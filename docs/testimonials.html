@@ -7,78 +7,220 @@
 
   <style>
     * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
 
     body {
       margin: 0;
       font-family: Arial, Helvetica, sans-serif;
-      background: radial-gradient(circle at top, #073b5f, #020611 65%);
       color: white;
-      text-align: center;
-      padding: 35px 20px;
+      background: #020611;
+      overflow-x: hidden;
     }
 
-    .wrap {
-      max-width: 900px;
-      margin: auto;
+    .server-bg {
+      position: fixed;
+      inset: 0;
+      z-index: -4;
+      background:
+        radial-gradient(circle at 20% 20%, rgba(0,255,160,.25), transparent 22%),
+        radial-gradient(circle at 80% 10%, rgba(0,170,255,.25), transparent 25%),
+        linear-gradient(135deg, #020611, #031a2d, #020611);
+      animation: glowShift 8s ease-in-out infinite alternate;
+    }
+
+    .server-bg::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(0,255,180,.08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,200,255,.08) 1px, transparent 1px);
+      background-size: 52px 52px;
+      animation: gridMove 14s linear infinite;
+    }
+
+    .server-bg::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: -25%;
+      height: 180px;
+      background: linear-gradient(to bottom, transparent, rgba(0,255,190,.22), transparent);
+      animation: scanLine 5.5s linear infinite;
+    }
+
+    @keyframes glowShift {
+      from { filter: hue-rotate(0deg) brightness(1); }
+      to { filter: hue-rotate(18deg) brightness(1.25); }
+    }
+
+    @keyframes gridMove {
+      from { background-position: 0 0; }
+      to { background-position: 104px 104px; }
+    }
+
+    @keyframes scanLine {
+      from { top: -25%; }
+      to { top: 120%; }
+    }
+
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      padding: 18px 7%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(2, 6, 17, .72);
+      backdrop-filter: blur(14px);
+      border-bottom: 1px solid rgba(255,255,255,.08);
+    }
+
+    .brand {
+      font-size: 20px;
+      font-weight: 900;
+      letter-spacing: .4px;
+    }
+
+    .brand span { color: #64ff7a; }
+
+    #menu-toggle { display: none; }
+
+    .hamburger {
+      width: 46px;
+      height: 46px;
+      border-radius: 14px;
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      border: 1px solid rgba(100,255,122,.5);
+      background: rgba(255,255,255,.07);
+      box-shadow: 0 0 22px rgba(0,255,170,.22);
+    }
+
+    .hamburger div {
+      width: 23px;
+      height: 2px;
+      background: white;
+      position: relative;
+      box-shadow: 0 0 12px rgba(255,255,255,.8);
+    }
+
+    .hamburger div::before,
+    .hamburger div::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      width: 23px;
+      height: 2px;
+      background: white;
+    }
+
+    .hamburger div::before { top: -7px; }
+    .hamburger div::after { top: 7px; }
+
+    .menu {
+      position: absolute;
+      top: 72px;
+      right: 7%;
+      width: min(330px, 86vw);
+      padding: 16px;
+      border-radius: 22px;
+      background: rgba(3, 14, 31, .95);
+      border: 1px solid rgba(39,200,255,.4);
+      box-shadow: 0 0 35px rgba(0,200,255,.25);
+      display: none;
+    }
+
+    #menu-toggle:checked ~ .menu { display: block; }
+
+    .menu a {
+      display: block;
+      text-decoration: none;
+      color: white;
+      font-weight: 900;
+      padding: 15px 16px;
+      margin: 8px 0;
+      border-radius: 14px;
+      background: rgba(255,255,255,.07);
+      border: 1px solid rgba(255,255,255,.12);
+    }
+
+    main {
+      padding: 55px 7%;
+      text-align: center;
     }
 
     .logo {
-      width: 165px;
+      width: 170px;
       border-radius: 50%;
-      box-shadow: 0 0 35px rgba(0, 200, 255, .9);
-      margin-bottom: 20px;
+      box-shadow: 0 0 45px rgba(0, 225, 255, .75), 0 0 85px rgba(100,255,122,.25);
+      animation: float 3.5s ease-in-out infinite;
+      margin-bottom: 18px;
+    }
+
+    @keyframes float {
+      0%,100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
     }
 
     h1 {
-      font-size: 44px;
+      font-size: clamp(42px, 8vw, 72px);
       margin: 10px 0;
+      text-shadow: 0 0 28px rgba(0,200,255,.65);
     }
 
-    .green { color: #69e34f; }
-    .blue { color: #22c8ff; }
+    .green { color: #64ff7a; }
+    .blue { color: #27c8ff; }
 
     .sub {
       color: #d7e9f5;
-      font-size: 19px;
+      font-size: 18px;
       line-height: 1.7;
-      max-width: 760px;
+      max-width: 780px;
       margin: 18px auto 30px;
     }
 
     .card {
-      margin: 28px auto;
+      max-width: 900px;
+      margin: 26px auto;
       padding: 28px;
-      border-radius: 22px;
-      border: 1px solid rgba(34, 200, 255, .8);
-      background: rgba(255, 255, 255, .07);
-      box-shadow: 0 0 30px rgba(0, 200, 255, .18);
+      border-radius: 24px;
+      background: rgba(2, 10, 24, .76);
+      border: 1px solid rgba(39,200,255,.4);
+      box-shadow: 0 0 32px rgba(0,200,255,.18);
+      backdrop-filter: blur(10px);
     }
 
-    h2 {
-      color: #69e34f;
+    .card h2 {
+      color: #64ff7a;
       margin-top: 0;
+    }
+
+    .quote {
+      font-size: 22px;
+      font-weight: 900;
+      color: white;
     }
 
     p {
       color: #d7e9f5;
-      font-size: 18px;
+      font-size: 17px;
       line-height: 1.7;
-    }
-
-    .buttons {
-      margin-top: 28px;
     }
 
     .button {
       display: inline-block;
       margin: 10px;
-      padding: 15px 24px;
-      border-radius: 14px;
+      padding: 15px 22px;
+      border-radius: 15px;
       text-decoration: none;
       color: white;
-      font-weight: bold;
+      font-weight: 900;
       background: linear-gradient(90deg, #008cff, #00ff88);
-      box-shadow: 0 0 22px rgba(0, 255, 170, .3);
+      box-shadow: 0 0 26px rgba(0,255,170,.34);
     }
 
     .button.secondary {
@@ -86,28 +228,48 @@
       border: 1px solid rgba(255,255,255,.25);
     }
 
-    .quote {
-      font-size: 22px;
-      font-weight: bold;
-      color: white;
-    }
-
     footer {
-      margin-top: 40px;
+      text-align: center;
+      padding: 30px;
       color: #8fb6c9;
       font-size: 14px;
+    }
+
+    @media (max-width: 620px) {
+      header { padding: 14px 5%; }
+      .menu { right: 5%; top: 66px; }
+      main { padding: 45px 5%; }
+      .logo { width: 145px; }
     }
   </style>
 </head>
 
 <body>
-  <div class="wrap">
+  <div class="server-bg"></div>
+
+  <header>
+    <div class="brand">Shield<span>Mend</span>AI</div>
+
+    <input type="checkbox" id="menu-toggle" />
+    <label class="hamburger" for="menu-toggle" aria-label="Open menu">
+      <div></div>
+    </label>
+
+    <nav class="menu">
+      <a href="index.html">Home</a>
+      <a href="roadmap.html">Roadmap</a>
+      <a href="index.html#smend">$SMEND Token</a>
+      <a href="https://bankr.bot">Bankr</a>
+    </nav>
+  </header>
+
+  <main>
     <img class="logo" src="https://raw.githubusercontent.com/shieldmendai/shieldmendai-core/main/ShieldMendAI_under_1MB.jpg" alt="ShieldMendAI Logo" />
 
-    <h1>Shield<span class="green">Mend</span><span class="blue">AI</span></h1>
+    <h1>Founder <span class="green">Story</span></h1>
 
     <p class="sub">
-      Founder story, project mission, and the reason ShieldMendAI is being built.
+      Why ShieldMendAI exists, what problem it is trying to solve, and why the project is being built in public.
     </p>
 
     <div class="card">
@@ -139,24 +301,31 @@
     <div class="card">
       <h2>Founder Video</h2>
 
-      <p>
-        Watch the original ShieldMendAI founder video on X.
-      </p>
+      <p>Watch the original ShieldMendAI founder video on X.</p>
 
-      <div class="buttons">
-        <a class="button" href="https://x.com/i/status/2067653953873997988" target="_blank" rel="noopener noreferrer">
-          Watch Founder Video
-        </a>
+      <a class="button" href="https://x.com/i/status/2067653953873997988" target="_blank" rel="noopener noreferrer">
+        Watch Founder Video
+      </a>
 
-        <a class="button secondary" href="index.html">
-          Back to Home
-        </a>
-      </div>
+      <a class="button secondary" href="index.html">
+        Back to Home
+      </a>
     </div>
+  </main>
 
-    <footer>
-      © 2026 ShieldMendAI · The self-healing shield for your server.
-    </footer>
-  </div>
+  <footer>
+    © 2026 ShieldMendAI · Product first. Token second. Trust earned in public.
+  </footer>
+
+  <script>
+    document.querySelectorAll('.menu a').forEach(function(link) {
+      link.addEventListener('click', function() {
+        const menuToggle = document.getElementById('menu-toggle');
+        if (menuToggle) {
+          menuToggle.checked = false;
+        }
+      });
+    });
+  </script>
 </body>
 </html>
