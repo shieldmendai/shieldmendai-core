@@ -4,66 +4,267 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ShieldMendAI Roadmap</title>
+
   <style>
+    * { box-sizing: border-box; }
+
     body {
       margin: 0;
-      font-family: Arial, sans-serif;
+      font-family: Arial, Helvetica, sans-serif;
       color: white;
-      background: radial-gradient(circle at top, #073b5f, #02040a 60%);
-      padding: 30px 20px;
+      background: #020611;
+      overflow-x: hidden;
     }
-    .wrap {
-      max-width: 900px;
-      margin: auto;
+
+    .server-bg {
+      position: fixed;
+      inset: 0;
+      z-index: -3;
+      background:
+        radial-gradient(circle at 20% 20%, rgba(0,255,160,.25), transparent 22%),
+        radial-gradient(circle at 80% 10%, rgba(0,170,255,.25), transparent 25%),
+        linear-gradient(135deg, #020611, #031a2d, #020611);
+      animation: glowShift 8s ease-in-out infinite alternate;
     }
-    a {
-      color: #69e34f;
+
+    .server-bg::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(0,255,180,.08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,200,255,.08) 1px, transparent 1px);
+      background-size: 48px 48px;
+      animation: gridMove 12s linear infinite;
+    }
+
+    .server-bg::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: -20%;
+      height: 180px;
+      background: linear-gradient(to bottom, transparent, rgba(0,255,190,.22), transparent);
+      animation: scanLine 5s linear infinite;
+    }
+
+    @keyframes glowShift {
+      from { filter: hue-rotate(0deg) brightness(1); }
+      to { filter: hue-rotate(20deg) brightness(1.25); }
+    }
+
+    @keyframes gridMove {
+      from { background-position: 0 0; }
+      to { background-position: 96px 96px; }
+    }
+
+    @keyframes scanLine {
+      from { top: -25%; }
+      to { top: 120%; }
+    }
+
+    header {
+      padding: 24px 7%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .brand {
+      font-size: 20px;
+      font-weight: 900;
+    }
+
+    .brand span { color: #64ff7a; }
+
+    .nav a {
+      color: #d7e9f5;
       text-decoration: none;
+      margin-left: 14px;
+      padding: 10px 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      font-size: 14px;
       font-weight: bold;
     }
+
+    .hero {
+      padding: 60px 7% 30px;
+      text-align: center;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 9px 16px;
+      border-radius: 999px;
+      background: rgba(0,255,160,.12);
+      border: 1px solid rgba(0,255,160,.35);
+      color: #64ff7a;
+      font-weight: bold;
+      margin-bottom: 18px;
+    }
+
     h1 {
-      font-size: 44px;
-      text-align: center;
-      margin-bottom: 10px;
+      font-size: clamp(42px, 8vw, 82px);
+      margin: 10px 0;
+      text-shadow: 0 0 28px rgba(0,200,255,.65);
     }
+
     .sub {
-      text-align: center;
-      color: #cfefff;
+      max-width: 780px;
+      margin: 18px auto;
       font-size: 18px;
-      margin-bottom: 35px;
+      line-height: 1.7;
+      color: #d7e9f5;
     }
+
+    .timeline {
+      width: min(1000px, 92%);
+      margin: 45px auto 70px;
+      position: relative;
+    }
+
+    .timeline::before {
+      content: "";
+      position: absolute;
+      left: 22px;
+      top: 0;
+      bottom: 0;
+      width: 3px;
+      background: linear-gradient(#27c8ff, #64ff7a, #27c8ff);
+      box-shadow: 0 0 25px rgba(0,255,180,.8);
+    }
+
     .phase {
-      border: 1px solid #22c8ff;
-      background: rgba(255,255,255,.06);
-      border-radius: 18px;
+      position: relative;
+      margin: 28px 0 28px 58px;
       padding: 24px;
-      margin: 22px 0;
-      box-shadow: 0 0 25px rgba(0,200,255,.15);
+      border-radius: 22px;
+      border: 1px solid rgba(39,200,255,.45);
+      background: rgba(2, 10, 24, .82);
+      box-shadow: 0 0 30px rgba(0,200,255,.18);
+      backdrop-filter: blur(10px);
     }
-    h2 {
-      color: #69e34f;
-      margin-top: 0;
+
+    .phase::before {
+      content: "";
+      position: absolute;
+      left: -47px;
+      top: 28px;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #64ff7a;
+      box-shadow: 0 0 18px #64ff7a, 0 0 40px #27c8ff;
+      animation: dotPulse 1.8s ease-in-out infinite alternate;
     }
+
+    @keyframes dotPulse {
+      from { transform: scale(.9); opacity: .75; }
+      to { transform: scale(1.25); opacity: 1; }
+    }
+
+    .phase h2 {
+      margin: 0 0 12px;
+      color: #64ff7a;
+      font-size: 26px;
+    }
+
+    .status {
+      display: inline-block;
+      margin-bottom: 14px;
+      padding: 6px 11px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: .6px;
+    }
+
+    .done {
+      background: rgba(100,255,122,.18);
+      color: #64ff7a;
+      border: 1px solid rgba(100,255,122,.4);
+    }
+
+    .progress {
+      background: rgba(39,200,255,.16);
+      color: #27c8ff;
+      border: 1px solid rgba(39,200,255,.4);
+    }
+
+    .planned {
+      background: rgba(255,255,255,.09);
+      color: #d7e9f5;
+      border: 1px solid rgba(255,255,255,.22);
+    }
+
+    ul {
+      margin: 0;
+      padding-left: 22px;
+    }
+
     li {
       margin: 10px 0;
-      line-height: 1.5;
+      line-height: 1.55;
+      color: #d7e9f5;
     }
-    .top {
+
+    .cta {
       text-align: center;
-      margin-bottom: 30px;
+      padding: 20px 7% 65px;
+    }
+
+    .button {
+      display: inline-block;
+      margin: 8px;
+      padding: 15px 22px;
+      border-radius: 14px;
+      text-decoration: none;
+      color: white;
+      font-weight: 900;
+      background: linear-gradient(90deg, #008cff, #00ff88);
+      box-shadow: 0 0 24px rgba(0,255,170,.35);
+    }
+
+    .button.secondary {
+      background: rgba(255,255,255,.08);
+      border: 1px solid rgba(255,255,255,.25);
+    }
+
+    footer {
+      text-align: center;
+      padding: 30px;
+      color: #8fb6c9;
+      font-size: 14px;
     }
   </style>
 </head>
+
 <body>
-  <div class="wrap">
-    <div class="top">
-      <a href="index.html">← Back to ShieldMendAI</a>
+  <div class="server-bg"></div>
+
+  <header>
+    <div class="brand">Shield<span>Mend</span>AI</div>
+    <div class="nav">
+      <a href="index.html">Home</a>
+      <a href="testimonials.html">Founder Story</a>
     </div>
+  </header>
 
-    <h1>ShieldMendAI Roadmap</h1>
-    <p class="sub">The path toward a self-healing shield for your server.</p>
+  <section class="hero">
+    <div class="badge">PUBLIC ROADMAP</div>
+    <h1>Building the Self-Healing Server Shield</h1>
+    <p class="sub">
+      ShieldMendAI is being built in public: from project foundation, to core recovery logic,
+      to AI-assisted diagnostics, to a reusable tool regular server owners can actually use.
+    </p>
+  </section>
 
+  <section class="timeline">
     <div class="phase">
+      <span class="status done">COMPLETED</span>
       <h2>Phase 1 — Foundation</h2>
       <ul>
         <li>Brand identity created</li>
@@ -75,6 +276,7 @@
     </div>
 
     <div class="phase">
+      <span class="status progress">IN PROGRESS</span>
       <h2>Phase 2 — ShieldMendAI Core</h2>
       <ul>
         <li>Service monitoring</li>
@@ -86,6 +288,7 @@
     </div>
 
     <div class="phase">
+      <span class="status planned">PLANNED</span>
       <h2>Phase 3 — Alerts & Controls</h2>
       <ul>
         <li>Telegram alert setup</li>
@@ -97,6 +300,7 @@
     </div>
 
     <div class="phase">
+      <span class="status planned">PLANNED</span>
       <h2>Phase 4 — AI Recovery Layer</h2>
       <ul>
         <li>Incident pattern tracking</li>
@@ -108,6 +312,7 @@
     </div>
 
     <div class="phase">
+      <span class="status planned">PLANNED</span>
       <h2>Phase 5 — Public Release</h2>
       <ul>
         <li>One-command installer</li>
@@ -117,6 +322,15 @@
         <li>First stable release</li>
       </ul>
     </div>
-  </div>
+  </section>
+
+  <section class="cta">
+    <a class="button" href="index.html">Back to Home</a>
+    <a class="button secondary" href="https://github.com/shieldmendai/shieldmendai-core">View GitHub</a>
+  </section>
+
+  <footer>
+    © 2026 ShieldMendAI · Product first. Token second. Trust earned in public.
+  </footer>
 </body>
 </html>
