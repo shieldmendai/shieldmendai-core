@@ -1,4 +1,4 @@
-# Token Plan
+# ShieldMendAI Token Plan
 
 ## Token Name
 
@@ -16,82 +16,106 @@ Base
 
 Bankr
 
-## Current Status
-
-Preparing for launch on Bankr.
-
 ## Tagline
 
 The self-healing shield for your server.
 
-## Purpose
+## Current Status
 
-SMEND is the community/support token for the ShieldMendAI ecosystem.
+ShieldMendAI and the SMEND token are active development initiatives.
 
-The token is intended to help support:
+The ShieldMendAI project infrastructure, branding, documentation, GitHub repository, and community channels have been established.
 
-- Development costs
-- Server and infrastructure costs
-- AI/API costs
-- Testing and security work
-- Product growth
-- Future ShieldMendAI features
+SMEND is planned as the community support token for the ShieldMendAI ecosystem and is intended to launch on Bankr on Base.
 
-## Product
+Development of the ShieldMendAI platform continues alongside preparation for the public token launch and future product releases.
 
-ShieldMendAI is a self-healing server project built to help server owners reduce downtime.
+## Mission
 
-The system is designed to:
+ShieldMendAI is building a self-healing server platform designed to reduce downtime, automate recovery, and provide intelligent monitoring for server owners.
 
-- Monitor services
-- Detect failed processes
-- Restart broken services
-- Send Telegram alerts
-- Keep incident logs
-- Learn from previous incidents
+## What ShieldMendAI Does
 
-## Product-First Approach
+- Monitors critical services
+- Detects service failures
+- Automatically restarts failed services
+- Sends Telegram notifications
+- Maintains incident history
+- Tracks recurring problems
+- Provides recovery automation
 
-ShieldMendAI is a real software project first.
+## Purpose of SMEND
 
-SMEND is meant to support development and community participation. It does not replace the product.
+SMEND is intended to support the growth and development of the ShieldMendAI ecosystem.
 
-## Bankr Launch Details
+Funds generated through project activities may be used for:
 
-- Token name: ShieldMendAI
-- Ticker: SMEND
-- Chain: Base
-- Launch platform: Bankr
-- Supply: Bankr default fixed supply
-- Liquidity: handled by Bankr launch flow
-- Creator allocation at launch: none
-- Project funding source: creator trading fees
-- Fee recipient: official ShieldMendAI project wallet
-- Launch method: Bankr token launch
+- Server infrastructure
+- Development expenses
+- AI service costs
+- Monitoring systems
+- Security improvements
+- Product testing
+- Documentation
+- Community growth
+
+## Product-First Philosophy
+
+ShieldMendAI is a software project first.
+
+The token exists to support the ecosystem surrounding the project.
+
+## Development Roadmap
+
+### Phase 1 — Foundation
+
+- Brand creation
+- GitHub repository creation
+- Documentation setup
+- Community channel setup
+- Project structure creation
+
+### Phase 2 — ShieldMendAI Core
+
+- Service monitoring
+- Auto-restart systems
+- Telegram alerts
+- Incident logging
+- Recovery automation
+
+### Phase 3 — AI Layer
+
+- Pattern recognition
+- Incident learning
+- Intelligent diagnostics
+- Predictive recovery
+- Self-improving automation
+
+### Phase 4 — Public Release
+
+- Installer package
+- User configuration system
+- Public documentation
+- Community onboarding
+- Production deployments
 
 ## Official Links
 
 - X: @ShieldMendAi
-- GitHub: shieldmendai/shieldmendai-core
-- Website: GitHub repository for now
+- GitHub: https://github.com/shieldmendai/shieldmendai-core
 
-## Important Notes
+## Disclaimer
 
-- No guaranteed profit
-- No promised returns
-- No investment advice
-- No equity or ownership in ShieldMendAI
-- Token details may evolve as the project grows
-- Participation is voluntary and risky
+SMEND is a community support token.
 
-## Launch Message Draft
+Nothing in this document constitutes investment advice, financial advice, legal advice, or a promise of future returns.
 
-ShieldMendAI is launching SMEND on Bankr.
+Participation involves risk.
 
-SMEND is the community/support token for the ShieldMendAI ecosystem.
+There is no guarantee of profit, value appreciation, or future utility.
 
-ShieldMendAI is building a self-healing shield for servers: monitoring services, detecting failures, restarting broken processes, sending alerts, and keeping incident logs.
+Always do your own research before participating.
 
-SMEND exists to support development, infrastructure, testing, and future project growth.
+## Vision Statement
 
-No promised returns. Product first.
+ShieldMendAI aims to become the self-healing shield for servers worldwide.
