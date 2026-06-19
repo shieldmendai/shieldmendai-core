@@ -3,11 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ShieldMendAI | The Self-Healing Shield for Your Server</title>
+  <title>ShieldMendAI | Helping Everyday People Build With AI</title>
 
   <style>
     * { box-sizing: border-box; }
-
     html { scroll-behavior: smooth; }
 
     body {
@@ -21,13 +20,13 @@
     .server-bg {
       position: fixed;
       inset: 0;
-      z-index: -4;
+      z-index: -5;
       background:
-        radial-gradient(circle at 20% 20%, rgba(0,255,160,.28), transparent 22%),
-        radial-gradient(circle at 80% 15%, rgba(0,170,255,.3), transparent 26%),
-        radial-gradient(circle at 50% 85%, rgba(0,255,100,.14), transparent 28%),
+        radial-gradient(circle at 15% 18%, rgba(0,255,160,.35), transparent 24%),
+        radial-gradient(circle at 85% 12%, rgba(0,170,255,.38), transparent 28%),
+        radial-gradient(circle at 50% 90%, rgba(100,255,122,.22), transparent 30%),
         linear-gradient(135deg, #020611, #031a2d, #020611);
-      animation: bgGlow 8s ease-in-out infinite alternate;
+      animation: bgGlow 7s ease-in-out infinite alternate;
     }
 
     .server-bg::before {
@@ -35,8 +34,8 @@
       position: absolute;
       inset: 0;
       background-image:
-        linear-gradient(rgba(0,255,180,.08) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(0,200,255,.08) 1px, transparent 1px);
+        linear-gradient(rgba(0,255,180,.09) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,200,255,.09) 1px, transparent 1px);
       background-size: 52px 52px;
       animation: gridMove 14s linear infinite;
     }
@@ -48,13 +47,46 @@
       right: 0;
       top: -25%;
       height: 180px;
-      background: linear-gradient(to bottom, transparent, rgba(0,255,190,.22), transparent);
+      background: linear-gradient(to bottom, transparent, rgba(0,255,190,.24), transparent);
       animation: scanLine 5.5s linear infinite;
+    }
+
+    .effects {
+      position: fixed;
+      inset: 0;
+      z-index: -4;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .effects span {
+      position: absolute;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: rgba(100,255,122,.85);
+      box-shadow: 0 0 18px rgba(100,255,122,.9);
+      animation: rise 12s linear infinite;
+      opacity: .75;
+    }
+
+    .effects span:nth-child(1) { left: 8%; animation-delay: 0s; animation-duration: 10s; }
+    .effects span:nth-child(2) { left: 18%; animation-delay: 2s; animation-duration: 13s; }
+    .effects span:nth-child(3) { left: 31%; animation-delay: 4s; animation-duration: 11s; }
+    .effects span:nth-child(4) { left: 44%; animation-delay: 1s; animation-duration: 15s; }
+    .effects span:nth-child(5) { left: 57%; animation-delay: 3s; animation-duration: 12s; }
+    .effects span:nth-child(6) { left: 69%; animation-delay: 5s; animation-duration: 14s; }
+    .effects span:nth-child(7) { left: 82%; animation-delay: 1.5s; animation-duration: 10s; }
+    .effects span:nth-child(8) { left: 93%; animation-delay: 3.5s; animation-duration: 16s; }
+
+    @keyframes rise {
+      from { transform: translateY(105vh) scale(.7); }
+      to { transform: translateY(-10vh) scale(1.5); }
     }
 
     @keyframes bgGlow {
       from { filter: hue-rotate(0deg) brightness(1); }
-      to { filter: hue-rotate(18deg) brightness(1.25); }
+      to { filter: hue-rotate(18deg) brightness(1.28); }
     }
 
     @keyframes gridMove {
@@ -102,24 +134,17 @@
       box-shadow: 0 0 22px rgba(0,255,170,.22);
     }
 
-    .hamburger div {
-      width: 23px;
-      height: 2px;
-      background: white;
-      position: relative;
-      box-shadow: 0 0 12px rgba(255,255,255,.8);
-    }
-
+    .hamburger div,
     .hamburger div::before,
     .hamburger div::after {
-      content: "";
-      position: absolute;
-      left: 0;
       width: 23px;
       height: 2px;
       background: white;
+      position: absolute;
+      content: "";
     }
 
+    .hamburger div { position: relative; }
     .hamburger div::before { top: -7px; }
     .hamburger div::after { top: 7px; }
 
@@ -150,10 +175,6 @@
       border: 1px solid rgba(255,255,255,.12);
     }
 
-    .menu a:hover {
-      background: linear-gradient(90deg, rgba(0,140,255,.45), rgba(0,255,136,.28));
-    }
-
     .hero {
       min-height: 92vh;
       display: grid;
@@ -164,15 +185,22 @@
 
     .shell {
       width: min(1080px, 100%);
-      padding: 35px 22px;
+      padding: 38px 22px;
       border-radius: 34px;
-      background: rgba(2, 10, 24, .45);
-      border: 1px solid rgba(39,200,255,.28);
+      background: rgba(2, 10, 24, .50);
+      border: 1px solid rgba(39,200,255,.35);
       box-shadow:
-        0 0 0 1px rgba(100,255,122,.16),
-        0 0 45px rgba(0,200,255,.22),
-        inset 0 0 45px rgba(0,255,170,.07);
-      backdrop-filter: blur(12px);
+        0 0 0 1px rgba(100,255,122,.18),
+        0 0 65px rgba(0,200,255,.32),
+        0 0 120px rgba(100,255,122,.12),
+        inset 0 0 55px rgba(0,255,170,.09);
+      backdrop-filter: blur(13px);
+      animation: shellPulse 3.5s ease-in-out infinite alternate;
+    }
+
+    @keyframes shellPulse {
+      from { box-shadow: 0 0 45px rgba(0,200,255,.22), inset 0 0 45px rgba(0,255,170,.07); }
+      to { box-shadow: 0 0 85px rgba(0,200,255,.42), 0 0 130px rgba(100,255,122,.14), inset 0 0 60px rgba(0,255,170,.11); }
     }
 
     .logo-wrap {
@@ -182,7 +210,7 @@
       border-radius: 50%;
       padding: 7px;
       background: linear-gradient(130deg, #00d4ff, #64ff7a, #00d4ff);
-      box-shadow: 0 0 50px rgba(0, 225, 255, .75), 0 0 95px rgba(100,255,122,.28);
+      box-shadow: 0 0 55px rgba(0,225,255,.85), 0 0 110px rgba(100,255,122,.35);
       animation: float 3.5s ease-in-out infinite, halo 2.8s ease-in-out infinite alternate;
     }
 
@@ -216,13 +244,14 @@
       font-weight: 900;
       font-size: 13px;
       letter-spacing: .8px;
+      box-shadow: 0 0 22px rgba(100,255,122,.18);
     }
 
     h1 {
       margin: 14px 0 8px;
       font-size: clamp(44px, 9vw, 92px);
       line-height: .95;
-      text-shadow: 0 0 30px rgba(0,200,255,.65);
+      text-shadow: 0 0 34px rgba(0,200,255,.75);
     }
 
     .green { color: #64ff7a; }
@@ -244,11 +273,10 @@
       line-height: 1.7;
     }
 
-    .hero-buttons {
-      margin-top: 30px;
-    }
+    .hero-buttons { margin-top: 30px; }
 
     .button {
+      position: relative;
       display: inline-block;
       margin: 8px;
       padding: 15px 22px;
@@ -257,7 +285,23 @@
       color: white;
       font-weight: 900;
       background: linear-gradient(90deg, #008cff, #00ff88);
-      box-shadow: 0 0 26px rgba(0,255,170,.34);
+      box-shadow: 0 0 30px rgba(0,255,170,.38);
+      overflow: hidden;
+    }
+
+    .button::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: -120%;
+      width: 80%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,.45), transparent);
+      animation: shimmer 2.8s infinite;
+    }
+
+    @keyframes shimmer {
+      to { left: 130%; }
     }
 
     .button.secondary {
@@ -265,9 +309,7 @@
       border: 1px solid rgba(255,255,255,.25);
     }
 
-    section {
-      padding: 62px 7%;
-    }
+    section { padding: 62px 7%; }
 
     .section-title {
       text-align: center;
@@ -296,25 +338,11 @@
       position: relative;
       padding: 26px;
       border-radius: 24px;
-      background: rgba(2, 10, 24, .72);
+      background: rgba(2, 10, 24, .74);
       border: 1px solid rgba(39,200,255,.35);
-      box-shadow: 0 0 32px rgba(0,200,255,.16);
+      box-shadow: 0 0 34px rgba(0,200,255,.18);
       backdrop-filter: blur(10px);
       overflow: hidden;
-    }
-
-    .card::before {
-      content: "";
-      position: absolute;
-      inset: -2px;
-      border-radius: 24px;
-      padding: 1px;
-      background: linear-gradient(130deg, rgba(0,200,255,.65), rgba(100,255,122,.45), transparent);
-      mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-      -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-      mask-composite: exclude;
-      -webkit-mask-composite: xor;
-      pointer-events: none;
     }
 
     .card h3 {
@@ -346,7 +374,7 @@
       max-width: 980px;
       margin: auto;
       text-align: center;
-      background: linear-gradient(135deg, rgba(0,140,255,.22), rgba(0,255,136,.12));
+      background: linear-gradient(135deg, rgba(0,140,255,.24), rgba(0,255,136,.14));
     }
 
     .contract {
@@ -425,6 +453,11 @@
 <body>
   <div class="server-bg"></div>
 
+  <div class="effects">
+    <span></span><span></span><span></span><span></span>
+    <span></span><span></span><span></span><span></span>
+  </div>
+
   <header>
     <div class="brand">Shield<span>Mend</span>AI</div>
 
@@ -448,15 +481,15 @@
         <img class="logo" src="https://raw.githubusercontent.com/shieldmendai/shieldmendai-core/main/ShieldMendAI_under_1MB.jpg" alt="ShieldMendAI Logo" />
       </div>
 
-      <div class="badge">AI SERVER RECOVERY · BASE · BANKR</div>
+      <div class="badge">BUILD • CREATE • AUTOMATE</div>
 
       <h1>Shield<span class="green">Mend</span><span class="blue">AI</span></h1>
 
-      <div class="tagline">Self-healing infrastructure for builders.</div>
+      <div class="tagline">Helping Everyday People Build With AI</div>
 
       <p class="sub">
-        ShieldMendAI is building AI-powered server monitoring and recovery tools that detect failures,
-        restart broken services, notify owners, and help reduce downtime before small problems become disasters.
+        ShieldMendAI creates practical AI tools that help builders, creators, entrepreneurs,
+        and small teams turn ideas into working products faster.
       </p>
 
       <div class="hero-buttons">
@@ -473,19 +506,15 @@
         Product first. Token second. Trust earned in public.
       </div>
 
-      <p>
-        ShieldMendAI is not just another token launch.
-      </p>
+      <p>ShieldMendAI is not just another token launch.</p>
 
       <p>
         Most projects start with a coin and figure out the product later.
-        ShieldMendAI started from real server problems, real automation work, and a clear mission:
-        help servers detect failures, recover automatically, alert owners, and learn from incidents.
+        ShieldMendAI started from real automation work, real server problems,
+        and a bigger mission: help regular people build, automate, launch, and protect what they create.
       </p>
 
-      <p>
-        The token supports the build. The product is the mission.
-      </p>
+      <p>The token supports the build. The product is the mission.</p>
 
       <div class="trust-strip">
         <div class="trust">✅ Open-source repo</div>
@@ -498,30 +527,31 @@
   </section>
 
   <section>
-    <h2 class="section-title">Built for Real Server Problems</h2>
+    <h2 class="section-title">Built for Builders, Creators, and Small Teams</h2>
     <p class="section-sub">
-      ShieldMendAI is designed for builders, small teams, bot operators, and server owners who need recovery tools that are simple, visible, and practical.
+      ShieldMendAI is building practical AI-powered tools for people who want to create more,
+      automate more, and depend less on complicated systems.
     </p>
 
     <div class="grid">
       <div class="card">
-        <h3>🛡️ Monitor</h3>
-        <p>Watch critical services and detect when something breaks, stalls, or goes offline.</p>
+        <h3>🛠️ Build</h3>
+        <p>Turn ideas into working projects with practical AI-powered systems and automation.</p>
       </div>
 
       <div class="card">
-        <h3>⚡ Recover</h3>
-        <p>Restart failed services and trigger safe recovery workflows before downtime spreads.</p>
+        <h3>⚡ Automate</h3>
+        <p>Use AI workflows to reduce manual work, monitor systems, and keep projects moving.</p>
       </div>
 
       <div class="card">
-        <h3>📲 Alert</h3>
-        <p>Telegram alerts and simple owner controls are planned so regular users can stay informed without living in a terminal.</p>
+        <h3>🛡️ Protect</h3>
+        <p>Self-healing infrastructure helps detect failures, recover services, and reduce downtime.</p>
       </div>
 
       <div class="card">
-        <h3>🧠 Learn</h3>
-        <p>Track incidents over time so the system can improve from repeated failures and known recovery patterns.</p>
+        <h3>🚀 Launch</h3>
+        <p>Designed for builders, bot operators, creators, entrepreneurs, and small teams bringing ideas online.</p>
       </div>
     </div>
   </section>
@@ -535,8 +565,8 @@
       </p>
 
       <p>
-        The mission is product-first: build useful self-healing infrastructure, document progress publicly,
-        and grow a real ecosystem around server recovery automation.
+        The mission is product-first: build useful AI tools, document progress publicly,
+        and grow a real ecosystem around automation, recovery, and everyday builders.
       </p>
 
       <p class="contract">
@@ -562,7 +592,7 @@
     </div>
 
     <div>
-      © 2026 ShieldMendAI · The self-healing shield for your server.
+      © 2026 ShieldMendAI · Helping everyday people build with AI.
     </div>
 
     <p class="notice">
