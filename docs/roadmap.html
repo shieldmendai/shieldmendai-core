@@ -65,29 +65,32 @@
     }
 
     header {
-      padding: 24px 7%;
+      padding: 20px 6%;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      gap: 12px;
     }
 
     .brand {
       font-size: 20px;
       font-weight: 900;
+      white-space: nowrap;
     }
 
     .brand span { color: #64ff7a; }
 
-    .nav a {
-      color: #d7e9f5;
+    .back-home {
+      color: white;
       text-decoration: none;
-      margin-left: 14px;
+      font-weight: 900;
       padding: 10px 14px;
       border-radius: 999px;
-      border: 1px solid rgba(255,255,255,.14);
-      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(100,255,122,.35);
+      background: rgba(255,255,255,.07);
+      box-shadow: 0 0 18px rgba(0,255,170,.18);
+      white-space: nowrap;
       font-size: 14px;
-      font-weight: bold;
     }
 
     .hero {
@@ -239,6 +242,25 @@
       color: #8fb6c9;
       font-size: 14px;
     }
+
+    @media (max-width: 620px) {
+      header {
+        padding: 18px 5%;
+      }
+
+      .brand {
+        font-size: 18px;
+      }
+
+      .back-home {
+        font-size: 13px;
+        padding: 9px 12px;
+      }
+
+      .hero {
+        padding-top: 45px;
+      }
+    }
   </style>
 </head>
 
@@ -247,10 +269,7 @@
 
   <header>
     <div class="brand">Shield<span>Mend</span>AI</div>
-    <div class="nav">
-      <a href="index.html">Home</a>
-      <a href="testimonials.html">Founder Story</a>
-    </div>
+    <a class="back-home" href="index.html">← Back Home</a>
   </header>
 
   <section class="hero">
@@ -326,7 +345,7 @@
 
   <section class="cta">
     <a class="button" href="index.html">Back to Home</a>
-    <a class="button secondary" href="https://github.com/shieldmendai/shieldmendai-core">View GitHub</a>
+    <a class="button secondary" href="testimonials.html">Founder Story</a>
   </section>
 
   <footer>
