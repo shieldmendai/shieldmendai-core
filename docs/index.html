@@ -447,7 +447,30 @@
       .shell { padding: 28px 14px; }
       section { padding: 48px 5%; }
     }
-  </style>
+  #dexscreener-embed {
+  position: relative;
+  width: 100%;
+  padding-bottom: 125%;
+  border-radius: 22px;
+  overflow: hidden;
+  border: 1px solid rgba(39,200,255,.35);
+  box-shadow: 0 0 34px rgba(0,200,255,.18);
+}
+
+@media (min-width: 1400px) {
+  #dexscreener-embed {
+    padding-bottom: 65%;
+  }
+}
+
+#dexscreener-embed iframe {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  border: 0;
+}</style>
 </head>
 
 <body>
@@ -584,6 +607,23 @@
         ShieldMendAI is focused on building a real software project first.
       </p>
     </div>
+  </section>
+  
+  <section id="dex-chart">
+  <div class="card big">
+    <h2 class="section-title">$SMEND Live Chart</h2>
+
+    <p>
+      View the live $SMEND chart on Base through DEX Screener.
+    </p>
+
+    <div id="dexscreener-embed">
+      <iframe
+        src="https://dexscreener.com/base/0x0d1f16569df23a8efeb4aacadbfeec5eae9e24a8449e0854fa66d2b55ee48d9f?embed=1&loadChartSettings=0&chartLeftToolbar=0&chartTheme=dark&theme=dark&chartStyle=0&chartType=usd&interval=15"
+        title="$SMEND DEX Screener Chart">
+      </iframe>
+    </div>
+  </div>
   </section>
 
   <footer>
