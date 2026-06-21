@@ -1,11 +1,8 @@
-<!DOCTYPE html>
-<html lang="en">
+    <!DOCTYPE html><html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ShieldMendAI | Helping Everyday People Build With AI</title>
-
-  <style>
+  <title>ShieldMendAI | Helping Everyday People Build With AI</title>  <style>
     * { box-sizing: border-box; }
     html { scroll-behavior: smooth; }
 
@@ -377,6 +374,25 @@
       background: linear-gradient(135deg, rgba(0,140,255,.24), rgba(0,255,136,.14));
     }
 
+    .telegram-card {
+      max-width: 980px;
+      margin: auto;
+      text-align: center;
+      background: linear-gradient(135deg, rgba(0,140,255,.22), rgba(0,255,136,.16));
+    }
+
+    .telegram-icon {
+      width: 82px;
+      height: 82px;
+      margin: 0 auto 18px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      font-size: 42px;
+      background: linear-gradient(135deg, #27c8ff, #00ff88);
+      box-shadow: 0 0 38px rgba(0,200,255,.45);
+    }
+
     .contract {
       word-break: break-all;
       color: #64ff7a;
@@ -415,6 +431,7 @@
       justify-content: center;
       gap: 14px;
       margin-bottom: 18px;
+      flex-wrap: wrap;
     }
 
     .social {
@@ -440,6 +457,31 @@
       font-size: 13px;
     }
 
+    #dexscreener-embed {
+      position: relative;
+      width: 100%;
+      padding-bottom: 125%;
+      border-radius: 22px;
+      overflow: hidden;
+      border: 1px solid rgba(39,200,255,.35);
+      box-shadow: 0 0 34px rgba(0,200,255,.18);
+    }
+
+    @media (min-width: 1400px) {
+      #dexscreener-embed {
+        padding-bottom: 65%;
+      }
+    }
+
+    #dexscreener-embed iframe {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      border: 0;
+    }
+
     @media (max-width: 620px) {
       header { padding: 14px 5%; }
       .menu { right: 5%; top: 66px; }
@@ -447,208 +489,182 @@
       .shell { padding: 28px 14px; }
       section { padding: 48px 5%; }
     }
-  #dexscreener-embed {
-  position: relative;
-  width: 100%;
-  padding-bottom: 125%;
-  border-radius: 22px;
-  overflow: hidden;
-  border: 1px solid rgba(39,200,255,.35);
-  box-shadow: 0 0 34px rgba(0,200,255,.18);
-}
-
-@media (min-width: 1400px) {
-  #dexscreener-embed {
-    padding-bottom: 65%;
-  }
-}
-
-#dexscreener-embed iframe {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  top: 0;
-  left: 0;
-  border: 0;
-}</style>
-</head>
-
-<body>
-  <div class="server-bg"></div>
-
-  <div class="effects">
+  </style></head><body>
+  <div class="server-bg"></div>  <div class="effects">
     <span></span><span></span><span></span><span></span>
     <span></span><span></span><span></span><span></span>
-  </div>
+  </div>  <header>
+    <div class="brand">Shield<span>Mend</span>AI</div><input type="checkbox" id="menu-toggle" />
+<label class="hamburger" for="menu-toggle" aria-label="Open menu">
+  <div></div>
+</label>
 
-  <header>
-    <div class="brand">Shield<span>Mend</span>AI</div>
+<nav class="menu">
+  <a href="#smend">$SMEND Token</a>
+  <a href="#telegram">Telegram Community</a>
+  <a href="#different">Why Different</a>
+  <a href="roadmap.html">Roadmap</a>
+  <a href="funding.html">v0.1 Funding Plan</a>
+  <a href="testimonials.html">Founder Story</a>
+  <a href="https://bankr.bot" target="_blank" rel="noopener noreferrer">Bankr</a>
+</nav>
 
-    <input type="checkbox" id="menu-toggle" />
-    <label class="hamburger" for="menu-toggle" aria-label="Open menu">
-      <div></div>
-    </label>
-
-    <nav class="menu">
-      <a href="#smend">$SMEND Token</a>
-      <a href="#different">Why Different</a>
-      <a href="roadmap.html">Roadmap</a>
-      <a href="funding.html">v0.1 Funding Plan</a>
-      <a href="testimonials.html">Founder Story</a>
-      <a href="https://bankr.bot">Bankr</a>
-    </nav>
-  </header>
-
-  <main class="hero">
+  </header>  <main class="hero">
     <div class="shell">
       <div class="logo-wrap">
         <img class="logo" src="https://raw.githubusercontent.com/shieldmendai/shieldmendai-core/main/ShieldMendAI_under_1MB.jpg" alt="ShieldMendAI Logo" />
-      </div>
+      </div>  <div class="badge">BUILD • CREATE • AUTOMATE</div>
 
-      <div class="badge">BUILD • CREATE • AUTOMATE</div>
+  <h1>Shield<span class="green">Mend</span><span class="blue">AI</span></h1>
 
-      <h1>Shield<span class="green">Mend</span><span class="blue">AI</span></h1>
+  <div class="tagline">Helping Everyday People Build With AI</div>
 
-      <div class="tagline">Helping Everyday People Build With AI</div>
+  <p class="sub">
+    ShieldMendAI creates practical AI tools that help builders, creators, entrepreneurs,
+    and small teams turn ideas into working products faster.
+  </p>
 
-      <p class="sub">
-        ShieldMendAI creates practical AI tools that help builders, creators, entrepreneurs,
-        and small teams turn ideas into working products faster.
-      </p>
+  <div class="hero-buttons">
+    <a class="button" href="#smend">View $SMEND</a>
+    <a class="button secondary" href="https://t.me/ShieldMendAi" target="_blank" rel="noopener noreferrer">Join Telegram</a>
+    <a class="button secondary" href="roadmap.html">Roadmap</a>
+    <a class="button secondary" href="testimonials.html">Founder Story</a>
+  </div>
+</div>
 
-      <div class="hero-buttons">
-        <a class="button" href="#smend">View $SMEND</a>
-        <a class="button secondary" href="roadmap.html">Roadmap</a>
-        <a class="button secondary" href="testimonials.html">Founder Story</a>
-      </div>
-    </div>
-  </main>
-
-  <section id="different">
+  </main>  <section id="different">
     <div class="card different">
       <div class="bigline">
         Product first. Token second. Trust earned in public.
-      </div>
+      </div>  <p>ShieldMendAI is not just another token launch.</p>
 
-      <p>ShieldMendAI is not just another token launch.</p>
+  <p>
+    Most projects start with a coin and figure out the product later.
+    ShieldMendAI started from real automation work, real server problems,
+    and a bigger mission: help regular people build, automate, launch, and protect what they create.
+  </p>
 
-      <p>
-        Most projects start with a coin and figure out the product later.
-        ShieldMendAI started from real automation work, real server problems,
-        and a bigger mission: help regular people build, automate, launch, and protect what they create.
-      </p>
+  <p>The token supports the build. The product is the mission.</p>
 
-      <p>The token supports the build. The product is the mission.</p>
+  <div class="trust-strip">
+    <div class="trust">✅ Open-source repo</div>
+    <div class="trust">✅ Public roadmap</div>
+    <div class="trust">✅ Token plan documented</div>
+    <div class="trust">🔒 Audit planned</div>
+    <div class="trust">🛡️ Build in public</div>
+  </div>
+</div>
 
-      <div class="trust-strip">
-        <div class="trust">✅ Open-source repo</div>
-        <div class="trust">✅ Public roadmap</div>
-        <div class="trust">✅ Token plan documented</div>
-        <div class="trust">🔒 Audit planned</div>
-        <div class="trust">🛡️ Build in public</div>
-      </div>
-    </div>
-  </section>
-
-  <section>
+  </section>  <section>
     <h2 class="section-title">Built for Builders, Creators, and Small Teams</h2>
     <p class="section-sub">
       ShieldMendAI is building practical AI-powered tools for people who want to create more,
       automate more, and depend less on complicated systems.
-    </p>
-
-    <div class="grid">
-      <div class="card">
-        <h3>🛠️ Build</h3>
-        <p>Turn ideas into working projects with practical AI-powered systems and automation.</p>
-      </div>
-
-      <div class="card">
-        <h3>⚡ Automate</h3>
-        <p>Use AI workflows to reduce manual work, monitor systems, and keep projects moving.</p>
-      </div>
-
-      <div class="card">
-        <h3>🛡️ Protect</h3>
-        <p>Self-healing infrastructure helps detect failures, recover services, and reduce downtime.</p>
-      </div>
-
-      <div class="card">
-        <h3>🚀 Launch</h3>
-        <p>Designed for builders, bot operators, creators, entrepreneurs, and small teams bringing ideas online.</p>
-      </div>
-    </div>
-  </section>
-
-  <section id="smend">
-    <div class="card token">
-      <h2 class="section-title">$SMEND on Base</h2>
-
-      <p>
-        SMEND is the community support token for the ShieldMendAI ecosystem, launched on Base through Bankr.
-      </p>
-
-      <p>
-        The mission is product-first: build useful AI tools, document progress publicly,
-        and grow a real ecosystem around automation, recovery, and everyday builders.
-      </p>
-
-      <p class="contract">
-        Contract: 0x148ccc51e0755c4b3f35215bcc4a57357a226ba3
-      </p>
-
-      <div class="hero-buttons">
-        <a class="button" href="https://bankr.bot">Open Bankr</a>
-        <a class="button secondary" href="roadmap.html">View Roadmap</a>
-      </div>
-
-      <p class="notice">
-        No promised returns. No investment advice. Participation is voluntary and risky.
-        ShieldMendAI is focused on building a real software project first.
-      </p>
-    </div>
-  </section>
-  
-  <section id="dex-chart">
-  <div class="card big">
-    <h2 class="section-title">$SMEND Live Chart</h2>
-
-    <p>
-      View the live $SMEND chart on Base through DEX Screener.
-    </p>
-
-    <div id="dexscreener-embed">
-      <iframe
-        src="https://dexscreener.com/base/0x0d1f16569df23a8efeb4aacadbfeec5eae9e24a8449e0854fa66d2b55ee48d9f?embed=1&loadChartSettings=0&chartLeftToolbar=0&chartTheme=dark&theme=dark&chartStyle=0&chartType=usd&interval=15"
-        title="$SMEND DEX Screener Chart">
-      </iframe>
-    </div>
+    </p><div class="grid">
+  <div class="card">
+    <h3>🛠️ Build</h3>
+    <p>Turn ideas into working projects with practical AI-powered systems and automation.</p>
   </div>
-  </section>
 
-  <footer>
+  <div class="card">
+    <h3>⚡ Automate</h3>
+    <p>Use AI workflows to reduce manual work, monitor systems, and keep projects moving.</p>
+  </div>
+
+  <div class="card">
+    <h3>🛡️ Protect</h3>
+    <p>Self-healing infrastructure helps detect failures, recover services, and reduce downtime.</p>
+  </div>
+
+  <div class="card">
+    <h3>🚀 Launch</h3>
+    <p>Designed for builders, bot operators, creators, entrepreneurs, and small teams bringing ideas online.</p>
+  </div>
+</div>
+
+  </section>  <section id="telegram">
+    <div class="card telegram-card">
+      <div class="telegram-icon">✈️</div>  <h2 class="section-title">Join the ShieldMendAI Telegram</h2>
+
+  <p>
+    The official ShieldMendAI community is live for project updates, support questions,
+    official links, development progress, and community discussion.
+  </p>
+
+  <p>
+    Join the community to follow the build, ask questions, and stay connected as ShieldMendAI grows.
+  </p>
+
+  <div class="hero-buttons">
+    <a class="button" href="https://t.me/ShieldMendAi" target="_blank" rel="noopener noreferrer">Open Telegram</a>
+  </div>
+
+  <p class="notice">
+    Admins will never DM first. Never share seed phrases or private keys.
+    Always verify official links inside the community.
+  </p>
+</div>
+
+  </section>  <section id="smend">
+    <div class="card token">
+      <h2 class="section-title">$SMEND on Base</h2>  <p>
+    SMEND is the community support token for the ShieldMendAI ecosystem, launched on Base through Bankr.
+  </p>
+
+  <p>
+    The mission is product-first: build useful AI tools, document progress publicly,
+    and grow a real ecosystem around automation, recovery, and everyday builders.
+  </p>
+
+  <p class="contract">
+    Contract: 0x148ccc51e0755c4b3f35215bcc4a57357a226ba3
+  </p>
+
+  <div class="hero-buttons">
+    <a class="button" href="https://bankr.bot" target="_blank" rel="noopener noreferrer">Open Bankr</a>
+    <a class="button secondary" href="https://t.me/ShieldMendAi" target="_blank" rel="noopener noreferrer">Join Telegram</a>
+    <a class="button secondary" href="roadmap.html">View Roadmap</a>
+  </div>
+
+  <p class="notice">
+    No promised returns. No investment advice. Participation is voluntary and risky.
+    ShieldMendAI is focused on building a real software project first.
+  </p>
+</div>
+
+  </section>  <section id="dex-chart">
+    <div class="card big">
+      <h2 class="section-title">$SMEND Live Chart</h2>  <p>
+    View the live $SMEND chart on Base through DEX Screener.
+  </p>
+
+  <div id="dexscreener-embed">
+    <iframe
+      src="https://dexscreener.com/base/0x0d1f16569df23a8efeb4aacadbfeec5eae9e24a8449e0854fa66d2b55ee48d9f?embed=1&loadChartSettings=0&chartLeftToolbar=0&chartTheme=dark&theme=dark&chartStyle=0&chartType=usd&interval=15"
+      title="$SMEND DEX Screener Chart">
+    </iframe>
+  </div>
+</div>
+
+  </section>  <footer>
     <div class="socials">
       <a class="social" href="https://x.com/ShieldMendAI" target="_blank" rel="noopener noreferrer" aria-label="X">𝕏</a>
       <a class="social" href="https://github.com/shieldmendai/shieldmendai-core" target="_blank" rel="noopener noreferrer" aria-label="GitHub">⌘</a>
-    </div>
+      <a class="social" href="https://t.me/ShieldMendAi" target="_blank" rel="noopener noreferrer" aria-label="Telegram">✈️</a>
+    </div><div>
+  © 2026 ShieldMendAI · Helping everyday people build with AI.
+</div>
 
-    <div>
-      © 2026 ShieldMendAI · Helping everyday people build with AI.
-    </div>
+<p class="notice">
+  SMEND is a community support token. Nothing on this website is investment advice or a promise of returns.
+  Product first. Token second. Trust earned in public.
+</p>
 
-    <p class="notice">
-      SMEND is a community support token. Nothing on this website is investment advice or a promise of returns.
-      Product first. Token second. Trust earned in public.
-    </p>
-  </footer>
-
-<script>
-document.querySelectorAll('.menu a').forEach(function(link) {
-  link.addEventListener('click', function() {
-    document.getElementById('menu-toggle').checked = false;
-  });
-});
-</script>
-
-</body>
-</html>
+  </footer>  <script>
+    document.querySelectorAll('.menu a').forEach(function(link) {
+      link.addEventListener('click', function() {
+        document.getElementById('menu-toggle').checked = false;
+      });
+    });
+  </script></body>
+    </html>
