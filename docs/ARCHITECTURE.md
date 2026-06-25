@@ -13,7 +13,7 @@ The product cannot guarantee protection of every server, detection of every
 vulnerability, prevention of every attack, repair of every code failure, or
 safe automatic repair in every situation.
 
-## Phase 3 Boundary
+## Phase 4 Boundary
 
 Implemented now:
 
@@ -26,13 +26,17 @@ Implemented now:
 - fixture-root-confined file and structured-file checks;
 - scenario validation, simulation dispatch, and CLI output;
 - automated tests.
+- deny-by-default repair policy parsing and exact allowlists;
+- typed requests, approvals, authorization decisions, plans, preconditions,
+  verification plans, rollback plans, attempts, results, and audit events;
+- deterministic simulation-only repair execution.
 
 Modeled but not operational:
 
-- production observation, repairs, verification, rollback, incidents on disk,
+- production observation and repair, live verification and rollback, incidents on disk,
   notifications, plugins, installers, deployment, and code repair.
 
-Phase 3 performs no live systemd, process, socket, HTTP, DNS, subprocess,
+Phase 4 performs no live systemd, process, socket, HTTP, DNS, subprocess,
 notification, vulnerability scan, package update, or repair operation. Actual
 file reads are limited to explicit fixture or temporary roots.
 
@@ -172,10 +176,9 @@ application metadata remain isolated per installation. The design introduces
 no mandatory cloud service, shared customer database, shared credential,
 automatic telemetry, or automatic upload.
 
-## Exact Phase 4 Task
+## Exact Phase 5 Task
 
-Design and implement deny-by-default controlled repair action models, policy
-authorization, and simulation-only executors for explicitly configured
-allowlisted actions. Phase 4 must retain dry-run defaults and must not add
-arbitrary shell execution, production service changes, notifications,
-deployment, or unapproved file mutation.
+Implement deterministic recovery verification and loop protection: bounded
+retry budgets, cooldowns, backoff, circuit breakers, post-repair state
+transitions, rollback decisions, and non-secret controller state. Do not add
+production mutation, live system access, notifications, or deployment.

@@ -176,6 +176,89 @@ class RepairActionCategory(str, Enum):
     REQUEST_MANUAL_INTERVENTION = "request_manual_intervention"
 
 
+class ActionRisk(str, Enum):
+    INFORMATIONAL = "informational"
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+    CRITICAL = "critical"
+    PROHIBITED = "prohibited"
+
+
+class ApprovalDecision(str, Enum):
+    APPROVED = "approved"
+    DENIED = "denied"
+    REVOKED = "revoked"
+    EXPIRED = "expired"
+    PENDING = "pending"
+
+
+class AuthorizationReasonCode(str, Enum):
+    AUTHORIZED = "authorized"
+    POLICY_OBSERVE_ONLY = "policy_observe_only"
+    POLICY_RECOMMEND_ONLY = "policy_recommend_only"
+    TARGET_NOT_FOUND = "target_not_found"
+    TARGET_DISABLED = "target_disabled"
+    TARGET_NOT_ALLOWLISTED = "target_not_allowlisted"
+    ACTION_NOT_ALLOWLISTED = "action_not_allowlisted"
+    TARGET_ACTION_NOT_ALLOWLISTED = "target_action_not_allowlisted"
+    ADAPTER_MISMATCH = "adapter_mismatch"
+    FINDING_ACTION_MISMATCH = "finding_action_mismatch"
+    SEVERITY_NOT_PERMITTED = "severity_not_permitted"
+    CONFIDENCE_NOT_PERMITTED = "confidence_not_permitted"
+    RISK_TOO_HIGH = "risk_too_high"
+    ACTION_PROHIBITED = "action_prohibited"
+    APPROVAL_MISSING = "approval_missing"
+    APPROVAL_INVALID = "approval_invalid"
+    APPROVAL_EXPIRED = "approval_expired"
+    APPROVAL_REVOKED = "approval_revoked"
+    APPROVAL_CONSUMED = "approval_consumed"
+    RETRY_LIMIT_EXCEEDED = "retry_limit_exceeded"
+    COOLDOWN_NOT_ELAPSED = "cooldown_not_elapsed"
+    EVIDENCE_MISSING = "evidence_missing"
+    VERIFICATION_MISSING = "verification_missing"
+    ROLLBACK_MISSING = "rollback_missing"
+    REQUEST_EXPIRED = "request_expired"
+    REQUEST_CONSUMED = "request_consumed"
+    SIMULATION_REQUIRED = "simulation_required"
+    PRODUCTION_UNAVAILABLE = "production_unavailable"
+    POLICY_REFERENCE_MISMATCH = "policy_reference_mismatch"
+
+
+class RepairPreconditionType(str, Enum):
+    FINDING_STILL_PRESENT = "finding_still_present"
+    TARGET_IDENTITY_MATCHES = "target_identity_matches"
+    TARGET_IS_ALLOWLISTED = "target_is_allowlisted"
+    ACTION_IS_ALLOWLISTED = "action_is_allowlisted"
+    BACKUP_AVAILABLE = "backup_available"
+    KNOWN_GOOD_SOURCE_AVAILABLE = "known_good_source_available"
+    ROLLBACK_AVAILABLE = "rollback_available"
+    RETRY_BUDGET_AVAILABLE = "retry_budget_available"
+    COOLDOWN_ELAPSED = "cooldown_elapsed"
+    APPROVAL_VALID = "approval_valid"
+    VERIFICATION_CONFIGURED = "verification_configured"
+    SIMULATION_ONLY = "simulation_only"
+
+
+class SimulatedRepairOutcome(str, Enum):
+    AUTHORIZED_AND_SIMULATED_SUCCESS = "authorized_and_simulated_success"
+    AUTHORIZED_AND_SIMULATED_FAILURE = "authorized_and_simulated_failure"
+    DENIED_BY_POLICY = "denied_by_policy"
+    DENIED_MISSING_ALLOWLIST = "denied_missing_allowlist"
+    DENIED_MISSING_APPROVAL = "denied_missing_approval"
+    DENIED_EXPIRED_APPROVAL = "denied_expired_approval"
+    DENIED_RISK_TOO_HIGH = "denied_risk_too_high"
+    DENIED_RETRY_LIMIT = "denied_retry_limit"
+    DENIED_COOLDOWN = "denied_cooldown"
+    DENIED_MISSING_VERIFICATION = "denied_missing_verification"
+    DENIED_MISSING_ROLLBACK = "denied_missing_rollback"
+    SIMULATED_VERIFICATION_SUCCESS = "simulated_verification_success"
+    SIMULATED_VERIFICATION_FAILURE = "simulated_verification_failure"
+    SIMULATED_ROLLBACK_SUCCESS = "simulated_rollback_success"
+    SIMULATED_ROLLBACK_FAILURE = "simulated_rollback_failure"
+    MANUAL_INTERVENTION_REQUIRED = "manual_intervention_required"
+
+
 class NotificationChannelType(str, Enum):
     TELEGRAM = "telegram"
     EMAIL = "email"
@@ -230,12 +313,228 @@ class RepairPolicy:
     id: str
     mode: PolicyMode
     allowed_actions: tuple[RepairActionCategory, ...] = ()
+    allowed_target_ids: tuple[str, ...] = ()
+    allowed_adapter_types: tuple[AdapterType, ...] = ()
+    allowed_target_actions: tuple[tuple[str, RepairActionCategory], ...] = ()
+    maximum_risk: ActionRisk = ActionRisk.INFORMATIONAL
+    allowed_finding_categories: tuple[str, ...] = ()
+    minimum_severity: Severity = Severity.INFO
+    maximum_severity: Severity = Severity.CRITICAL
+    minimum_confidence: Confidence = Confidence.LOW
     retry_limit: int | None = None
     cooldown_seconds: int | None = None
     verification_delay_seconds: int | None = None
     require_pre_repair_evidence: bool = True
     require_verification: bool = True
     rollback_on_verification_failure: bool = True
+
+
+@dataclass(frozen=True)
+class RepairRequest:
+    request_id: str
+    incident_id: str
+    target_id: str
+    adapter_type: AdapterType
+    finding_category: ReliabilityCategory | SecurityCategory
+    finding_severity: Severity
+    finding_confidence: Confidence
+    requested_action: RepairActionCategory
+    requested_at: str
+    expires_at: str
+    policy_reference: str
+    evidence_reference: str | None
+    simulation: bool
+    consumed_at: str | None = None
+
+
+@dataclass(frozen=True)
+class ApprovalRecord:
+    approval_id: str
+    request_id: str
+    approver_reference: str
+    decision: ApprovalDecision
+    approved_action: RepairActionCategory
+    issued_at: str
+    expires_at: str
+    target_scope: tuple[str, ...]
+    one_time: bool
+    reason: str
+    consumed_at: str | None = None
+    revoked: bool = False
+
+
+@dataclass(frozen=True)
+class RetryState:
+    attempts: int
+    limit: int
+
+
+@dataclass(frozen=True)
+class CooldownState:
+    last_attempt_at: str | None
+    cooldown_seconds: int
+    elapsed: bool
+
+
+@dataclass(frozen=True)
+class RepairPrecondition:
+    condition: RepairPreconditionType
+    satisfied: bool
+    explanation: str
+
+
+@dataclass(frozen=True)
+class VerificationPlan:
+    verification_id: str
+    target_id: str
+    adapter_type: AdapterType
+    checks_to_repeat: tuple[str, ...]
+    expected_status: str
+    delay_seconds: int
+    maximum_attempts: int
+    success_criteria: tuple[str, ...]
+    failure_criteria: tuple[str, ...]
+    rollback_trigger: str | None
+    manual_review_trigger: str | None
+
+
+@dataclass(frozen=True)
+class RollbackPlan:
+    rollback_id: str
+    original_action: RepairActionCategory
+    rollback_action: str
+    required_backup_reference: str | None
+    known_good_reference: str | None
+    preconditions: tuple[str, ...]
+    verification_after_rollback: tuple[str, ...]
+    maximum_attempts: int
+    manual_intervention_fallback: str
+
+
+@dataclass(frozen=True)
+class AuthorizationReason:
+    code: AuthorizationReasonCode
+    explanation: str
+
+
+@dataclass(frozen=True)
+class AuthorizationDecision:
+    decision_id: str
+    request_id: str
+    target_id: str
+    action: RepairActionCategory
+    risk: ActionRisk
+    permitted: bool
+    simulation_permitted: bool
+    recommendation_only: bool
+    reasons: tuple[AuthorizationReason, ...]
+    approval_reference: str | None
+    decided_at: str
+
+    def to_safe_dict(self) -> dict[str, Any]:
+        from .redaction import redact
+
+        return redact(to_primitive(self))
+
+
+@dataclass(frozen=True)
+class RepairStep:
+    step_id: str
+    action: str
+    description: str
+    simulation_only: bool = True
+
+
+@dataclass(frozen=True)
+class RepairPlan:
+    plan_id: str
+    request: RepairRequest
+    authorization: AuthorizationDecision
+    risk: ActionRisk
+    created_at: str
+    expires_at: str
+    preconditions: tuple[RepairPrecondition, ...]
+    steps: tuple[RepairStep, ...]
+    verification_plan: VerificationPlan
+    rollback_plan: RollbackPlan | None
+    approval_required: bool
+    simulation: bool = True
+    production_execution_available: bool = False
+
+
+@dataclass(frozen=True)
+class RepairAuthorizationContext:
+    target: Target | None
+    policy: RepairPolicy
+    approval: ApprovalRecord | None
+    retry_state: RetryState
+    cooldown_state: CooldownState
+    verification_plan: VerificationPlan | None
+    rollback_plan: RollbackPlan | None
+    evidence_present: bool
+    finding_still_present: bool
+    now: str
+    production_execution_available: bool = False
+
+
+@dataclass(frozen=True)
+class RepairAuditEvent:
+    event_id: str
+    request_id: str
+    incident_id: str
+    target_id: str
+    timestamp: str
+    event_type: str
+    authorization_outcome: str
+    reason_codes: tuple[AuthorizationReasonCode, ...]
+    policy_reference: str
+    action: RepairActionCategory
+    risk: ActionRisk
+    simulation: bool
+    approval_reference: str | None
+    verification_outcome: str | None
+    rollback_outcome: str | None
+    final_outcome: SimulatedRepairOutcome
+
+    def to_safe_dict(self) -> dict[str, Any]:
+        from .redaction import redact
+
+        value = redact(to_primitive(self))
+        value["authorization_outcome"] = self.authorization_outcome
+        return value
+
+
+@dataclass(frozen=True)
+class RepairAttemptRecord:
+    attempt_id: str
+    request_id: str
+    plan_id: str
+    target_id: str
+    action: RepairActionCategory
+    risk: ActionRisk
+    started_at: str
+    completed_at: str
+    simulation: bool
+    steps: tuple[RepairStep, ...]
+    verification_outcome: str
+    rollback_outcome: str
+    final_outcome: SimulatedRepairOutcome
+
+
+@dataclass(frozen=True)
+class SimulatedRepairResult:
+    request_id: str
+    plan_id: str
+    authorized: bool
+    simulation: bool
+    production_execution_available: bool
+    outcome: SimulatedRepairOutcome
+    steps: tuple[RepairStep, ...]
+    verification_outcome: str
+    rollback_outcome: str
+    manual_intervention_required: bool
+    attempt_record: RepairAttemptRecord
+    audit_events: tuple[RepairAuditEvent, ...]
 
 
 @dataclass(frozen=True)

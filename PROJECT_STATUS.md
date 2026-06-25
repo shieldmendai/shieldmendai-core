@@ -2,7 +2,7 @@
 
 ## Current Stage
 
-Phase 3 — simulation-only observation and detection layer.
+Phase 4 — deny-by-default repair authorization and simulation layer.
 
 ## Implemented
 
@@ -20,12 +20,17 @@ Phase 3 — simulation-only observation and detection layer.
 - Scenario validation and simulation CLI commands
 - Language-independent example configuration
 - Automated safety and validation tests
+- Typed repair requests, approvals, policies, authorization decisions, plans,
+  preconditions, verification plans, rollback plans, results, and audit events
+- Exact target/action allowlists and risk thresholds
+- Deterministic simulation-only repair executor
+- Phase 4 repair CLI commands and stable exit codes
 
 ## Modeled Only
 
 - Production systemd, process, PID, TCP, HTTP, executable, and file adapters
 - Database, container, Kubernetes, Windows service, and plugin adapters
-- Controlled repairs, verification, rollback, and incident persistence
+- Production repairs, live verification, rollback execution, and persistence
 - Telegram, email, SMS, webhook, and local notification delivery
 - Isolated code-repair workflow
 
@@ -33,13 +38,14 @@ Phase 3 — simulation-only observation and detection layer.
 
 - Live monitoring or process inspection
 - systemd or network access
-- Repairs, restarts, file changes, or deployments
+- Real repairs, restarts, file or permission changes, or deployments
 - Vulnerability or security scanning
 - Notification delivery
 - Production installer or dedicated-server deployment
 
 ## Next Task
 
-Phase 4 will implement deny-by-default repair authorization and simulation-only
-executors for explicit allowlisted actions. It will not implement production
-mutation, arbitrary shell execution, deployment, or notification delivery.
+Phase 5 will implement deterministic recovery verification and loop protection:
+bounded retries, cooldown/backoff, circuit breakers, rollback decision rules,
+and non-secret controller state. Production mutation and notification delivery
+remain unavailable.

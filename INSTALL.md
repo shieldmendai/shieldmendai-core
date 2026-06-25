@@ -1,6 +1,6 @@
 # ShieldMendAi Development Installation
 
-ShieldMendAi is currently a Phase 3 simulation framework. There is no
+ShieldMendAi is currently a Phase 4 simulation framework. There is no
 production installer, systemd service, live monitoring engine, or repair
 engine yet.
 
@@ -29,11 +29,16 @@ shieldmendai show-config examples/shieldmendai.example.yaml
 shieldmendai list-adapters
 shieldmendai inspect-scenario examples/scenarios/phase3-example.yaml
 shieldmendai simulate examples/simulation-config.yaml examples/scenarios/phase3-example.yaml
+shieldmendai list-repair-actions
+shieldmendai inspect-repair-policy examples/repair/policy.yaml
+shieldmendai authorize-repair examples/repair/config.yaml examples/repair/request.yaml examples/repair/policy.yaml
+shieldmendai plan-repair examples/repair/config.yaml examples/repair/request.yaml examples/repair/policy.yaml
+shieldmendai simulate-repair examples/repair/config.yaml examples/repair/request.yaml examples/repair/policy.yaml examples/repair/scenarios/success.yaml
 ```
 
-These commands only parse, validate, normalize, redact, plan, simulate, and
-read controlled fixtures. They perform no live host, process, systemd,
-subprocess, or network operation.
+These commands only parse, validate, normalize, redact, authorize, plan,
+simulate, and read controlled fixtures. They perform no live host, process,
+systemd, subprocess, network, notification, or repair operation.
 
 ## Run Tests
 

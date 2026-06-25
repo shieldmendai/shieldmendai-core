@@ -19,3 +19,15 @@ class AdapterError(ShieldMendAiError):
 
 class UnsafeObservationError(ShieldMendAiError):
     """Raised when an observation would cross a Phase 3 safety boundary."""
+
+
+class RepairValidationError(ShieldMendAiError):
+    """Raised when repair input is invalid or unsafe."""
+
+
+class RepairAuthorizationError(ShieldMendAiError):
+    """Raised when a denied or mismatched repair is presented for planning."""
+
+
+class UnsafeRepairError(ShieldMendAiError):
+    """Raised when a repair would cross the simulation-only boundary."""

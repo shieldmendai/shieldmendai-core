@@ -1,0 +1,67 @@
+authorization_at: "2030-01-01T00:01:00Z"
+evidence_present: true
+finding_still_present: true
+
+request:
+  request_id: repair-request-001
+  incident_id: incident-001
+  target_id: fictional-api-service
+  adapter_type: systemd_service
+  finding_category: service_failed
+  finding_severity: high
+  finding_confidence: deterministic
+  requested_action: restart_allowlisted_service
+  requested_at: "2030-01-01T00:00:00Z"
+  expires_at: "2030-01-01T01:00:00Z"
+  policy_reference: phase4-low-risk
+  evidence_reference: evidence-001
+  simulation: true
+
+approval:
+  approval_id: approval-001
+  request_id: repair-request-001
+  approver_reference: operator-ref-001
+  decision: approved
+  approved_action: restart_allowlisted_service
+  issued_at: "2030-01-01T00:00:30Z"
+  expires_at: "2030-01-01T00:30:00Z"
+  target_scope:
+    - fictional-api-service
+  one_time: true
+  reason: Approved for deterministic low-risk simulation.
+  revoked: false
+
+retry_state:
+  attempts: 0
+  limit: 1
+
+cooldown_state:
+  cooldown_seconds: 300
+  elapsed: true
+
+verification_plan:
+  verification_id: verification-001
+  target_id: fictional-api-service
+  adapter_type: systemd_service
+  checks_to_repeat:
+    - simulated_service_state
+  expected_status: healthy
+  delay_seconds: 15
+  maximum_attempts: 1
+  success_criteria:
+    - deterministic scenario reports success
+  failure_criteria:
+    - deterministic scenario reports failure
+  rollback_trigger: simulated verification failure
+  manual_review_trigger: simulated rollback failure
+
+rollback_plan:
+  rollback_id: rollback-001
+  original_action: restart_allowlisted_service
+  rollback_action: simulate_manual_service_recovery
+  preconditions:
+    - rollback_available
+  verification_after_rollback:
+    - simulated_service_state
+  maximum_attempts: 1
+  manual_intervention_fallback: Request manual intervention without changing a live service.

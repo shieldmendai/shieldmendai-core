@@ -70,7 +70,11 @@ auto_repair_low_risk
 auto_repair_allowlisted
 ```
 
-Action categories are modeled, not executed. There is no fix-everything mode.
+Phase 4 repair policy files add exact target IDs, adapter types, actions,
+target/action pairs, maximum risk, optional finding categories and severity
+ranges, retry/cooldown settings, and verification/rollback requirements.
+Empty allowlists deny execution. Wildcards and duplicate or contradictory
+entries are rejected. There is no fix-everything mode.
 
 Incident lifecycle values distinguish suspected, detected, confirmed, proposed
 repair, awaiting approval, approved repair, automatically permitted repair,
@@ -116,3 +120,9 @@ performs no live observation or action.
 
 See [Phase 3 simulation](SIMULATION.md) for the scenario schema, fixture-root
 rules, supported deterministic states, normalized findings, and exit codes.
+
+## Phase 4 Repairs
+
+See [Phase 4 repair authorization and simulation](REPAIRS.md) for repair
+request, approval, policy, verification, rollback, scenario, CLI, audit, and
+exit-code details. All repair execution remains deterministic simulation.

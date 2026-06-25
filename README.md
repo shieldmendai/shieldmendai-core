@@ -8,14 +8,17 @@ roll back failed actions, and report sanitized incidents.
 ShieldMendAi does not guarantee detection or prevention of every vulnerability,
 attack, application failure, or unsafe repair condition.
 
-## Phase 3 Status
+## Phase 4 Status
 
-Phase 3 provides an installable Python framework for configuration validation,
-dry-run planning, deterministic observation simulations, and fixture-confined
-read-only file checks. It does not monitor live systems, inspect processes,
-contact systemd, open network connections, execute commands, send
-notifications, repair files, restart services, scan vulnerabilities, modify
-source code, or deploy anything.
+Phase 4 adds deny-by-default repair authorization, typed approvals, exact
+allowlists, verification and rollback plans, deterministic repair simulation,
+and structured audit records. It retains all Phase 2 and Phase 3 configuration
+and observation behavior.
+
+It does not monitor live systems, inspect processes, contact systemd, open
+network connections, execute commands, send notifications, repair files,
+restart services, change permissions, roll back deployments, apply code
+patches, scan vulnerabilities, or deploy anything.
 
 Implemented:
 
@@ -31,12 +34,17 @@ Implemented:
 - safe scenario validation and fixture-root confinement;
 - safe language-independent example configuration;
 - automated safety and validation tests.
+- typed repair requests, policies, authorization decisions, reason codes,
+  approvals, preconditions, verification plans, rollback plans, results, and
+  audit events;
+- exact target, adapter, action, and target/action allowlists;
+- simulation-only repair planning and deterministic outcomes.
 
 Unavailable or modeled only:
 
 - production Linux observers; Windows, container, Kubernetes, database, and
   plugin adapters;
-- controlled repairs, verification, rollback, and notifications;
+- production repairs, live verification, rollback execution, and notifications;
 - code-repair workflow;
 - Telegram, email, SMS, webhook, and local incident delivery.
 
@@ -72,6 +80,11 @@ shieldmendai show-config examples/shieldmendai.example.yaml
 shieldmendai list-adapters
 shieldmendai inspect-scenario examples/scenarios/phase3-example.yaml
 shieldmendai simulate examples/simulation-config.yaml examples/scenarios/phase3-example.yaml
+shieldmendai list-repair-actions
+shieldmendai inspect-repair-policy examples/repair/policy.yaml
+shieldmendai authorize-repair examples/repair/config.yaml examples/repair/request.yaml examples/repair/policy.yaml
+shieldmendai plan-repair examples/repair/config.yaml examples/repair/request.yaml examples/repair/policy.yaml
+shieldmendai simulate-repair examples/repair/config.yaml examples/repair/request.yaml examples/repair/policy.yaml examples/repair/scenarios/success.yaml
 ```
 
 `plan` remains planning-only. Simulation output is explicitly labeled and
@@ -94,6 +107,7 @@ PYTHONPATH=src python3 -m unittest discover -s tests -v
 
 - [Configuration and policies](docs/CONFIGURATION.md)
 - [Phase 3 simulation](docs/SIMULATION.md)
+- [Phase 4 repair authorization and simulation](docs/REPAIRS.md)
 - [Architecture](docs/ARCHITECTURE.md)
 - [Security boundaries](docs/SECURITY_BOUNDARIES.md)
 - [Extraction plan](docs/EXTRACTION_PLAN.md)
@@ -107,13 +121,15 @@ PYTHONPATH=src python3 -m unittest discover -s tests -v
 2. Phase 2: safe standalone framework and dry-run CLI — complete.
 3. Phase 3: safe observation simulations and fixture checks — complete.
 4. Phase 4: deny-by-default controlled repair models and simulation-only
-   allowlisted action execution.
-5. Later phases: production adapters, verification and loop protection,
+   allowlisted action execution — complete.
+5. Phase 5: recovery verification and loop protection in deterministic
+   simulation.
+6. Later phases: production adapters,
    incidents and notifications, installer, simulations, and deployment.
 
-The exact Phase 4 task is to add deny-by-default repair authorization and
-simulation-only executors for explicit allowlisted actions. No production
-mutation or notification delivery belongs in Phase 4.
+The exact Phase 5 task is to add bounded verification state transitions,
+retry/cooldown/backoff controls, circuit breakers, rollback decisions, and
+non-secret controller state without production mutation or notification.
 
 ## License
 

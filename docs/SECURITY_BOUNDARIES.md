@@ -80,3 +80,18 @@ were excluded from content review. No private source file was copied.
 - The example uses reserved `.invalid` domains and placeholder environment
   variable names only.
 - Tests mock or prohibit live operation and action boundaries.
+
+## Phase 4 Enforcement
+
+- Every repair request is denied unless exact target, adapter, action, and
+  target/action allowlists and every applicable safety gate pass.
+- Empty allowlists deny; wildcard, duplicate, contradictory, unknown, or
+  ambiguous policy entries are rejected.
+- Approval records use sanitized references and reject mismatches, expiration,
+  revocation, future issue times, and consumed one-time approvals.
+- Every permitted simulation requires verification planning. Future
+  state-changing actions require rollback planning.
+- The repair executor accepts only authorized, unexpired, simulation-only
+  plans and returns deterministic records.
+- No service, file, permission, ownership, deployment, code, process, network,
+  notification, repository, or dedicated-server mutation is implemented.

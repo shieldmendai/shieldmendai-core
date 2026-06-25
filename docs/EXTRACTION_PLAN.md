@@ -52,6 +52,7 @@ performed only when explicitly authorized and only to the official repository.
 
 ## Phase 4 — Controlled repair actions
 
+- Status: complete on `codex/extraction-phase-4`.
 - Goal: implement deny-by-default authorization and simulation-only execution
   for explicit, user-configured, allowlisted repairs.
 - Outputs: policy engine, repair action models, dry-run plans, and safe
@@ -66,7 +67,8 @@ performed only when explicitly authorized and only to the official repository.
 
 ## Phase 5 — Recovery verification and loop protection
 
-- Goal: verify recovery and prevent repeated or escalating repair loops.
+- Goal: add deterministic post-repair verification state transitions and
+  prevent repeated or escalating repair loops without production mutation.
 - Outputs: post-repair probes, cooldowns, retry budgets, backoff, circuit
   breakers, and persistent non-secret controller state.
 - Tests: failed verification, cooldown, retry exhaustion, restart-loop, and

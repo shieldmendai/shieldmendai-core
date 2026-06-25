@@ -176,6 +176,8 @@ def _parse_repair_policy(data: Any, index: int) -> RepairPolicy:
         _enum(RepairActionCategory, action, f"{location}.allowed_actions")
         for action in _list(item.get("allowed_actions"), f"{location}.allowed_actions")
     )
+    if len(allowed) != len(set(allowed)):
+        raise ConfigurationError(f"{location}.allowed_actions contains duplicate entries")
     return RepairPolicy(
         id=_text(item.get("id"), f"{location}.id", identifier=True),
         mode=_enum(PolicyMode, item.get("mode"), f"{location}.mode"),

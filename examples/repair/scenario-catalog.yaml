@@ -1,0 +1,42 @@
+schema_version: "1.0"
+simulation_only: true
+demonstrations:
+  - id: observe-only-denies-restart
+    policy_mode: observe_only
+    expected: denied_by_policy
+  - id: recommend-only-restart
+    policy_mode: recommend
+    expected: recommendation_without_execution
+  - id: approval-missing
+    policy_mode: require_approval
+    expected: denied_missing_approval
+  - id: valid-approved-low-risk
+    policy_mode: require_approval
+    expected: authorized_and_simulated_success
+  - id: approval-expired
+    expected: denied_expired_approval
+  - id: approval-revoked
+    expected: denied_revoked_approval
+  - id: target-not-allowlisted
+    expected: denied_missing_allowlist
+  - id: action-not-allowlisted
+    expected: denied_missing_allowlist
+  - id: risk-above-maximum
+    expected: denied_risk_too_high
+  - id: retry-exhausted
+    expected: denied_retry_limit
+  - id: cooldown-active
+    expected: denied_cooldown
+  - id: verification-missing
+    expected: denied_missing_verification
+  - id: rollback-missing
+    expected: denied_missing_rollback
+  - id: allowlisted-restart-success
+    expected: authorized_and_simulated_success
+  - id: verification-failure-rollback-success
+    expected: simulated_rollback_success
+  - id: rollback-failure-manual-review
+    expected: manual_intervention_required
+  - id: code-patch-prohibited
+    action: apply_approved_code_patch
+    expected: prohibited
