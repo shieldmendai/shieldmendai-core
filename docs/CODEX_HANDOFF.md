@@ -30,7 +30,8 @@
   shell, sleep, socket, HTTP, chmod, and chown boundaries; manifest validation
   and final resume check; private source was not accessed; all new execution
   remains deterministic simulation.
-- Implementation commit: pending.
+- Implementation commit:
+  `f7805c227800f026cfc96d4f32927ac428a3928e`.
 - Documentation checkpoint: pending.
 - Remote branch: `origin/codex/extraction-phase-5` pending push.
 - Push status: not yet pushed.
@@ -39,4 +40,4 @@
   disabled by default. Do not enable production recovery, live observers,
   mandatory network access, or deployment.
 - Blockers: none.
-- UTC timestamp: 2026-06-25T16:41:44Z
+- UTC timestamp: 2026-06-25T16:43:03Z
