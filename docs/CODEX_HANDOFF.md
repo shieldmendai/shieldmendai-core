@@ -33,7 +33,8 @@
   tests; provider simulations patched against subprocess, shell, sleep, socket,
   HTTP, and SMTP boundaries; no provider credential resolved; private source
   was not accessed.
-- Implementation commit: pending.
+- Implementation commit:
+  `87fc06f`.
 - Documentation checkpoint: pending.
 - Remote branch: `origin/codex/extraction-phase-6` after final push.
 - Push status: pending commits and push.
