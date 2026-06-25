@@ -13,7 +13,7 @@ The product cannot guarantee protection of every server, detection of every
 vulnerability, prevention of every attack, repair of every code failure, or
 safe automatic repair in every situation.
 
-## Phase 5 Boundary
+## Phase 6 Boundary
 
 Implemented now:
 
@@ -35,15 +35,25 @@ Implemented now:
 - duplicate-attempt and idempotency protection;
 - deterministic verification and rollback decisions;
 - versioned, JSON-safe, non-secret recovery state.
+- versioned sanitized incident records and explicit incident transitions;
+- exact-scope correlation and canonical duplicate references;
+- fixture-confined atomic incident JSON storage and integrity validation;
+- deterministic retention preview and optional temporary-fixture removal;
+- fixed simulated notifier registry for Telegram, email, SMS, webhook, and
+  local alerts;
+- deterministic routing, templates, rendering, duplicate suppression,
+  cooldowns, attempt budgets, provider isolation, and notification audit data.
 
 Modeled but not operational:
 
-- production observation and repair, live verification and rollback, incidents on disk,
-  notifications, plugins, installers, deployment, and code repair.
+- production observation and repair, live verification and rollback,
+  production incident persistence, production retention deletion, real
+  notification delivery, plugins, installers, deployment, and code repair.
 
-Phase 5 performs no live systemd, process, socket, HTTP, DNS, subprocess,
-notification, vulnerability scan, package update, or repair operation. Actual
-file reads are limited to explicit fixture or temporary roots.
+Phase 6 performs no live systemd, process, socket, HTTP, DNS, SMTP,
+subprocess, notification, vulnerability scan, package update, repair,
+recovery, or deployment operation. File writes are limited to explicit
+temporary fixture roots.
 
 ## Platform and Language Independence
 
@@ -181,9 +191,11 @@ application metadata remain isolated per installation. The design introduces
 no mandatory cloud service, shared customer database, shared credential,
 automatic telemetry, or automatic upload.
 
-## Exact Phase 6 Task
+## Exact Phase 7 Task
 
-Add redacted local incident records, retention controls, notifier interfaces,
-and optional outbound alert modeling with delivery disabled by default. Do not
-enable production recovery, live observers, mandatory network access, or
-deployment.
+Create a controlled dedicated-server sandbox installation and a local-only,
+read-only Linux observation pilot for ShieldMendAi. Include installer and
+uninstaller simulation, least-privilege planning, systemd templates, safe
+configuration bootstrap, read-only adapters, a controlled test-server
+allowlist, and local incident persistence. Do not add repairs, service
+restarts, notification delivery, private-source access, or customer deployment.

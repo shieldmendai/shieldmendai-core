@@ -1,0 +1,7 @@
+schema_version: "1.0"
+template:
+  template_id: incident-opened-fictional
+  event_type: incident_created
+  subject_template: "[{severity}] {summary}"
+  body_template: "Incident {incident_id} for {application_id}/{target_id} is {status}."
+  maximum_length: 2000

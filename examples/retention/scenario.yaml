@@ -1,0 +1,5 @@
+schema_version: "1.0"
+scenario_id: fictional-retention-preview
+now: "2030-01-01T00:00:00Z"
+remove_generated_fixtures: false
+simulation: true

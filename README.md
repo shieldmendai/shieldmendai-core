@@ -8,17 +8,18 @@ roll back failed actions, and report sanitized incidents.
 ShieldMendAi does not guarantee detection or prevention of every vulnerability,
 attack, application failure, or unsafe repair condition.
 
-## Phase 5 Status
+## Phase 6 Status
 
-Phase 5 adds deterministic recovery verification, explicit lifecycle
-transitions, bounded retries, cooldown and backoff, circuit breakers, rollback
-decisions, idempotency protection, and versioned non-secret controller state.
-It preserves all Phase 2–4 behavior.
+Phase 6 adds sanitized versioned incident records, explicit incident
+lifecycles, fixture-confined local storage, integrity checks, retention preview
+and simulation, fixed notifier interfaces, routing, safe templates, duplicate
+suppression, cooldown and attempt budgets, and deterministic Telegram, email,
+SMS, webhook, and local-alert simulations. It preserves all Phase 2–5
+behavior.
 
-It does not monitor live systems, inspect processes, contact systemd, open
-network connections, execute commands, send notifications, repair files,
-restart services, change permissions, roll back deployments, apply code
-patches, scan vulnerabilities, or deploy anything.
+It sends no real notification, resolves no credential, opens no network
+connection, creates no production incident directory, deletes no production
+record, and performs no live monitoring, repair, recovery, or deployment.
 
 Implemented:
 
@@ -45,12 +46,23 @@ Implemented:
 - rolling failure windows, circuit breaking, duplicate suppression, and
   manual-intervention escalation;
 - JSON-safe recovery-state serialization and inspection.
+- typed incident records, timelines, correlation, lifecycle transitions,
+  version metadata, and sanitized checksums;
+- temporary-root-confined incident JSON storage and deterministic retention
+  preview/fixture simulation;
+- fixed simulated notifier registry and provider capabilities;
+- severity, event, status, and escalation routing;
+- allowlisted message templates, redaction, escaping, length bounds, and
+  visible truncation;
+- duplicate-alert suppression, cooldowns, attempt budgets, delivery results,
+  and notification audit records.
 
 Unavailable or modeled only:
 
 - production Linux observers; Windows, container, Kubernetes, database, and
   plugin adapters;
-- production repairs, live verification, rollback execution, and notifications;
+- production repairs, live verification, rollback execution, production
+  incident storage, production retention deletion, and real notifications;
 - code-repair workflow;
 - Telegram, email, SMS, webhook, and local incident delivery.
 
@@ -94,6 +106,11 @@ shieldmendai simulate-repair examples/repair/config.yaml examples/repair/request
 shieldmendai inspect-recovery-policy examples/recovery/policy.yaml
 shieldmendai calculate-backoff examples/recovery/policy.yaml 2
 shieldmendai simulate-recovery examples/repair/config.yaml examples/repair/request.yaml examples/repair/policy.yaml examples/recovery/policy.yaml examples/recovery/scenarios/first-success.yaml
+shieldmendai list-notifiers
+shieldmendai inspect-notification-policy examples/notifications/policy.yaml
+shieldmendai inspect-incident examples/incidents/incident-low.json
+shieldmendai render-notification examples/incidents/incident-low.json examples/notifications/policy.yaml examples/notifications/template.yaml
+shieldmendai simulate-notification examples/incidents/incident-low.json examples/notifications/policy.yaml examples/notifications/scenario.yaml --template-path examples/notifications/template.yaml
 ```
 
 `plan` remains planning-only. Simulation output is explicitly labeled and
@@ -118,6 +135,7 @@ PYTHONPATH=src python3 -m unittest discover -s tests -v
 - [Phase 3 simulation](docs/SIMULATION.md)
 - [Phase 4 repair authorization and simulation](docs/REPAIRS.md)
 - [Phase 5 deterministic recovery](docs/RECOVERY.md)
+- [Phase 6 incidents, retention, and notification simulation](docs/INCIDENTS_AND_NOTIFICATIONS.md)
 - [Architecture](docs/ARCHITECTURE.md)
 - [Security boundaries](docs/SECURITY_BOUNDARIES.md)
 - [Extraction plan](docs/EXTRACTION_PLAN.md)
@@ -133,13 +151,15 @@ PYTHONPATH=src python3 -m unittest discover -s tests -v
 4. Phase 4: deny-by-default controlled repair models and simulation-only
    allowlisted action execution — complete.
 5. Phase 5: deterministic recovery verification and loop protection — complete.
-6. Phase 6: redacted incident records and optional alert interfaces.
-7. Later phases: production adapters, installer, expanded simulations, and
-   deployment.
+6. Phase 6: redacted incident records, retention, and notification
+   simulations — complete.
+7. Phase 7: controlled dedicated-server sandbox installation and a local-only,
+   read-only Linux observation pilot.
 
-The exact Phase 6 task is to add redacted local incident records, retention
-controls, notifier interfaces, and optional outbound alert modeling with
-delivery disabled by default.
+The exact Phase 7 task is to create a controlled dedicated-server sandbox
+installation and a local-only, read-only Linux observation pilot for
+ShieldMendAi. Phase 7 must include no repairs, service restarts, notification
+delivery, customer deployment, or private-source access.
 
 ## License
 

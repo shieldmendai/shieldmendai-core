@@ -1,0 +1,80 @@
+schema_version: "1.0"
+policy:
+  routing_policy_id: fictional-routing
+  enabled: true
+  default_channels: []
+  severity_routes:
+    info: []
+    low: [local-fictional]
+    medium: [email-fictional, telegram-fictional]
+    high: [email-fictional, telegram-fictional, webhook-fictional]
+    critical:
+      [email-fictional, telegram-fictional, sms-fictional, webhook-fictional, local-fictional]
+  event_routes:
+    rollback_failed: [webhook-fictional]
+    manual_intervention_requested: [telegram-fictional, sms-fictional]
+  status_routes: {}
+  escalation_routes:
+    manual_intervention: [telegram-fictional, sms-fictional]
+    rollback_failure: [webhook-fictional]
+    circuit_open: [telegram-fictional]
+  suppressed_categories: []
+  suppressed_targets: []
+  minimum_severity: info
+  notification_cooldown_seconds: 60
+  duplicate_window_seconds: 300
+  maximum_attempts_per_channel: 3
+  maximum_attempts_per_incident: 10
+  minimum_interval_seconds: 0
+  escalation_interval_seconds: 60
+  severity_escalation_overrides_duplicate: true
+  manual_intervention_overrides_duplicate: true
+  simulation_only: true
+  channels:
+    - channel_id: telegram-fictional
+      notifier_type: telegram
+      enabled: true
+      enabled_severities: [medium, high, critical]
+      settings:
+        token_env: SHIELDMENDAI_TELEGRAM_TOKEN_REF
+        chat_id_env: SHIELDMENDAI_TELEGRAM_CHAT_REF
+        parse_mode: plain
+        disable_preview: true
+    - channel_id: email-fictional
+      notifier_type: email
+      enabled: true
+      enabled_severities: [low, medium, high, critical]
+      settings:
+        provider_type: smtp_future
+        smtp_host: mail.example.invalid
+        port: 587
+        tls_required: true
+        username_env: SHIELDMENDAI_EMAIL_USER_REF
+        password_env: SHIELDMENDAI_EMAIL_PASSWORD_REF
+        from_address_reference: address-ref-sender
+        recipient_references: [address-ref-operations]
+    - channel_id: sms-fictional
+      notifier_type: sms
+      enabled: true
+      enabled_severities: [critical]
+      settings:
+        provider_name: fictional-provider
+        account_id_env: SHIELDMENDAI_SMS_ACCOUNT_REF
+        token_env: SHIELDMENDAI_SMS_TOKEN_REF
+        from_number_reference: number-ref-sender
+        recipient_references: [number-ref-operations]
+    - channel_id: webhook-fictional
+      notifier_type: webhook
+      enabled: true
+      enabled_severities: [high, critical]
+      settings:
+        url_env: SHIELDMENDAI_WEBHOOK_URL_REF
+        signing_secret_env: SHIELDMENDAI_WEBHOOK_SIGNING_REF
+        timeout_seconds: 5
+    - channel_id: local-fictional
+      notifier_type: local
+      enabled: true
+      enabled_severities: [info, low, medium, high, critical]
+      settings:
+        output_root: /tmp/shieldmendai-phase6-fixtures
+        format: json

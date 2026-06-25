@@ -12,18 +12,43 @@ from .config import load_config
 from .errors import (
     AdapterError,
     ConfigurationError,
+    IncidentTransitionError,
+    IncidentValidationError,
+    NotificationValidationError,
     RepairAuthorizationError,
     RepairValidationError,
     RecoveryTransitionError,
     RecoveryValidationError,
     ScenarioError,
     ShieldMendAiError,
+    UnsafeIncidentStoreError,
+    UnsafeNotificationError,
     UnsafeObservationError,
     UnsafeRecoveryError,
     UnsafeRepairError,
 )
+from .incidents import (
+    LocalIncidentStore,
+    load_incident_record,
+    load_retention_policy,
+    load_retention_scenario,
+    preview_retention,
+    simulate_retention,
+)
 from .models import ObservationStatus, SimulatedRepairOutcome, to_primitive
 from .observation import ObservationCoordinator, build_simulation_registry
+from .notifications import (
+    NotificationChannelType,
+    NotificationSimulator,
+    NotificationTemplate,
+    build_simulated_notifier_registry,
+    load_notification_inputs,
+    load_notification_policy,
+    load_notification_scenario,
+    load_notification_template,
+    render_notification,
+    safe_notification_policy_dict,
+)
 from .planner import create_plan
 from .repair import (
     SimulationRepairExecutor,
@@ -115,6 +140,47 @@ def build_parser() -> argparse.ArgumentParser:
         "inspect-circuit", help="inspect circuit state without resetting it"
     )
     circuit.add_argument("state_path")
+    commands.add_parser(
+        "list-notifiers", help="list deterministic simulated notifier capabilities"
+    )
+    notification_policy = commands.add_parser(
+        "inspect-notification-policy",
+        help="validate notification routing and provider references",
+    )
+    notification_policy.add_argument("policy_path")
+    incident = commands.add_parser(
+        "inspect-incident", help="validate and summarize a sanitized incident"
+    )
+    incident.add_argument("incident_path")
+    incident_store = commands.add_parser(
+        "inspect-incident-store", help="inspect a temporary incident store"
+    )
+    incident_store.add_argument("store_root")
+    render = commands.add_parser(
+        "render-notification", help="render a sanitized notification preview"
+    )
+    render.add_argument("incident_path")
+    render.add_argument("policy_path")
+    render.add_argument("template_path")
+    notification = commands.add_parser(
+        "simulate-notification", help="simulate notification routing and provider results"
+    )
+    notification.add_argument("incident_path")
+    notification.add_argument("policy_path")
+    notification.add_argument("scenario_path")
+    notification.add_argument("--template-path")
+    retention = commands.add_parser(
+        "preview-retention", help="preview retention without removing records"
+    )
+    retention.add_argument("store_root")
+    retention.add_argument("policy_path")
+    retention.add_argument("--at", default="2100-01-01T00:00:00Z")
+    retention_simulation = commands.add_parser(
+        "simulate-retention", help="simulate retention for generated temporary fixtures"
+    )
+    retention_simulation.add_argument("store_root")
+    retention_simulation.add_argument("policy_path")
+    retention_simulation.add_argument("scenario_path")
     return parser
 
 
@@ -125,6 +191,105 @@ def _print_json(value: object) -> None:
 def run(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     try:
+        if args.command == "list-notifiers":
+            print("SIMULATION ONLY — PRODUCTION NOTIFICATION DELIVERY IS UNAVAILABLE")
+            _print_json(
+                [
+                    to_primitive(item)
+                    for item in build_simulated_notifier_registry().capabilities()
+                ]
+            )
+            return 0
+        if args.command == "inspect-notification-policy":
+            policy = load_notification_policy(args.policy_path)
+            print("NOTIFICATION POLICY INSPECTION ONLY — NO NOTIFICATION SENT")
+            _print_json(safe_notification_policy_dict(policy))
+            return 0
+        if args.command == "inspect-incident":
+            incident = load_incident_record(args.incident_path)
+            print("INCIDENT INSPECTION ONLY — NO NOTIFICATION SENT")
+            _print_json(
+                {
+                    **to_primitive(incident.summarized()),
+                    "evidence_references": [
+                        {
+                            "reference_id": item.reference_id,
+                            "evidence_type": item.evidence_type,
+                            "summary": item.summary,
+                            "redacted": True,
+                        }
+                        for item in incident.evidence_references
+                    ],
+                }
+            )
+            return 0
+        if args.command == "inspect-incident-store":
+            print("INCIDENT STORE INSPECTION ONLY — NO RECORDS REMOVED")
+            _print_json(LocalIncidentStore(args.store_root).inspect())
+            return 0
+        if args.command == "render-notification":
+            incident, policy, template = load_notification_inputs(
+                args.incident_path, args.policy_path, args.template_path
+            )
+            channel = next(
+                (
+                    item.notifier_type
+                    for item in policy.channels
+                    if item.enabled
+                    and item.notifier_type is not NotificationChannelType.NONE
+                ),
+                NotificationChannelType.NONE,
+            )
+            message = render_notification(
+                incident,
+                template,
+                channel,
+                rendered_at=incident.updated_at,
+            )
+            print("MESSAGE PREVIEW ONLY — NO NOTIFICATION SENT")
+            _print_json(to_primitive(message))
+            return 0
+        if args.command == "simulate-notification":
+            incident = load_incident_record(args.incident_path)
+            policy = load_notification_policy(args.policy_path)
+            scenario = load_notification_scenario(args.scenario_path)
+            template = (
+                load_notification_template(args.template_path)
+                if args.template_path
+                else NotificationTemplate(
+                    "1.0",
+                    "default-simulation-template",
+                    scenario.event_type,
+                    "[{severity}] {summary}",
+                    "Incident {incident_id} for {application_id}/{target_id} is {status}.",
+                    2000,
+                )
+            )
+            result = NotificationSimulator().simulate(
+                incident, policy, template, scenario
+            )
+            print("SIMULATION ONLY — NO EXTERNAL NOTIFICATION SENT")
+            _print_json(to_primitive(result))
+            return result.exit_code
+        if args.command == "preview-retention":
+            store = LocalIncidentStore(args.store_root)
+            policy = load_retention_policy(args.policy_path)
+            print("RETENTION PREVIEW ONLY — NO RECORDS REMOVED")
+            _print_json(to_primitive(preview_retention(store, policy, now=args.at)))
+            return 0
+        if args.command == "simulate-retention":
+            store = LocalIncidentStore(args.store_root)
+            policy = load_retention_policy(args.policy_path)
+            scenario = load_retention_scenario(args.scenario_path)
+            result = simulate_retention(
+                store,
+                policy,
+                now=scenario.now,
+                remove_generated_fixtures=scenario.remove_generated_fixtures,
+            )
+            print("RETENTION SIMULATION ONLY — NO PRODUCTION RECORDS AFFECTED")
+            _print_json(to_primitive(result))
+            return 0
         if args.command == "inspect-recovery-policy":
             policy = load_recovery_policy(args.policy_path)
             print("RECOVERY POLICY INSPECTION ONLY — NO RECOVERY ACTION")
@@ -286,6 +451,21 @@ def run(argv: Sequence[str] | None = None) -> int:
     except UnsafeRecoveryError as error:
         print(f"Unsafe or unsupported recovery: {sanitize_message(str(error))}", file=sys.stderr)
         return 4
+    except UnsafeIncidentStoreError as error:
+        print(f"Unsafe incident store: {sanitize_message(str(error))}", file=sys.stderr)
+        return 6
+    except IncidentTransitionError as error:
+        print(f"Incident transition error: {sanitize_message(str(error))}", file=sys.stderr)
+        return 7
+    except IncidentValidationError as error:
+        print(f"Incident input error: {sanitize_message(str(error))}", file=sys.stderr)
+        return 5 if "checksum" in str(error).lower() else 1
+    except UnsafeNotificationError as error:
+        print(f"Unsafe notification operation: {sanitize_message(str(error))}", file=sys.stderr)
+        return 4
+    except NotificationValidationError as error:
+        print(f"Notification input error: {sanitize_message(str(error))}", file=sys.stderr)
+        return 1
     except RecoveryTransitionError as error:
         print(f"Recovery transition error: {sanitize_message(str(error))}", file=sys.stderr)
         return 7

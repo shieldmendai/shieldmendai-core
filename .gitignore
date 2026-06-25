@@ -282,6 +282,10 @@ archives/
 # Local incident and notification artifacts
 incidents/
 notifications/
+!examples/incidents/
+!examples/incidents/**
+!examples/notifications/
+!examples/notifications/**
 telegram_seen*
 alert_state*
 cooldown_state*

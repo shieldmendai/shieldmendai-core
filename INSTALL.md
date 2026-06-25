@@ -1,6 +1,6 @@
 # ShieldMendAi Development Installation
 
-ShieldMendAi is currently a Phase 5 simulation framework. There is no
+ShieldMendAi is currently a Phase 6 simulation framework. There is no
 production installer, systemd service, live monitoring engine, or repair
 engine yet.
 
@@ -37,11 +37,18 @@ shieldmendai simulate-repair examples/repair/config.yaml examples/repair/request
 shieldmendai inspect-recovery-policy examples/recovery/policy.yaml
 shieldmendai calculate-backoff examples/recovery/policy.yaml 2
 shieldmendai simulate-recovery examples/repair/config.yaml examples/repair/request.yaml examples/repair/policy.yaml examples/recovery/policy.yaml examples/recovery/scenarios/first-success.yaml
+shieldmendai list-notifiers
+shieldmendai inspect-notification-policy examples/notifications/policy.yaml
+shieldmendai inspect-incident examples/incidents/incident-low.json
+shieldmendai render-notification examples/incidents/incident-low.json examples/notifications/policy.yaml examples/notifications/template.yaml
+shieldmendai simulate-notification examples/incidents/incident-low.json examples/notifications/policy.yaml examples/notifications/scenario.yaml --template-path examples/notifications/template.yaml
 ```
 
 These commands only parse, validate, normalize, redact, authorize, plan,
-simulate, and read controlled fixtures. They perform no live host, process,
-systemd, subprocess, network, notification, or repair operation.
+simulate, and read or write controlled temporary fixtures. They perform no
+live host, process, systemd, subprocess, network, real notification, repair,
+production retention, or deployment operation. Notification references are
+validated but never resolved.
 
 ## Run Tests
 

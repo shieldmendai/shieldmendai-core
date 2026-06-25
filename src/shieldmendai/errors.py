@@ -43,3 +43,23 @@ class RecoveryTransitionError(ShieldMendAiError):
 
 class UnsafeRecoveryError(ShieldMendAiError):
     """Raised when recovery would cross the simulation-only boundary."""
+
+
+class IncidentValidationError(ShieldMendAiError):
+    """Raised when an incident record or retention input is invalid."""
+
+
+class IncidentTransitionError(ShieldMendAiError):
+    """Raised when an incident lifecycle transition is invalid."""
+
+
+class UnsafeIncidentStoreError(ShieldMendAiError):
+    """Raised when local incident storage would cross its fixture boundary."""
+
+
+class NotificationValidationError(ShieldMendAiError):
+    """Raised when notification configuration, routing, or templates are invalid."""
+
+
+class UnsafeNotificationError(ShieldMendAiError):
+    """Raised when notification handling would cross the simulation-only boundary."""

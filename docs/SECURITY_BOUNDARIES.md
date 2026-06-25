@@ -111,3 +111,24 @@ were excluded from content review. No private source file was copied.
 - No live repair, verification, rollback, observer, service, process, file,
   permission, deployment, network, notification, or repository operation is
   implemented.
+
+## Phase 6 Enforcement
+
+- Incident records accept only typed sanitized fields, structured evidence
+  references, known schema versions, chronological unique events, and valid
+  checksums.
+- Incident stores require an explicit existing temporary root and reject
+  traversal, unsafe absolute roots, and symlink escapes.
+- Retention defaults to preview and can remove only eligible generated
+  fixtures under a validated temporary root.
+- Telegram, email, SMS, and webhook providers are deterministic simulations
+  with production delivery, network use, and secret resolution unavailable.
+- Notification configuration accepts environment-variable names and sanitized
+  destination references only; it never reads environment values.
+- Templates use a fixed variable allowlist and cannot execute code, import
+  files, expand environment variables, or render complete evidence.
+- Routing, duplicate suppression, cooldowns, and attempt budgets use supplied
+  timestamps and exact matching. No sleep or background loop exists.
+- No real message, provider contact, external upload, production incident
+  directory, production deletion, monitoring, repair, recovery, or deployment
+  is implemented.

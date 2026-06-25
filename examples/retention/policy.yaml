@@ -1,0 +1,14 @@
+schema_version: "1.0"
+policy:
+  retention_policy_id: fictional-retention
+  enabled: true
+  maximum_age_days: 90
+  maximum_record_count: 1000
+  maximum_total_bytes: 100000000
+  retain_minimum_severity: high
+  retain_unresolved: true
+  retain_manual_intervention: true
+  retain_latest_versions: true
+  archive_before_delete: false
+  dry_run: true
+  review_required: true

@@ -135,3 +135,16 @@ linear and exponential backoff, circuit breakers, verification evaluation,
 rollback decisions, idempotency, loop protection, CLI commands, and exit
 codes. Cooldown bypass and jitter are disabled. All timestamps and outcomes
 are supplied deterministic data.
+
+## Phase 6 Incidents, Retention, and Notifications
+
+See [Phase 6 incidents and notification simulation](INCIDENTS_AND_NOTIFICATIONS.md).
+Incident JSON is versioned and checksummed after sanitization. Stores must be
+explicit temporary roots. Retention defaults to preview-only.
+
+Notification policies define exact channel IDs, severity/event/status routes,
+suppression, cooldowns, and finite attempt budgets. Provider settings contain
+only environment-variable names and sanitized destination references.
+Environment variables are never resolved. `simulation_only: true` is required,
+and all Telegram, email, SMS, webhook, and local behavior is deterministic
+simulation.

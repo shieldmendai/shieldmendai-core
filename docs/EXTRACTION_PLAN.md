@@ -82,25 +82,32 @@ performed only when explicitly authorized and only to the official repository.
 
 ## Phase 6 — Incident records and optional alerts
 
+- Status: complete on `codex/extraction-phase-6`.
 - Goal: produce redacted local incidents and optional outbound notifications.
-- Outputs: incident schema, recorder, retention controls, notifier interface,
-  and optional Telegram adapter.
+- Outputs: typed incident schema and timelines, fixture-confined recorder,
+  integrity validation, deterministic retention controls, fixed notifier
+  interfaces, routing, templates, suppression, cooldowns, attempt budgets, and
+  Telegram/email/SMS/webhook/local simulations.
 - Tests: schema, redaction, retention, notifier failure, throttling, and
   disabled-notifier tests.
 - Stop conditions: secret-bearing incidents or mandatory network access.
 - Security review: inspect every serialized field and notification template.
 - Git checkpoint: commit incident and alert functionality.
 
-## Phase 7 — Installer, configuration, and CLI
+## Phase 7 — Dedicated-server sandbox and read-only Linux pilot
 
-- Goal: make installation and operation explicit and reversible.
-- Outputs: installer, public example configuration, CLI commands, and
-  `shieldmendai-*.service` or `shieldmendai-*.timer` templates.
-- Tests: clean install/uninstall in an isolated environment, permissions,
-  configuration errors, and idempotency.
-- Stop conditions: installer changes unrelated services or imports private data.
-- Security review: least privilege, ownership, secret-file modes, and rollback.
-- Git checkpoint: commit installation assets and documentation.
+- Goal: create a controlled dedicated-server sandbox installation and a
+  local-only, read-only Linux observation pilot.
+- Outputs: installer/uninstaller simulation, least-privilege service-user
+  planning, systemd unit templates, safe configuration bootstrap, read-only
+  production-adapter interfaces, controlled test-server allowlist, and local
+  incident persistence.
+- Restrictions: no repairs, service restarts, notification delivery,
+  private-source access, or customer deployment.
+- Tests: isolated install/uninstall simulation, path and permission planning,
+  allowlist enforcement, read-only observation, and idempotency.
+- Security review: least privilege, local-only boundaries, no provider access,
+  and no mutation of customer or private systems.
 
 ## Phase 8 — Automated tests and isolated simulations
 

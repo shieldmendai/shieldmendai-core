@@ -1,0 +1,11 @@
+schema_version: "1.0"
+scenario_id: high-severity-fictional
+now: "2030-01-01T00:10:00Z"
+event_type: incident_created
+requested_production_delivery: false
+provider_outcomes:
+  telegram: simulated_delivery_success
+  email: simulated_delivery_failure
+previous_notifications: []
+remove_local_fixture_output: false
+simulation: true

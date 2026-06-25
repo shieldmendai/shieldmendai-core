@@ -2,46 +2,47 @@
 
 - Product name: ShieldMendAi
 - Workspace: `/root/ShieldMendAi`
-- Current branch: `codex/extraction-phase-5`
-- Current phase: Phase 5 — deterministic recovery verification and loop
-  protection, implementation and validation complete.
-- Completed work: preserved Phase 1–4 behavior; added typed recovery policies,
-  lifecycle states and transitions, retry and rollback budgets, deterministic
-  cooldown and fixed/linear/exponential backoff, rolling failure windows,
-  closed/open/half-open circuit behavior, duplicate plan and request
-  suppression, deterministic attempt IDs, verification evaluation, rollback
-  decisions, manual-intervention escalation, audit events, versioned JSON-safe
-  state, fictional scenarios, CLI inspection/simulation commands, and Phase 5
-  tests.
-- Intentionally deferred: production controllers; live observation,
-  verification, repair, rollback, service restart, file restoration,
-  permission or ownership changes, deployment, code patching, notifications,
-  vulnerability scanning, installation, dedicated-server work, and Phase 6.
-- Tests performed: 118 `unittest` tests passed, including all 34 Phase 2, 32
-  Phase 3, 25 Phase 4, and 27 Phase 5 tests; Python package and test
-  compilation; policy, state, circuit, backoff, success, retry,
-  post-rollback-verification, and manual-intervention CLI paths; package wheel
-  build.
-- Safety checks performed: exact official origin and matching Phase 4
-  local/remote tip verified; clean Phase 4 baseline verified; Phase 4 resume
-  check, 91 baseline tests, compilation, and wheel build passed; complete diff
-  and whitespace review; tracked secret-category path scan without printing
-  values; implementation/example prohibited-pattern scan; patched subprocess,
-  shell, sleep, socket, HTTP, chmod, and chown boundaries; manifest validation
-  and final resume check; private source was not accessed; all new execution
-  remains deterministic simulation.
-- Implementation commit:
-  `f7805c227800f026cfc96d4f32927ac428a3928e`.
-- Documentation checkpoint:
-  `aac48d592a7d9b4e9fcb3f816eb2fda38a9558a1`.
-- Remote branch: `origin/codex/extraction-phase-5`, upstream tracking
-  configured.
-- Push status: Phase 5 implementation and checkpoint commits pushed
-  successfully; no merge, force-push, rebase, release, or deployment
-  performed.
-- Exact Phase 6 task: add redacted local incident records, retention controls,
-  notifier interfaces, and optional outbound alert modeling with delivery
-  disabled by default. Do not enable production recovery, live observers,
-  mandatory network access, or deployment.
+- Current branch: `codex/extraction-phase-6`
+- Current phase: Phase 6 — safe incident records, retention controls, and
+  deterministic notification simulations, implementation and validation
+  complete.
+- Completed work: preserved Phase 1–5 behavior; added typed versioned incident
+  records, explicit lifecycle transitions, chronological timelines, exact-scope
+  correlation and canonical duplicate references, sanitized evidence
+  references, checksum integrity, temporary-root-confined atomic JSON storage,
+  deterministic retention preview and fixture-only removal simulation, fixed
+  notifier capabilities and registry, Telegram/email/SMS/webhook/local
+  simulations, routing, allowlisted templates, redacted bounded rendering,
+  duplicate suppression, cooldowns, attempt budgets, delivery results, audit
+  records, Phase 6 CLI commands, examples, documentation, and tests.
+- Intentionally deferred: production incident storage and deletion; provider
+  authentication or secret resolution; real Telegram, email, SMS, webhook, or
+  local production delivery; live observation, repair, recovery, service
+  restart, file restoration, permission changes, deployment, vulnerability
+  scanning, dedicated-server installation, and Phase 7.
+- Tests performed: Phase 6 focused suite passed 23 tests; complete
+  `unittest` suite passed 141 tests, including all 118 Phase 2–5 tests; package
+  and test compilation passed; example incident and manifest JSON validation
+  passed; CLI inspection and rendering smoke tests passed; Git whitespace
+  check passed; package wheel built successfully.
+- Safety checks performed: correct workspace and exact official origin
+  verified; official origin fetched; clean Phase 5 baseline and exact matching
+  local/remote Phase 5 tip `d595de314a144b2e84d084bb73882e25e9598052`
+  verified; Phase 5 resume check, 118 baseline tests, compilation, and wheel
+  build passed; all Phase 6 filesystem writes confined to temporary roots in
+  tests; provider simulations patched against subprocess, shell, sleep, socket,
+  HTTP, and SMTP boundaries; no provider credential resolved; private source
+  was not accessed.
+- Implementation commit: pending.
+- Documentation checkpoint: pending.
+- Remote branch: `origin/codex/extraction-phase-6` after final push.
+- Push status: pending commits and push.
+- Exact Phase 7 task: Create a controlled dedicated-server sandbox
+  installation and a local-only, read-only Linux observation pilot for
+  ShieldMendAi. Include installer and uninstaller simulation, least-privilege
+  service-user planning, systemd unit templates, safe configuration bootstrap,
+  read-only production-adapter interfaces, a controlled test-server allowlist,
+  and local incident persistence. Include no repairs, service restarts,
+  notification delivery, private-source access, or customer deployment.
 - Blockers: none.
-- UTC timestamp: 2026-06-25T16:45:00Z
+- UTC timestamp: 2026-06-25T17:50:02Z

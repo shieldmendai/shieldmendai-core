@@ -2,7 +2,8 @@
 
 ## Current Stage
 
-Phase 5 — deterministic recovery verification and loop protection.
+Phase 6 — safe incident records, retention controls, and deterministic
+notification simulation.
 
 ## Implemented
 
@@ -31,13 +32,24 @@ Phase 5 — deterministic recovery verification and loop protection.
 - Duplicate plan/request suppression and deterministic attempt IDs
 - Verification evaluation, rollback decisions, and manual escalation
 - Versioned JSON-safe recovery snapshots and Phase 5 CLI commands
+- Versioned sanitized incident records, explicit lifecycle transitions, typed
+  timelines, exact-scope correlation, and duplicate handling
+- Temporary-root-confined incident storage with checksum and version validation
+- Deterministic retention preview and fixture-only removal simulation
+- Fixed Telegram, email, SMS, webhook, and local simulated notifier interfaces
+- Severity/event/status/escalation routing and provider failure isolation
+- Allowlisted templates, redaction, escaping, bounded rendering, and truncation
+- Duplicate suppression, cooldown, per-channel/per-incident attempt budgets,
+  simulated delivery results, and audit events
+- Phase 6 inspection, preview, rendering, and simulation CLI commands
 
 ## Modeled Only
 
 - Production systemd, process, PID, TCP, HTTP, executable, and file adapters
 - Database, container, Kubernetes, Windows service, and plugin adapters
 - Production repairs, live verification, rollback execution, and production persistence
-- Telegram, email, SMS, webhook, and local notification delivery
+- Real Telegram, email, SMS, webhook, and local production delivery
+- Production incident persistence and production retention deletion
 - Isolated code-repair workflow
 
 ## Not Available
@@ -51,6 +63,6 @@ Phase 5 — deterministic recovery verification and loop protection.
 
 ## Next Task
 
-Phase 6 will add redacted local incident records, retention controls, notifier
-interfaces, and optional alert modeling. Delivery remains disabled by default,
-and production recovery remains unavailable.
+Create a controlled dedicated-server sandbox installation and a local-only,
+read-only Linux observation pilot for ShieldMendAi. Do not add repairs, service
+restarts, notification delivery, customer deployment, or private-source access.
