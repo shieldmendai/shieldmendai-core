@@ -35,7 +35,8 @@
   was not accessed.
 - Implementation commit:
   `87fc06f`.
-- Documentation checkpoint: pending.
+- Documentation checkpoint:
+  `d8e5abe`.
 - Remote branch: `origin/codex/extraction-phase-6` after final push.
 - Push status: pending commits and push.
 - Exact Phase 7 task: Create a controlled dedicated-server sandbox
