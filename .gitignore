@@ -216,3 +216,88 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# ShieldMendAi security boundaries
+# Keep safe public templates trackable.
+!.env.example
+!*.example
+!config.example.*
+!examples/**
+
+# Credentials, keys, certificates, and wallet material
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+*.seed
+*.mnemonic
+*private_key*
+*private-key*
+*seed_phrase*
+*seed-phrase*
+wallets/
+wallet/
+keystores/
+credentials/
+secrets/
+
+# Private configuration and local overrides
+config.local.*
+config.private.*
+config.secret.*
+*.local.yaml
+*.local.yml
+*.local.json
+*.secret.yaml
+*.secret.yml
+*.secret.json
+
+# Runtime logs, reports, state, backups, and databases
+logs/
+log/
+reports/
+report/
+state/
+runtime/
+backups/
+backup/
+archives/
+*.log
+*.jsonl
+*.state
+*.bak
+*.backup
+*.old
+*.sqlite
+*.sqlite3
+*.db
+*.db-journal
+*.dump
+*.sql
+
+# Local incident and notification artifacts
+incidents/
+notifications/
+telegram_seen*
+alert_state*
+cooldown_state*
+
+# Local editor, test, and operating-system artifacts
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+.coverage
+coverage.json
+junit.xml
+
+# Extraction scratch data must never be committed
+private_source/
+source_snapshot/
+extraction_work/

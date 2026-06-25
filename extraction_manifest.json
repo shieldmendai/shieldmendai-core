@@ -1,0 +1,80 @@
+{
+  "schema_version": "1.0",
+  "product_name": "ShieldMendAi",
+  "workspace_path": "/root/ShieldMendAi",
+  "source_path": "/root/newbasebot",
+  "updated_at_utc": "2026-06-25T04:07:34Z",
+  "current_phase": "Phase 1 - read-only inventory and architecture",
+  "source_items_reviewed": {
+    "source_files": 13,
+    "systemd_units": 16,
+    "method": "metadata, SHA-256, syntax structure, capability classification, and redacted unit directives"
+  },
+  "reusable_components_identified": [
+    "configuration loader",
+    "systemd monitor",
+    "file-health monitor",
+    "process-health monitor",
+    "command and HTTP health-check adapters",
+    "policy engine",
+    "allowlisted repair executor",
+    "recovery verifier",
+    "cooldown and retry controller",
+    "incident recorder",
+    "optional Telegram notifier",
+    "CLI",
+    "installer",
+    "systemd service and timer templates",
+    "isolated test harness"
+  ],
+  "excluded_private_components": [
+    "credentials and environment contents",
+    "wallet material and wallet history",
+    "credential-bearing RPC configuration",
+    "trading strategies and buy or sell behavior",
+    "token scoring and discovery logic",
+    "positions, transactions, and PnL",
+    "deny lists and quarantine lists",
+    "private logs, reports, state, backups, databases, and caches",
+    "customer, user, and shell-history data"
+  ],
+  "files_created": [
+    "docs/CODEX_HANDOFF.md",
+    "docs/EXTRACTION_PLAN.md",
+    "docs/SOURCE_INVENTORY.md",
+    "docs/ARCHITECTURE.md",
+    "docs/SECURITY_BOUNDARIES.md",
+    "docs/DEDICATED_SERVER_PLAN.md",
+    "extraction_manifest.json",
+    "scripts/resume_check.sh"
+  ],
+  "checks_run": [
+    "official origin verification",
+    "branch and clean working-tree verification",
+    "existing repository documentation inspection",
+    "targeted private-source metadata scan",
+    "reviewed-source SHA-256 baseline",
+    "redacted systemd unit-file review",
+    "required-file verification",
+    "repository-only credential-pattern scan",
+    "prohibited-artifact filename scan",
+    "expected private-reference review",
+    "reviewed-source and systemd SHA-256 comparison",
+    "Git diff and whitespace validation"
+  ],
+  "tests_run": [
+    "python3 -m json.tool extraction_manifest.json",
+    "bash -n scripts/resume_check.sh",
+    "scripts/resume_check.sh"
+  ],
+  "next_actions": [
+    "create local Phase 1 checkpoint commits",
+    "start Phase 2 only in a later authorized run by creating a dry-run package skeleton and configuration schema"
+  ],
+  "blockers": [
+    "systemd D-Bus is unavailable in the sandbox; static unit files were reviewed instead"
+  ],
+  "last_commit": "066efa61196fa803f29ef9012429a50424df4193",
+  "remote_status": "origin matches official repository; branch has no upstream; remote was not contacted during this run",
+  "push_status": "not pushed; prohibited during Phase 1 run"
+}
