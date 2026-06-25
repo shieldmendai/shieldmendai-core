@@ -1,1117 +1,212 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-  <title>ShieldMendAI | The Self-Healing Shield For Your Server</title>
-
-  <style>
-    * {
-      box-sizing: border-box;
-    }
-
-    html {
-      scroll-behavior: smooth;
-    }
-
-    body {
-      margin: 0;
-      font-family: Arial, Helvetica, sans-serif;
-      color: white;
-      background: #020611;
-      overflow-x: hidden;
-    }
-
-    .server-bg {
-      position: fixed;
-      inset: 0;
-      z-index: -5;
-      background:
-        radial-gradient(
-          circle at 15% 18%,
-          rgba(0, 255, 160, 0.35),
-          transparent 24%
-        ),
-        radial-gradient(
-          circle at 85% 12%,
-          rgba(0, 170, 255, 0.38),
-          transparent 28%
-        ),
-        radial-gradient(
-          circle at 50% 90%,
-          rgba(100, 255, 122, 0.22),
-          transparent 30%
-        ),
-        linear-gradient(
-          135deg,
-          #020611,
-          #031a2d,
-          #020611
-        );
-
-      animation: bgGlow 7s ease-in-out infinite alternate;
-    }
-
-    .server-bg::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-
-      background-image:
-        linear-gradient(
-          rgba(0, 255, 180, 0.09) 1px,
-          transparent 1px
-        ),
-        linear-gradient(
-          90deg,
-          rgba(0, 200, 255, 0.09) 1px,
-          transparent 1px
-        );
-
-      background-size: 52px 52px;
-      animation: gridMove 14s linear infinite;
-    }
-
-    .server-bg::after {
-      content: "";
-      position: absolute;
-      left: 0;
-      right: 0;
-      top: -25%;
-      height: 180px;
-
-      background:
-        linear-gradient(
-          to bottom,
-          transparent,
-          rgba(0, 255, 190, 0.24),
-          transparent
-        );
-
-      animation: scanLine 5.5s linear infinite;
-    }
-
-    .effects {
-      position: fixed;
-      inset: 0;
-      z-index: -4;
-      pointer-events: none;
-      overflow: hidden;
-    }
-
-    .effects span {
-      position: absolute;
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: rgba(100, 255, 122, 0.85);
-      box-shadow: 0 0 18px rgba(100, 255, 122, 0.9);
-      animation: rise 12s linear infinite;
-      opacity: 0.75;
-    }
-
-    .effects span:nth-child(1) {
-      left: 8%;
-      animation-delay: 0s;
-      animation-duration: 10s;
-    }
-
-    .effects span:nth-child(2) {
-      left: 18%;
-      animation-delay: 2s;
-      animation-duration: 13s;
-    }
-
-    .effects span:nth-child(3) {
-      left: 31%;
-      animation-delay: 4s;
-      animation-duration: 11s;
-    }
-
-    .effects span:nth-child(4) {
-      left: 44%;
-      animation-delay: 1s;
-      animation-duration: 15s;
-    }
-
-    .effects span:nth-child(5) {
-      left: 57%;
-      animation-delay: 3s;
-      animation-duration: 12s;
-    }
-
-    .effects span:nth-child(6) {
-      left: 69%;
-      animation-delay: 5s;
-      animation-duration: 14s;
-    }
-
-    .effects span:nth-child(7) {
-      left: 82%;
-      animation-delay: 1.5s;
-      animation-duration: 10s;
-    }
-
-    .effects span:nth-child(8) {
-      left: 93%;
-      animation-delay: 3.5s;
-      animation-duration: 16s;
-    }
-
-    @keyframes rise {
-      from {
-        transform: translateY(105vh) scale(0.7);
-      }
-
-      to {
-        transform: translateY(-10vh) scale(1.5);
-      }
-    }
-
-    @keyframes bgGlow {
-      from {
-        filter: hue-rotate(0deg) brightness(1);
-      }
-
-      to {
-        filter: hue-rotate(18deg) brightness(1.28);
-      }
-    }
-
-    @keyframes gridMove {
-      from {
-        background-position: 0 0;
-      }
-
-      to {
-        background-position: 104px 104px;
-      }
-    }
-
-    @keyframes scanLine {
-      from {
-        top: -25%;
-      }
-
-      to {
-        top: 120%;
-      }
-    }
-
-    header {
-      position: sticky;
-      top: 0;
-      z-index: 10;
-      padding: 18px 7%;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: rgba(2, 6, 17, 0.72);
-      backdrop-filter: blur(14px);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    }
-
-    .brand {
-      font-size: 20px;
-      font-weight: 900;
-      letter-spacing: 0.4px;
-    }
-
-    .brand span {
-      color: #64ff7a;
-    }
-
-    #menu-toggle {
-      display: none;
-    }
-
-    .hamburger {
-      width: 46px;
-      height: 46px;
-      border-radius: 14px;
-      display: grid;
-      place-items: center;
-      cursor: pointer;
-      border: 1px solid rgba(100, 255, 122, 0.5);
-      background: rgba(255, 255, 255, 0.07);
-      box-shadow: 0 0 22px rgba(0, 255, 170, 0.22);
-    }
-
-    .hamburger div,
-    .hamburger div::before,
-    .hamburger div::after {
-      width: 23px;
-      height: 2px;
-      background: white;
-      position: absolute;
-      content: "";
-    }
-
-    .hamburger div {
-      position: relative;
-    }
-
-    .hamburger div::before {
-      top: -7px;
-    }
-
-    .hamburger div::after {
-      top: 7px;
-    }
-
-    .menu {
-      position: absolute;
-      top: 72px;
-      right: 7%;
-      width: min(330px, 86vw);
-      padding: 16px;
-      border-radius: 22px;
-      background: rgba(3, 14, 31, 0.95);
-      border: 1px solid rgba(39, 200, 255, 0.4);
-      box-shadow: 0 0 35px rgba(0, 200, 255, 0.25);
-      display: none;
-    }
-
-    #menu-toggle:checked ~ .menu {
-      display: block;
-    }
-
-    .menu a {
-      display: block;
-      text-decoration: none;
-      color: white;
-      font-weight: 900;
-      padding: 15px 16px;
-      margin: 8px 0;
-      border-radius: 14px;
-      background: rgba(255, 255, 255, 0.07);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-    }
-
-    .hero {
-      min-height: 92vh;
-      display: grid;
-      place-items: center;
-      text-align: center;
-      padding: 55px 7% 30px;
-    }
-
-    .shell {
-      width: min(1080px, 100%);
-      padding: 38px 22px;
-      border-radius: 34px;
-      background: rgba(2, 10, 24, 0.5);
-      border: 1px solid rgba(39, 200, 255, 0.35);
-
-      box-shadow:
-        0 0 0 1px rgba(100, 255, 122, 0.18),
-        0 0 65px rgba(0, 200, 255, 0.32),
-        0 0 120px rgba(100, 255, 122, 0.12),
-        inset 0 0 55px rgba(0, 255, 170, 0.09);
-
-      backdrop-filter: blur(13px);
-      animation: shellPulse 3.5s ease-in-out infinite alternate;
-    }
-
-    @keyframes shellPulse {
-      from {
-        box-shadow:
-          0 0 45px rgba(0, 200, 255, 0.22),
-          inset 0 0 45px rgba(0, 255, 170, 0.07);
-      }
-
-      to {
-        box-shadow:
-          0 0 85px rgba(0, 200, 255, 0.42),
-          0 0 130px rgba(100, 255, 122, 0.14),
-          inset 0 0 60px rgba(0, 255, 170, 0.11);
-      }
-    }
-
-    .logo-wrap {
-      width: 210px;
-      height: 210px;
-      margin: 0 auto;
-      border-radius: 50%;
-      padding: 7px;
-      background:
-        linear-gradient(
-          130deg,
-          #00d4ff,
-          #64ff7a,
-          #00d4ff
-        );
-
-      box-shadow:
-        0 0 55px rgba(0, 225, 255, 0.85),
-        0 0 110px rgba(100, 255, 122, 0.35);
-
-      animation:
-        float 3.5s ease-in-out infinite,
-        halo 2.8s ease-in-out infinite alternate;
-    }
-
-    .logo {
-      width: 100%;
-      height: 100%;
-      border-radius: 50%;
-      display: block;
-      object-fit: cover;
-      background: #020611;
-    }
-
-    @keyframes float {
-      0%,
-      100% {
-        transform: translateY(0);
-      }
-
-      50% {
-        transform: translateY(-12px);
-      }
-    }
-
-    @keyframes halo {
-      from {
-        filter: brightness(1);
-      }
-
-      to {
-        filter: brightness(1.25);
-      }
-    }
-
-    .badge {
-      display: inline-block;
-      margin: 26px 0 8px;
-      padding: 10px 16px;
-      border-radius: 999px;
-      color: #64ff7a;
-      background: rgba(100, 255, 122, 0.12);
-      border: 1px solid rgba(100, 255, 122, 0.35);
-      font-weight: 900;
-      font-size: 13px;
-      letter-spacing: 0.8px;
-      box-shadow: 0 0 22px rgba(100, 255, 122, 0.18);
-    }
-
-    h1 {
-      margin: 14px 0 8px;
-      font-size: clamp(44px, 9vw, 92px);
-      line-height: 0.95;
-      text-shadow: 0 0 34px rgba(0, 200, 255, 0.75);
-    }
-
-    .green {
-      color: #64ff7a;
-    }
-
-    .blue {
-      color: #27c8ff;
-    }
-
-    .tagline {
-      max-width: 900px;
-      margin: 14px auto;
-      font-size: clamp(24px, 4.5vw, 46px);
-      line-height: 1.1;
-      font-weight: 900;
-    }
-
-    .sub {
-      max-width: 820px;
-      margin: 22px auto;
-      color: #d7e9f5;
-      font-size: 18px;
-      line-height: 1.7;
-    }
-
-    .hero-buttons {
-      margin-top: 30px;
-    }
-
-    .button {
-      position: relative;
-      display: inline-block;
-      margin: 8px;
-      padding: 15px 22px;
-      border-radius: 15px;
-      text-decoration: none;
-      color: white;
-      font-weight: 900;
-      background: linear-gradient(90deg, #008cff, #00ff88);
-      box-shadow: 0 0 30px rgba(0, 255, 170, 0.38);
-      overflow: hidden;
-    }
-
-    .button::after {
-      content: "";
-      position: absolute;
-      top: 0;
-      left: -120%;
-      width: 80%;
-      height: 100%;
-
-      background:
-        linear-gradient(
-          90deg,
-          transparent,
-          rgba(255, 255, 255, 0.45),
-          transparent
-        );
-
-      animation: shimmer 2.8s infinite;
-    }
-
-    @keyframes shimmer {
-      to {
-        left: 130%;
-      }
-    }
-
-    .button.secondary {
-      background: rgba(255, 255, 255, 0.08);
-      border: 1px solid rgba(255, 255, 255, 0.25);
-    }
-
-    section {
-      padding: 62px 7%;
-    }
-
-    .section-title {
-      text-align: center;
-      font-size: clamp(32px, 6vw, 52px);
-      margin: 0 0 28px;
-    }
-
-    .section-sub {
-      text-align: center;
-      max-width: 760px;
-      margin: -10px auto 35px;
-      color: #d7e9f5;
-      font-size: 18px;
-      line-height: 1.7;
-    }
-
-    .grid {
-      display: grid;
-      grid-template-columns:
-        repeat(
-          auto-fit,
-          minmax(230px, 1fr)
-        );
-
-      gap: 18px;
-      max-width: 1120px;
-      margin: auto;
-    }
-
-    .card {
-      position: relative;
-      padding: 26px;
-      border-radius: 24px;
-      background: rgba(2, 10, 24, 0.74);
-      border: 1px solid rgba(39, 200, 255, 0.35);
-      box-shadow: 0 0 34px rgba(0, 200, 255, 0.18);
-      backdrop-filter: blur(10px);
-      overflow: hidden;
-    }
-
-    .card h3 {
-      margin-top: 0;
-      color: #64ff7a;
-      font-size: 22px;
-    }
-
-    .card p,
-    .card li {
-      color: #d7e9f5;
-      line-height: 1.65;
-      font-size: 16px;
-    }
-
-    .different {
-      max-width: 980px;
-      margin: auto;
-      text-align: center;
-    }
-
-    .different .bigline {
-      font-size: clamp(26px, 5vw, 46px);
-      font-weight: 900;
-      line-height: 1.12;
-      margin-bottom: 18px;
-    }
-
-    .token {
-      max-width: 980px;
-      margin: auto;
-      text-align: center;
-
-      background:
-        linear-gradient(
-          135deg,
-          rgba(0, 140, 255, 0.24),
-          rgba(0, 255, 136, 0.14)
-        );
-    }
-
-    .telegram-card {
-      max-width: 980px;
-      margin: auto;
-      text-align: center;
-
-      background:
-        linear-gradient(
-          135deg,
-          rgba(0, 140, 255, 0.22),
-          rgba(0, 255, 136, 0.16)
-        );
-    }
-
-    .telegram-icon {
-      width: 82px;
-      height: 82px;
-      margin: 0 auto 18px;
-      display: grid;
-      place-items: center;
-      color: #2aabee;
-
-      filter:
-        drop-shadow(
-          0 0 18px rgba(42, 171, 238, 0.72)
-        );
-    }
-
-    .telegram-icon svg {
-      width: 82px;
-      height: 82px;
-      display: block;
-    }
-
-    .telegram-social svg {
-      width: 27px;
-      height: 27px;
-      display: block;
-      color: #2aabee;
-
-      filter:
-        drop-shadow(
-          0 0 8px rgba(42, 171, 238, 0.55)
-        );
-    }
-
-    .contract {
-      word-break: break-all;
-      color: #64ff7a;
-      font-weight: 900;
-      font-size: 15px;
-    }
-
-    .trust-strip {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 12px;
-      max-width: 980px;
-      margin: 34px auto 0;
-    }
-
-    .trust {
-      padding: 11px 14px;
-      border-radius: 999px;
-      background: rgba(255, 255, 255, 0.08);
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      color: #d7e9f5;
-      font-size: 14px;
-      font-weight: bold;
-    }
-
-    footer {
-      padding: 48px 7% 35px;
-      text-align: center;
-      border-top: 1px solid rgba(255, 255, 255, 0.08);
-      background: rgba(1, 4, 12, 0.7);
-    }
-
-    .socials {
-      display: flex;
-      justify-content: center;
-      gap: 14px;
-      margin-bottom: 18px;
-      flex-wrap: wrap;
-    }
-
-    .social {
-      width: 52px;
-      height: 52px;
-      border-radius: 50%;
-      display: grid;
-      place-items: center;
-      color: white;
-      text-decoration: none;
-      font-size: 18px;
-      font-weight: 900;
-      border: 1px solid rgba(39, 200, 255, 0.5);
-      background: rgba(255, 255, 255, 0.08);
-      box-shadow: 0 0 24px rgba(0, 200, 255, 0.2);
-    }
-
-    .notice {
-      max-width: 850px;
-      margin: 18px auto 0;
-      color: #8fb6c9;
-      line-height: 1.6;
-      font-size: 13px;
-    }
-
-    #dexscreener-embed {
-      position: relative;
-      width: 100%;
-      padding-bottom: 125%;
-      border-radius: 22px;
-      overflow: hidden;
-      border: 1px solid rgba(39, 200, 255, 0.35);
-      box-shadow: 0 0 34px rgba(0, 200, 255, 0.18);
-    }
-
-    @media (min-width: 1400px) {
-      #dexscreener-embed {
-        padding-bottom: 65%;
-      }
-    }
-
-    #dexscreener-embed iframe {
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      top: 0;
-      left: 0;
-      border: 0;
-    }
-
-    @media (max-width: 620px) {
-      header {
-        padding: 14px 5%;
-      }
-
-      .menu {
-        right: 5%;
-        top: 66px;
-      }
-
-      .logo-wrap {
-        width: 175px;
-        height: 175px;
-      }
-
-      .shell {
-        padding: 28px 14px;
-      }
-
-      section {
-        padding: 48px 5%;
-      }
-    }
-  </style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="ShieldMendAi is building a policy-controlled reliability layer for servers and applications. Explore the verified builder roadmap and deterministic recovery simulator.">
+  <title>ShieldMendAi — Policy-controlled reliability infrastructure</title>
+  <link rel="stylesheet" href="styles.css">
 </head>
-
 <body>
-  <div class="server-bg"></div>
-
-  <div class="effects">
-    <span></span>
-    <span></span>
-    <span></span>
-    <span></span>
-    <span></span>
-    <span></span>
-    <span></span>
-    <span></span>
-  </div>
-
-  <header>
-    <div class="brand">
-      Shield<span>Mend</span>AI
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="index.html" aria-label="ShieldMendAi home">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 32 38" fill="none"><path d="M16 1.5 29 6v10.2c0 9.2-5.2 16.2-13 20.3C8.2 32.4 3 25.4 3 16.2V6l13-4.5Z" stroke="currentColor"/><path d="m9.5 19 4.1 4.1 9-10" stroke="currentColor" stroke-width="2"/></svg>
+        </span>
+        <span>Shield<span>Mend</span>Ai</span>
+      </a>
+      <button class="menu-button" type="button" aria-label="Toggle navigation" aria-expanded="false"><span></span></button>
+      <nav class="site-nav" aria-label="Primary navigation">
+        <a href="#product">Product</a>
+        <a href="#how-it-works">How It Works</a>
+        <a href="roadmap.html">Builder Roadmap</a>
+        <a href="simulator.html">Simulator</a>
+        <a href="https://github.com/shieldmendai/shieldmendai-core/tree/main/docs" target="_blank" rel="noopener noreferrer">Documentation</a>
+        <a href="about.html">About</a>
+        <a href="community.html">Community</a>
+        <a class="nav-cta" href="https://github.com/shieldmendai/shieldmendai-core" target="_blank" rel="noopener noreferrer">GitHub ↗</a>
+      </nav>
     </div>
-
-    <input
-      type="checkbox"
-      id="menu-toggle"
-    />
-
-    <label
-      class="hamburger"
-      for="menu-toggle"
-      aria-label="Open menu"
-    >
-      <div></div>
-    </label>
-
-    <nav class="menu">
-      <a href="#smend">
-        $SMEND Token
-      </a>
-
-      <a href="#telegram">
-        Telegram Community
-      </a>
-
-      <a href="#different">
-        Why Different
-      </a>
-
-      <a href="roadmap.html">
-        Roadmap
-      </a>
-
-      <a href="funding.html">
-        v0.1 Funding Plan
-      </a>
-
-      <a href="testimonials.html">
-        Founder Story
-      </a>
-
-      <a
-        href="https://bankr.bot"
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        Bankr
-      </a>
-    </nav>
   </header>
 
-  <main class="hero">
-    <div class="shell">
-      <div class="logo-wrap">
-        <img
-          class="logo"
-          src="https://raw.githubusercontent.com/shieldmendai/shieldmendai-core/main/ShieldMendAI_under_1MB.jpg"
-          alt="ShieldMendAI Logo"
-        />
+  <main id="main">
+    <section class="hero">
+      <div class="container hero-grid">
+        <div>
+          <p class="eyebrow">Reliability infrastructure · Pre-alpha</p>
+          <h1>A safer path from failure to <span class="gradient-text">verified recovery.</span></h1>
+          <p class="lede">ShieldMendAi is building a reusable, self-hosted reliability layer that observes failures, evaluates policy, plans authorized responses, verifies outcomes, and records every incident. Current execution is deterministic simulation only.</p>
+          <div class="actions">
+            <a class="button" href="roadmap.html">Explore the builder roadmap</a>
+            <a class="button secondary" href="simulator.html">Open recovery simulator</a>
+          </div>
+        </div>
+        <aside class="signal-card" aria-label="Current development signal">
+          <div class="signal-head"><span>Current build signal</span><i class="live-dot"></i></div>
+          <div class="signal-row"><span>01</span><strong>Core package</strong><b>Tested</b></div>
+          <div class="signal-row"><span>02</span><strong>Recovery engine</strong><b>Simulated</b></div>
+          <div class="signal-row"><span>03</span><strong>Public website</strong><b>Building</b></div>
+          <div class="signal-row"><span>04</span><strong>Live production repair</strong><b style="color:var(--danger)">Unavailable</b></div>
+        </aside>
       </div>
+    </section>
 
-      <div class="badge">
-        DETECT • REPAIR • RECOVER
+    <section class="section-tight" aria-label="Development proof">
+      <div class="container metric-strip">
+        <div class="metric"><strong>6</strong><span>completed development phases</span></div>
+        <div class="metric"><strong>141</strong><span>verified passing automated tests</span></div>
+        <div class="metric"><strong>11</strong><span>deterministic observer simulations</span></div>
+        <div class="metric"><strong>0</strong><span>production repairs claimed or enabled</span></div>
       </div>
+    </section>
 
-      <h1>
-        Shield<span class="green">Mend</span><span class="blue">AI</span>
-      </h1>
-
-      <div class="tagline">
-        The self-healing shield for your server.
+    <section class="section" id="product">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">The product</p>
+            <h2>Recovery infrastructure built around control.</h2>
+          </div>
+          <p>ShieldMendAi separates observation, authorization, action planning, verification, rollback, and incident reporting. The architecture is designed to resist broad permissions, repeated repair loops, and unverified “fixes.”</p>
+        </div>
+        <div class="card-grid">
+          <article class="card">
+            <span class="card-number">01 / OBSERVE</span>
+            <h3>Normalize failure signals</h3>
+            <p>Typed findings for services, timers, processes, APIs, ports, executables, and files—currently supplied through safe scenarios and fixture-confined checks.</p>
+          </article>
+          <article class="card">
+            <span class="card-number">02 / AUTHORIZE</span>
+            <h3>Deny by default</h3>
+            <p>Exact target and action allowlists, approval policies, risk classes, preconditions, verification plans, and rollback requirements gate every simulated repair.</p>
+          </article>
+          <article class="card">
+            <span class="card-number">03 / RECOVER</span>
+            <h3>Bound every attempt</h3>
+            <p>Finite retries, cooldowns, backoff, circuit breakers, duplicate suppression, and manual escalation are modeled before any production execution exists.</p>
+          </article>
+        </div>
       </div>
+    </section>
 
-      <p class="sub">
-        ShieldMendAI is building AI-powered infrastructure tools for monitoring,
-        recovery, automation, and server protection.
-      </p>
-
-      <div class="hero-buttons">
-        <a
-          class="button"
-          href="#smend"
-        >
-          View $SMEND
-        </a>
-
-        <a
-          class="button secondary"
-          href="https://t.me/ShieldMendAiCommunity"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Join Telegram
-        </a>
-
-        <a
-          class="button secondary"
-          href="roadmap.html"
-        >
-          Roadmap
-        </a>
+    <section class="section" id="how-it-works">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">How it works</p>
+            <h2>One explicit lifecycle. No hidden leap to automation.</h2>
+          </div>
+          <p>Each boundary is independently typed and auditable. Today, the entire lifecycle consumes controlled inputs and returns deterministic simulated outcomes.</p>
+        </div>
+        <div class="flow" aria-label="ShieldMendAi lifecycle">
+          <div class="flow-step">Observe</div>
+          <div class="flow-step">Classify</div>
+          <div class="flow-step">Propose</div>
+          <div class="flow-step">Authorize</div>
+          <div class="flow-step">Act</div>
+          <div class="flow-step">Verify</div>
+          <div class="flow-step">Rollback / report</div>
+        </div>
       </div>
-    </div>
+    </section>
+
+    <section class="section" id="roadmap-preview">
+      <div class="container roadmap-preview">
+        <div class="roadmap-intro">
+          <p class="eyebrow">Builder roadmap</p>
+          <h2>Built in controlled stages.</h2>
+          <p class="small-copy">The roadmap distinguishes tested architecture from simulation, active public work, the next controlled pilot, planned capabilities, and the long-term vision.</p>
+          <div class="actions"><a class="button" href="roadmap.html">View the complete roadmap</a></div>
+        </div>
+        <div>
+          <a class="mini-stage" href="roadmap.html#foundation">
+            <span class="num">01</span>
+            <span><h3>Foundation completed</h3><p>Installable package, CLI, typed policy and recovery architecture, incident records, and deterministic simulations.</p></span>
+            <span class="status complete">Completed</span>
+          </a>
+          <a class="mini-stage" href="roadmap.html#building">
+            <span class="num">02</span>
+            <span><h3>Public product experience</h3><p>Professional website, recovery simulator, roadmap, technical explanations, mobile navigation, and accessibility.</p></span>
+            <span class="status active">Building now</span>
+          </a>
+          <a class="mini-stage" href="roadmap.html#next">
+            <span class="num">03</span>
+            <span><h3>Dedicated-server sandbox</h3><p>Safely prove installation and local read-only observation boundaries before enabling any real repair.</p></span>
+            <span class="status next">Next milestone</span>
+          </a>
+          <a class="mini-stage" href="roadmap.html#future">
+            <span class="num">04</span>
+            <span><h3>Controlled live adapters</h3><p>Carefully scoped observers, low-risk repair adapters, real verification, rollback, and secure delivery.</p></span>
+            <span class="status planned">Planned</span>
+          </a>
+          <a class="mini-stage" href="roadmap.html#vision">
+            <span class="num">05</span>
+            <span><h3>Language-independent reliability layer</h3><p>A reusable reliability boundary for servers, applications, containers, and infrastructure.</p></span>
+            <span class="status long">Long-term</span>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="security-boundary">
+      <div class="container">
+        <div class="section-head">
+          <div><p class="eyebrow">Security boundary</p><h2>What exists—and what does not.</h2></div>
+          <p>Clear capability labeling is part of the product. Simulation is not described as deployment, and architecture is not described as live operation.</p>
+        </div>
+        <div class="boundary">
+          <article class="boundary-panel">
+            <h3>Implemented and tested</h3>
+            <ul class="check-list">
+              <li>Standalone Python package and command-line interface</li>
+              <li>Typed configuration, finding, repair, recovery, incident, and notification models</li>
+              <li>Deny-by-default authorization and exact allowlists</li>
+              <li>Bounded recovery, circuit breakers, and loop protection</li>
+              <li>Versioned incident records and integrity validation</li>
+              <li>141 verified passing automated tests</li>
+            </ul>
+          </article>
+          <article class="boundary-panel">
+            <h3>Production unavailable</h3>
+            <ul class="plain-list">
+              <li>Live system or process observation</li>
+              <li>Service restarts or real repair execution</li>
+              <li>Production incident persistence or deletion</li>
+              <li>Real Telegram, email, SMS, webhook, or local delivery</li>
+              <li>Customer deployment or autonomous production repair</li>
+              <li>Vulnerability scanning or universal compatibility</li>
+            </ul>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container vision">
+        <p class="eyebrow">Try the architecture</p>
+        <h2>Walk through a recovery decision without touching a real system.</h2>
+        <p class="lede">The interactive simulator demonstrates how a finding moves through classification, policy authorization, simulated action, verification, rollback planning, and incident recording.</p>
+        <div class="actions">
+          <a class="button" href="simulator.html">Launch simulator</a>
+          <a class="button secondary" href="https://github.com/shieldmendai/shieldmendai-core" target="_blank" rel="noopener noreferrer">Inspect the source ↗</a>
+        </div>
+      </div>
+    </section>
   </main>
 
-  <section id="different">
-    <div class="card different">
-      <div class="bigline">
-        Real software. Real infrastructure. Built in public.
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div><a class="brand" href="index.html"><span>Shield<span>Mend</span>Ai</span></a><p class="small-copy">Policy-controlled reliability infrastructure under active development.</p></div>
+        <div><h3>Product</h3><a href="#how-it-works">How it works</a><a href="roadmap.html">Builder roadmap</a><a href="simulator.html">Simulator</a></div>
+        <div><h3>Project</h3><a href="about.html">About</a><a href="funding.html">Funding</a><a href="community.html">Community & token</a></div>
+        <div><h3>Build</h3><a href="https://github.com/shieldmendai/shieldmendai-core" target="_blank" rel="noopener noreferrer">GitHub ↗</a><a href="https://github.com/shieldmendai/shieldmendai-core/tree/main/docs" target="_blank" rel="noopener noreferrer">Documentation ↗</a><a href="https://x.com/ShieldMendAI" target="_blank" rel="noopener noreferrer">X ↗</a></div>
       </div>
-
-      <p>
-        ShieldMendAI is focused on practical AI automation for builders,
-        creators, operators, and small teams.
-      </p>
-
-      <p>
-        The goal is simple: help users detect problems, attempt recovery
-        actions, reduce downtime, and manage technical systems with less
-        friction.
-      </p>
-
-      <div class="trust-strip">
-        <div class="trust">
-          Open-source repo
-        </div>
-
-        <div class="trust">
-          Public roadmap
-        </div>
-
-        <div class="trust">
-          Token plan documented
-        </div>
-
-        <div class="trust">
-          Audit planned
-        </div>
-
-        <div class="trust">
-          Building in public
-        </div>
-      </div>
+      <div class="footer-bottom"><span>© 2026 ShieldMendAi. MIT-licensed core.</span><span>Pre-alpha · Simulation only · No production repair capability</span></div>
     </div>
-  </section>
-
-  <section>
-    <h2 class="section-title">
-      Built for Builders and Operators
-    </h2>
-
-    <p class="section-sub">
-      ShieldMendAI is designed for people who want practical AI tools that
-      help keep projects online, organized, and moving.
-    </p>
-
-    <div class="grid">
-      <div class="card">
-        <h3>
-          Build
-        </h3>
-
-        <p>
-          Create and manage practical AI-powered systems with a clear roadmap.
-        </p>
-      </div>
-
-      <div class="card">
-        <h3>
-          Automate
-        </h3>
-
-        <p>
-          Reduce repetitive work with workflows designed to monitor and
-          respond.
-        </p>
-      </div>
-
-      <div class="card">
-        <h3>
-          Protect
-        </h3>
-
-        <p>
-          Detect failures, trigger recovery steps, and reduce unnecessary
-          downtime.
-        </p>
-      </div>
-
-      <div class="card">
-        <h3>
-          Launch
-        </h3>
-
-        <p>
-          Support builders, bot operators, creators, and small teams bringing
-          projects online.
-        </p>
-      </div>
-    </div>
-  </section>
-
-  <section id="telegram">
-    <div class="card telegram-card">
-      <div
-        class="telegram-icon"
-        aria-hidden="true"
-      >
-        <svg
-          viewBox="0 0 24 24"
-          fill="currentColor"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path d="M11.944 0A12 12 0 1 0 12 24a12 12 0 0 0-.056-24zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.5 1.202-.82 1.231-.696.064-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.13-5.061 3.337-.479.329-.913.49-1.302.481-.428-.009-1.252-.242-1.865-.441-.752-.245-1.349-.374-1.297-.789.027-.216.324-.437.893-.663 3.498-1.524 5.831-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
-        </svg>
-      </div>
-
-      <h2 class="section-title">
-        Join the ShieldMendAI Community
-      </h2>
-
-      <p>
-        Follow official updates, development progress, support discussions,
-        and community announcements.
-      </p>
-
-      <div class="hero-buttons">
-        <a
-          class="button"
-          href="https://t.me/ShieldMendAiCommunity"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Open Telegram
-        </a>
-      </div>
-
-      <p class="notice">
-        Admins will never DM first. Never share seed phrases or private keys.
-        Always verify official links inside the community.
-      </p>
-    </div>
-  </section>
-
-  <section id="smend">
-    <div class="card token">
-      <h2 class="section-title">
-        $SMEND on Base
-      </h2>
-
-      <p>
-        SMEND is the community support token for the ShieldMendAI ecosystem,
-        launched on Base through Bankr.
-      </p>
-
-      <p>
-        ShieldMendAI is focused on AI-powered monitoring, recovery, and
-        automation tools. The goal is to build useful software first and grow
-        the ecosystem around real utility.
-      </p>
-
-      <p class="contract">
-        Contract: 0x148ccc51e0755c4b3f35215bcc4a57357a226ba3
-      </p>
-
-      <div class="hero-buttons">
-        <a
-          class="button"
-          href="https://bankr.bot"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Open Bankr
-        </a>
-
-        <a
-          class="button secondary"
-          href="https://t.me/ShieldMendAiCommunity"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Join Telegram
-        </a>
-
-        <a
-          class="button secondary"
-          href="roadmap.html"
-        >
-          View Roadmap
-        </a>
-      </div>
-
-      <p class="notice">
-        No promised returns. No investment advice. Participation is voluntary
-        and risky.
-      </p>
-    </div>
-  </section>
-
-  <section id="dex-chart">
-    <div class="card big">
-      <h2 class="section-title">
-        $SMEND Live Chart
-      </h2>
-
-      <p>
-        View the live $SMEND market chart on Base.
-      </p>
-
-      <div id="dexscreener-embed">
-        <iframe
-          src="https://dexscreener.com/base/0x0d1f16569df23a8efeb4aacadbfeec5eae9e24a8449e0854fa66d2b55ee48d9f?embed=1&loadChartSettings=0&chartLeftToolbar=0&chartTheme=dark&theme=dark&chartStyle=0&chartType=usd&interval=15"
-          title="$SMEND DEX Screener Chart"
-          loading="lazy"
-        >
-        </iframe>
-      </div>
-    </div>
-  </section>
-
-  <footer>
-    <div class="socials">
-      <a
-        class="social"
-        href="https://x.com/ShieldMendAI"
-        target="_blank"
-        rel="noopener noreferrer"
-        aria-label="X"
-      >
-        𝕏
-      </a>
-
-      <a
-        class="social"
-        href="https://github.com/shieldmendai/shieldmendai-core"
-        target="_blank"
-        rel="noopener noreferrer"
-        aria-label="GitHub"
-      >
-        ⌘
-      </a>
-
-      <a
-        class="social telegram-social"
-        href="https://t.me/ShieldMendAiCommunity"
-        target="_blank"
-        rel="noopener noreferrer"
-        aria-label="Telegram"
-      >
-        <svg
-          viewBox="0 0 24 24"
-          fill="currentColor"
-          aria-hidden="true"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path d="M11.944 0A12 12 0 1 0 12 24a12 12 0 0 0-.056-24zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.5 1.202-.82 1.231-.696.064-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.13-5.061 3.337-.479.329-.913.49-1.302.481-.428-.009-1.252-.242-1.865-.441-.752-.245-1.349-.374-1.297-.789.027-.216.324-.437.893-.663 3.498-1.524 5.831-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
-        </svg>
-      </a>
-    </div>
-
-    <div>
-      © 2026 ShieldMendAI · The self-healing shield for your server.
-    </div>
-
-    <p class="notice">
-      SMEND is a community support token. Nothing on this website is investment
-      advice or a promise of returns. ShieldMendAI is focused on building real
-      software and utility.
-    </p>
   </footer>
-
-  <script>
-    document
-      .querySelectorAll(".menu a")
-      .forEach(function (link) {
-        link.addEventListener("click", function () {
-          document.getElementById("menu-toggle").checked = false;
-        });
-      });
-  </script>
+  <script src="site.js"></script>
 </body>
 </html>
