@@ -1,85 +1,157 @@
 # ShieldMendAi Architecture
 
-## Design Principles
+## Mission and Limits
 
-ShieldMendAi is a standalone, deny-by-default recovery system. Monitored
-targets and permitted repairs come only from user configuration. Source-project
-paths and legacy unit names are not defaults, aliases, or implicit targets.
-
-The engine separates observation, policy, execution, verification, and
-reporting. A failed observation never directly invokes a shell command.
-
-## Components
-
-1. **Configuration loader** — validates targets, probes, policies, repair
-   allowlists, retry budgets, retention, and optional notifier settings.
-2. **systemd monitor** — reads configured unit load and active state through a
-   constrained adapter.
-3. **File-health monitor** — checks configured existence, type, age, size,
-   parseability, mode, and ownership expectations without recording contents.
-4. **Process-health monitor** — checks configured process identity, liveness,
-   age, and duplicate-count constraints.
-5. **Command or HTTP adapter** — runs fixed configured probes with timeouts and
-   redacted output, or performs bounded HTTP checks with secrets separated from
-   logged URLs.
-6. **Policy engine** — maps normalized observations to no-op, incident, or an
-   explicitly allowlisted repair plan.
-7. **Allowlisted repair executor** — supports a small action registry such as
-   restart configured unit, create configured directory, restore a validated
-   public template, or correct configured mode/ownership. Arbitrary shell
-   strings are rejected.
-8. **Recovery verifier** — reruns the relevant probes after a repair and
-   records success only when configured conditions pass.
-9. **Cooldown and retry controller** — enforces retry budgets, exponential
-   backoff, cooldowns, circuit breakers, and restart-loop prevention per target.
-10. **Incident recorder** — writes structured, redacted events with target IDs,
-    observation categories, decisions, actions, and verification outcomes.
-11. **Optional Telegram notifier** — sends selected redacted incident summaries
-    when enabled; tokens and chat identifiers remain secret configuration.
-12. **CLI** — provides configuration validation, status, check, dry-run, repair
-    approval, incident inspection, and version commands.
-13. **Installer** — installs into an isolated directory with least-privilege
-    ownership and `shieldmendai-*` systemd definitions.
-14. **Test harness** — supplies fake clocks, filesystems, process tables,
-    systemd adapters, HTTP endpoints, and action executors.
-
-## Control Flow
+ShieldMendAi is designed as a language-independent and server-independent
+reliability and security recovery platform. Its intended lifecycle is:
 
 ```text
-configuration
-    -> monitors/probes
-    -> normalized observations
-    -> policy decision
-    -> cooldown/retry authorization
-    -> dry-run plan or allowlisted executor
-    -> recovery verification
-    -> redacted incident
-    -> optional notification
+observe -> classify -> propose -> authorize -> act -> verify -> roll back/report
 ```
 
-## Configuration Model
+The product cannot guarantee protection of every server, detection of every
+vulnerability, prevention of every attack, repair of every code failure, or
+safe automatic repair in every situation.
 
-Each target receives a stable public ID and declares:
+## Phase 2 Boundary
 
-- monitor adapter and non-secret parameters;
-- health thresholds and timeout;
-- allowed repair action IDs and constrained arguments;
-- verification probes;
-- retry count, backoff, cooldown, and circuit-breaker limits;
-- incident severity and notification policy.
+Implemented now:
 
-Secret values are referenced from protected environment or credential files,
-not embedded in normal configuration, command lines, incidents, or logs.
+- typed models and YAML validation;
+- normalized, redacted configuration display;
+- deterministic planning-only output;
+- no-op adapter and action boundaries;
+- automated tests.
 
-## Safety Invariants
+Modeled but not operational:
 
-- Dry-run is the initial and default deployment mode.
-- Unknown targets and actions are denied.
-- A repair cannot address a target absent from configuration.
-- Commands use argument arrays, fixed executables, timeouts, and no shell.
-- File writes use confined paths and atomic replacement where appropriate.
-- Backups, if supported later, are bounded, permission-controlled, and never
-  imported from the private source.
-- Verification is mandatory before reporting recovery.
-- Retry exhaustion opens a circuit and requires an explicit policy transition.
-- Notifications are optional and cannot change repair decisions.
+- monitoring, detection, repairs, verification, rollback, incidents on disk,
+  notifications, plugins, installers, deployment, and code repair.
+
+Phase 2 performs no systemd, process, file-health, socket, HTTP, subprocess,
+notification, vulnerability scan, package update, or repair operation.
+
+## Platform and Language Independence
+
+The initial core is Python, but applications remain in their native language.
+Adapters operate at generic boundaries:
+
+- `systemd_service`, `systemd_timer`, `process`, and `pid_file`;
+- `tcp`, `http`, and `executable_check`;
+- `file`, `json_file`, `yaml_file`, and `toml_file`;
+- `database`, `container`, `kubernetes`, `windows_service`, and `plugin`.
+
+Linux is the first planned operational platform. Windows services, Docker,
+Kubernetes, cloud VMs, on-premise servers, websites, APIs, databases, and
+background workers are represented as future extension points.
+
+## Core Components
+
+1. **Configuration loader** validates all settings without resolving secrets.
+2. **Typed target models** describe observations at generic application and OS
+   boundaries.
+3. **Reliability and security categories** normalize future findings.
+4. **Policy models** allow only observe, recommend, approval-required, or
+   narrowly allowlisted automatic modes.
+5. **Planner** describes configured targets and policy modes without execution.
+6. **Redaction** removes credential values and sensitive references from
+   display output and future incident/log boundaries.
+7. **Incident model** records lifecycle status, sanitized evidence, proposed
+   action, approval, verification, rollback, and notification outcomes.
+8. **Notification protocols** isolate provider failure from core decisions.
+9. **Plugin protocol** reserves a versioned, sanitized JSON boundary.
+10. **Test harness** prohibits live subprocess, network, systemd, notification,
+    and repair behavior.
+
+## Finding and Incident Lifecycle
+
+The status model distinguishes:
+
+- suspected, detected, and confirmed;
+- proposed repair and awaiting approval;
+- approved or automatically permitted repair;
+- repair attempted, successful, or unsuccessful;
+- verification successful or failed;
+- rollback completed;
+- manual intervention required.
+
+Incident evidence must be necessary, structured, and sanitized. It must not
+contain secrets, full credentials, full private source files, or unnecessary
+customer information.
+
+## Safe Repair Policies
+
+Supported policy modes are:
+
+- `observe_only`
+- `recommend`
+- `require_approval`
+- `auto_repair_low_risk`
+- `auto_repair_allowlisted`
+
+There is no unrestricted automatic mode. Future automatic repair requires
+target and action allowlists, least privilege, pre-repair evidence, retry
+limits, cooldowns, backup or rollback, post-repair verification, rollback after
+failed verification, incident records, and customer notification.
+
+## Code-Repair Safety Pipeline
+
+The future model is:
+
+1. Detect a reproducible failure.
+2. Record sanitized evidence.
+3. Identify an approved repository and branch.
+4. Preserve the current commit and deployment version.
+5. Create an isolated temporary workspace.
+6. Generate a proposed patch.
+7. Produce a human-readable diff.
+8. Run configured tests.
+9. Run linters.
+10. Run type checks.
+11. Run approved security checks.
+12. Reject patches that fail required checks.
+13. Require customer approval unless a narrowly defined low-risk allowlist
+    permits automatic use.
+14. Deploy through an approved mechanism.
+15. Verify application health.
+16. Roll back when verification fails.
+17. Record and report the complete result.
+
+ShieldMendAi must never silently rewrite arbitrary production code. Phase 2
+does not generate, apply, commit, deploy, or roll back code.
+
+## Notification Architecture
+
+Future channels include Telegram, email, SMS, webhooks, and local structured
+incident files. Credentials are environment references such as `token_env`,
+`password_env`, or `url_env`; they are never resolved by Phase 2.
+
+Channels can be selected by severity and have independent retry settings.
+Provider failures must be isolated and must not crash or alter the future
+recovery engine. No delivery adapter is implemented in Phase 2.
+
+## Plugin Boundary
+
+Future external plugins may communicate through versioned sanitized JSON over
+standard input and output. Requests and responses declare schema versions,
+request IDs, target IDs, capabilities, timeouts, sanitized parameters, results,
+and errors.
+
+Plugins require explicit allowlisting and capability declarations. They receive
+no direct secrets, cannot use unrestricted shell execution, and cannot bypass
+core policy. External plugin execution is not implemented in Phase 2.
+
+## Self-Hosted Isolation
+
+Customers install ShieldMendAi on their own systems. Configuration, credential
+references, incidents, repositories, notification destinations, and
+application metadata remain isolated per installation. The design introduces
+no mandatory cloud service, shared customer database, shared credential,
+automatic telemetry, or automatic upload.
+
+## Exact Phase 3 Task
+
+Implement read-only observation interfaces and fake test adapters for systemd,
+file, process, fixed executable, HTTP, and TCP targets. Normalize observations
+without adding repairs, notifications, vulnerability scanning, or live
+production access.

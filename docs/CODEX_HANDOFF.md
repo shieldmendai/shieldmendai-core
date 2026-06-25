@@ -1,33 +1,39 @@
 # Codex Handoff
 
 - Product name: ShieldMendAi
-- Objective: extract reusable monitoring and self-healing concepts into a clean,
-  public, standalone project without exposing or changing private systems.
-- Workspace path: `/root/ShieldMendAi`
-- Read-only source path: `/root/newbasebot`
-- Current phase: Phase 1 — read-only inventory and architecture, complete
-- Completed work: repository safety preflight; targeted source and systemd
-  discovery; sanitized source inventory; architecture; security boundaries;
-  ten-phase deployment path plus explicit legacy-retirement phase; dedicated
-  server plan; manifest; read-only resume script; README and ignore hardening.
-- Work in progress: none; stop after the Phase 1 metadata checkpoint.
-- Exact next task: in Phase 2, create the minimal `shieldmendai` Python package,
-  typed configuration schema, and dry-run CLI skeleton without live monitors or
-  repair execution.
-- Blockers: none for Phase 2. Phase 1 systemd D-Bus access was unavailable in
-  the sandbox, so discovery used read-only unit files under
-  `/etc/systemd/system`.
-- Safety restrictions: never modify the private source; never expose or copy
-  credentials, wallets, trading logic, logs, reports, state, backups, databases,
-  deny/quarantine data, or user data; never perform systemd write actions;
-  never push without explicit authorization and a clean safety scan.
-- Last checks and tests: manifest JSON parse; Bash syntax check; resume script;
-  required-file check; Git whitespace/diff check; repository-only credential
-  pattern and prohibited-artifact scan; expected-reference review; unchanged
-  SHA-256 verification for 13 source files and 16 systemd definitions.
-- Last local commit hash: `e3d89ecf8bbb0d8b94ff15a24a21e4bc3eaafeb2`
-- Remote status: `origin` fetch and push URLs match the official
-  `shieldmendai/shieldmendai-core` repository; local branch has no configured
-  upstream and started from the locally known `origin/main`.
-- Push status: not pushed; pushing is prohibited during this Phase 1 run.
-- UTC timestamp: 2026-06-25T04:09:27Z
+- Workspace: `/root/ShieldMendAi`
+- Current branch: `codex/extraction-phase-2`
+- Current phase: Phase 2 — safe standalone framework and dry-run CLI
+- Completed work: installable `shieldmendai` package; typed configuration,
+  reliability, security, lifecycle, repair-policy, incident, notification,
+  plugin, and code-repair workflow models; recursive redaction; YAML validation;
+  planning-only CLI; safe language-independent example; development
+  documentation; automated tests.
+- Deferred work: all live adapters, monitoring, process inspection, systemd
+  access, network access, incident persistence, repairs, verification, rollback,
+  notifications, vulnerability scanning, code modification, deployment, and
+  installation services.
+- Tests performed: 34 `unittest` tests covering imports, CLI, positive and
+  negative validation, credential rejection, redaction, dry-run planning,
+  prohibited live-operation boundaries, incident serialization, plugin/code
+  workflow data models, naming, and language-independent examples; Python
+  compilation; package wheel build; CLI smoke tests.
+- Safety checks performed: clean Phase 1 baseline; official origin; Phase 1
+  local/remote ref match; no private source reopened; implementation prohibited
+  string review; tracked-file credential and artifact scans; Git diff and
+  whitespace review; resume check; manifest validation; no service or timer
+  write action.
+- Last commit hash: `870d05f1c8c88b01a49c4c0e9dbef944c9f33c79`
+- Remote branch: Phase 2 branch not yet pushed; Phase 1 is available at
+  `origin/codex/extraction-phase-1`.
+- Push status: pending Phase 2 validation and local checkpoint.
+- Blockers: none.
+- Exact Phase 3 task: implement read-only observation interfaces and fake test
+  adapters for systemd, file, process, fixed executable, HTTP, and TCP targets;
+  normalize observations without repairs, notifications, vulnerability scans,
+  or production access.
+- Safety restrictions: preserve the private source as read-only; never expose
+  credentials or private operational data; never add unrestricted shell
+  execution; never perform live host or network operations without a later
+  explicitly authorized phase.
+- UTC timestamp: 2026-06-25T04:56:35Z

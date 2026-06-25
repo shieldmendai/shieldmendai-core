@@ -59,3 +59,17 @@ were excluded from content review. No private source file was copied.
 - bounded retries, cooldowns, circuit breakers, and post-repair verification;
 - secret files readable only by the service identity;
 - no access to unrelated trading directories or wallet material.
+
+## Phase 2 Enforcement
+
+- Configuration parsing is local and does not resolve environment variables.
+- `dry_run` must be true.
+- Direct credential values, authenticated URLs, unrestricted shell command
+  strings, private-source paths, and legacy private unit names are rejected.
+- The planner performs no subprocess, socket, HTTP, process, systemd,
+  notification, vulnerability-scan, or repair action.
+- Display output recursively redacts secret-like fields and credential
+  references.
+- The example uses reserved `.invalid` domains and placeholder environment
+  variable names only.
+- Tests mock or prohibit live operation boundaries.

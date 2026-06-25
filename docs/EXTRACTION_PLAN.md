@@ -23,14 +23,17 @@ performed only when explicitly authorized and only to the official repository.
 
 ## Phase 2 — Standalone ShieldMendAi framework
 
+- Status: complete on `codex/extraction-phase-2`.
 - Goal: create the minimal `shieldmendai` package and typed configuration
-  boundaries, with no live repair behavior.
-- Outputs: package skeleton, configuration models, dry-run CLI, and test layout.
-- Tests: imports, configuration validation, CLI help, and dry-run smoke tests.
+  boundaries, with no live monitoring or repair behavior.
+- Outputs: installable package, typed configuration and status models,
+  redaction, dry-run CLI, safe example, and automated tests.
+- Tests: imports, schema validation, negative validation cases, redaction, CLI
+  smoke tests, planning-only guards, and repository safety checks.
 - Stop conditions: any dependency on private paths, unit names, code, or data.
 - Security review: confirm examples contain placeholders only and configuration
   never logs secret values.
-- Git checkpoint: commit the framework and passing tests.
+- Git checkpoint: `feat: add safe ShieldMendAi framework and dry-run CLI`.
 
 ## Phase 3 — Generic monitoring and detection
 

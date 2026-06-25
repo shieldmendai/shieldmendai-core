@@ -1,0 +1,164 @@
+global:
+  schema_version: "1.0"
+  installation_name: example-installation
+  application_name: Example Application Portfolio
+  environment: staging
+  dry_run: true
+  poll_interval_seconds: 60
+  incident_directory: /var/lib/shieldmendai/incidents
+  log_level: INFO
+  default_policy_mode: observe_only
+  default_retry_limit: 2
+  default_cooldown_seconds: 300
+  default_verification_delay_seconds: 15
+
+repair_policies:
+  - id: observe
+    mode: observe_only
+    allowed_actions:
+      - no_action
+      - collect_evidence
+  - id: recommend-only
+    mode: recommend
+    allowed_actions:
+      - collect_evidence
+      - notify_only
+      - recommend_restart
+      - recommend_file_restore
+
+notification_channels:
+  - id: local-incidents
+    type: local_file
+    enabled: true
+    severities: [info, low, medium, high, critical]
+    retry_limit: 0
+    settings:
+      directory: /var/lib/shieldmendai/incidents
+  - id: operations-telegram
+    type: telegram
+    enabled: false
+    severities: [high, critical]
+    retry_limit: 2
+    settings:
+      token_env: SHIELDMENDAI_TELEGRAM_TOKEN
+      chat_id_env: SHIELDMENDAI_TELEGRAM_CHAT_ID
+  - id: operations-email
+    type: email
+    enabled: false
+    severities: [high, critical]
+    retry_limit: 2
+    settings:
+      provider_type: smtp
+      host: smtp.example.invalid
+      username_env: SHIELDMENDAI_EMAIL_USERNAME
+      password_env: SHIELDMENDAI_EMAIL_PASSWORD
+      from_address: shieldmendai@example.invalid
+      recipients: [operations@example.invalid]
+  - id: operations-sms
+    type: sms
+    enabled: false
+    severities: [critical]
+    retry_limit: 1
+    settings:
+      provider_name: example-provider
+      account_id_env: SHIELDMENDAI_SMS_ACCOUNT_ID
+      token_env: SHIELDMENDAI_SMS_TOKEN
+      from_number_env: SHIELDMENDAI_SMS_FROM_NUMBER
+      recipient_envs: [SHIELDMENDAI_SMS_RECIPIENT]
+  - id: operations-webhook
+    type: webhook
+    enabled: false
+    severities: [medium, high, critical]
+    retry_limit: 2
+    settings:
+      url_env: SHIELDMENDAI_WEBHOOK_URL
+      signing_secret_env: SHIELDMENDAI_WEBHOOK_SIGNING_SECRET
+      timeout_seconds: 5
+
+notification_policies:
+  - id: local-only
+    channels: [local-incidents]
+  - id: operations
+    channels:
+      - local-incidents
+      - operations-telegram
+      - operations-email
+      - operations-sms
+      - operations-webhook
+
+targets:
+  - id: web-service
+    display_name: Generic Linux Web Service
+    adapter_type: systemd_service
+    enabled: true
+    severity: high
+    monitoring:
+      unit: example-web.service
+      expected_state: active
+      restart_loop_threshold: 3
+      verification_delay_seconds: 15
+    repair_policy: recommend-only
+    notification_policy: operations
+    tags: [linux, web]
+
+  - id: node-api
+    display_name: Node.js API Health Endpoint
+    adapter_type: http
+    enabled: true
+    severity: high
+    monitoring:
+      url: https://api.example.invalid/health
+      method: GET
+      expected_status_codes: [200]
+      timeout_seconds: 5
+      tls_verify: true
+      response_match: healthy
+      credential_env: SHIELDMENDAI_NODE_API_CREDENTIAL
+    repair_policy: observe
+    notification_policy: operations
+    tags: [nodejs, api]
+
+  - id: java-service
+    display_name: Java TCP Service
+    adapter_type: tcp
+    enabled: true
+    severity: medium
+    monitoring:
+      host: service.example.invalid
+      port: 8443
+      timeout_seconds: 5
+    repair_policy: observe
+    notification_policy: local-only
+    tags: [java, tcp]
+
+  - id: application-state
+    display_name: Generic JSON State File
+    adapter_type: json_file
+    enabled: true
+    severity: medium
+    monitoring:
+      path: /srv/example-app/state/health.json
+      required: true
+      freshness_threshold_seconds: 300
+      structured_format: json
+      expected_permissions: "0640"
+      expected_owner: example-app
+      expected_group: example-app
+      checksum_policy: report_change
+    repair_policy: observe
+    notification_policy: local-only
+    tags: [json, state]
+
+  - id: application-self-test
+    display_name: Generic Application Self-Test
+    adapter_type: executable_check
+    enabled: true
+    severity: high
+    monitoring:
+      executable_path: /usr/local/bin/example-app-self-test
+      arguments: ["--format", "json"]
+      timeout_seconds: 10
+      expected_exit_codes: [0]
+    repair_policy: observe
+    notification_policy: operations
+    tags: [language-independent, self-test]

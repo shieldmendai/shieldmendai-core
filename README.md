@@ -1,64 +1,105 @@
-# shieldmendai-core
-The self-healing shield for your server.
-## Roadmap
+# ShieldMendAi
 
-### Phase 1 — Core Guardian
-- Monitor server services
-- Detect failed processes
-- Restart broken services
-- Send Telegram alerts
-- Keep repair logs
+ShieldMendAi is a self-hosted reliability and security recovery platform under
+active development. Its long-term mission is to detect application and
+infrastructure failures, determine a policy-approved response, verify recovery,
+roll back failed actions, and report sanitized incidents.
 
-### Phase 2 — Self-Healing
-- Diagnose common failures
-- Apply safe repair steps
-- Create backups before changes
-- Verify services after repair
-- Learn from past incidents
+ShieldMendAi does not guarantee detection or prevention of every vulnerability,
+attack, application failure, or unsafe repair condition.
 
-### Phase 3 — Installer
-- One-command install
-- Telegram setup prompts
-- User config file
-- Systemd service setup
-- Safe update process
+## Phase 2 Status
 
-### Phase 4 — Public Release
-- Documentation
-- Example configs
-- Security checklist
-- First stable release
+Phase 2 provides an installable Python framework for configuration validation
+and dry-run planning. It does not monitor systems, inspect processes, contact
+systemd, open network connections, send notifications, repair files, restart
+services, scan vulnerabilities, modify source code, or deploy anything.
 
-## Vision
+Implemented:
 
-ShieldMendAI is a reusable AI-powered server guardian that monitors systems, detects failures, attempts safe repairs, alerts owners through Telegram, and learns from previous incidents.
+- typed configuration, target, policy, incident, status, and notification models;
+- reliability and security category enums;
+- recursive redaction utilities;
+- YAML configuration validation;
+- planning-only CLI output;
+- safe language-independent example configuration;
+- automated safety and validation tests.
 
-Users install ShieldMendAI on their own servers, provide their own configuration and credentials, and maintain full control of their infrastructure.
+Modeled only:
 
-Goal: Reduce downtime through safe automation and self-healing workflows.
+- Linux, Windows, container, Kubernetes, database, and plugin adapters;
+- controlled repairs, verification, rollback, and notifications;
+- code-repair workflow;
+- Telegram, email, SMS, webhook, and local incident delivery.
 
-## Development Status
+## Language-Independent Design
 
-ShieldMendAi is in Phase 1: read-only inventory and architecture. This phase
-documents reusable monitoring and recovery concepts from a stopped private
-system without copying private code, credentials, trading logic, state, or
-operational data.
+The core is currently Python, but protected applications do not need to be
+Python applications. Targets are described through operating-system and
+application boundaries such as systemd units, processes, PID files, TCP,
+HTTP, structured files, fixed executable checks, databases, containers,
+Kubernetes resources, Windows services, and future plugins.
 
-No standalone recovery engine is implemented yet. The next phase will create
-the minimal `shieldmendai` package and configuration schema in dry-run mode.
+ShieldMendAi is Linux-first. Windows, Docker, Kubernetes, cloud VM, on-premise,
+website, API, database, and background-worker support are future capabilities,
+not completed integrations.
 
-Development records:
+## Development Installation
 
-- [Codex handoff](docs/CODEX_HANDOFF.md)
-- [Extraction plan](docs/EXTRACTION_PLAN.md)
-- [Sanitized source inventory](docs/SOURCE_INVENTORY.md)
+```bash
+python3 -m venv .venv
+. .venv/bin/activate
+python -m pip install -e .
+```
+
+The only runtime dependency is constrained to `PyYAML>=6.0,<7.0`.
+
+## Safe CLI
+
+```bash
+shieldmendai --version
+shieldmendai validate-config examples/shieldmendai.example.yaml
+shieldmendai plan examples/shieldmendai.example.yaml
+shieldmendai show-config examples/shieldmendai.example.yaml
+```
+
+`plan` is always planning-only in Phase 2. `show-config` redacts credential
+references and never resolves environment variables.
+
+Without an editable installation:
+
+```bash
+PYTHONPATH=src python3 -m shieldmendai.main --version
+```
+
+## Tests
+
+```bash
+PYTHONPATH=src python3 -m unittest discover -s tests -v
+```
+
+## Documentation
+
+- [Configuration and policies](docs/CONFIGURATION.md)
 - [Architecture](docs/ARCHITECTURE.md)
 - [Security boundaries](docs/SECURITY_BOUNDARIES.md)
+- [Extraction plan](docs/EXTRACTION_PLAN.md)
+- [Codex handoff](docs/CODEX_HANDOFF.md)
 - [Dedicated server plan](docs/DEDICATED_SERVER_PLAN.md)
 - [Extraction manifest](extraction_manifest.json)
 
-Run the read-only continuation check from the repository root:
+## Roadmap
 
-```bash
-scripts/resume_check.sh
-```
+1. Phase 1: sanitized inventory and architecture — complete.
+2. Phase 2: safe standalone framework and dry-run CLI — complete.
+3. Phase 3: generic read-only monitoring and detection adapters.
+4. Later phases: controlled repair, verification and loop protection,
+   incidents and notifications, installer, simulations, and deployment.
+
+The exact Phase 3 task is to implement read-only adapter interfaces and fake
+test adapters for systemd, file, process, command, HTTP, and TCP observations.
+No repair execution belongs in Phase 3.
+
+## License
+
+MIT

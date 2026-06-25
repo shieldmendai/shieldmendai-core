@@ -1,43 +1,40 @@
-# ShieldMendAI Installation
+# ShieldMendAi Development Installation
+
+ShieldMendAi is currently a Phase 2 planning framework. There is no production
+installer, systemd service, monitoring engine, or repair engine yet.
 
 ## Requirements
 
-- Ubuntu 22.04+
-- Root or sudo access
-- Internet connection
-- Telegram Bot Token
+- Python 3.10 or newer
+- `pip`
+- An isolated virtual environment
 
-## Quick Install
+## Editable Installation
 
 ```bash
 git clone https://github.com/shieldmendai/shieldmendai-core.git
 cd shieldmendai-core
-bash install.sh
+python3 -m venv .venv
+. .venv/bin/activate
+python -m pip install -e .
 ```
 
-## Configuration
-
-Edit:
-
-```text
-config.yaml
-```
-
-Add:
-
-- Telegram Bot Token
-- Telegram Chat ID
-- Services to monitor
-
-## Start
+## Validate the Example
 
 ```bash
-sudo systemctl start shieldmendai
-sudo systemctl enable shieldmendai
+shieldmendai validate-config examples/shieldmendai.example.yaml
+shieldmendai plan examples/shieldmendai.example.yaml
+shieldmendai show-config examples/shieldmendai.example.yaml
 ```
 
-## Verify
+These commands only parse, validate, normalize, redact, and describe
+configuration. They perform no live host or network operation.
+
+## Run Tests
 
 ```bash
-shieldmendai status
+PYTHONPATH=src python3 -m unittest discover -s tests -v
 ```
+
+Production installation, dedicated service users, protected credential files,
+and `shieldmendai-*.service` units are planned for later phases.
