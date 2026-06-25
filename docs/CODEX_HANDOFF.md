@@ -30,12 +30,15 @@
   reviews passed; manifest and resume checks passed.
 - Last implementation commit:
   `79ebf55b82217e0a21998c6206a91a6a95203f62`.
-- Remote branch: `origin/codex/extraction-phase-3` pending creation.
-- Push status: pending final safety review, commit, and authorized push; no
-  merge or force-push performed.
+- Documentation checkpoint:
+  `60dac532bc97635748e6d46f2f0ba2b94eba0fa6`.
+- Remote branch: `origin/codex/extraction-phase-3`, upstream tracking
+  configured.
+- Push status: Phase 3 implementation and checkpoint commits pushed
+  successfully; no merge or force-push performed.
 - Exact Phase 4 task: implement deny-by-default repair authorization and
   simulation-only executors for explicit user-configured allowlisted actions,
   retaining dry-run defaults and excluding arbitrary shell execution,
   production mutation, deployment, and notification delivery.
 - Blockers: none.
-- UTC timestamp: 2026-06-25T05:23:39Z
+- UTC timestamp: 2026-06-25T05:24:39Z
