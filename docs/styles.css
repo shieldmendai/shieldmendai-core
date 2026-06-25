@@ -774,3 +774,23 @@ summary {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
   .site-nav-backdrop { backdrop-filter: none; }
 }
+
+    
+/* SHIELDMENDAI MOBILE NAV LAYER FIX */
+@media (max-width: 1040px) {
+  .site-header {
+    z-index: 110 !important;
+  }
+
+  .site-nav-backdrop {
+    z-index: 100 !important;
+  }
+
+  .site-nav {
+    position: fixed !important;
+    top: 84px !important;
+    left: 14px !important;
+    right: 14px !important;
+    z-index: 120 !important;
+  }
+}
