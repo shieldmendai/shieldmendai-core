@@ -32,7 +32,8 @@
   remains deterministic simulation.
 - Implementation commit:
   `f7805c227800f026cfc96d4f32927ac428a3928e`.
-- Documentation checkpoint: pending.
+- Documentation checkpoint:
+  `aac48d592a7d9b4e9fcb3f816eb2fda38a9558a1`.
 - Remote branch: `origin/codex/extraction-phase-5` pending push.
 - Push status: not yet pushed.
 - Exact Phase 6 task: add redacted local incident records, retention controls,
@@ -40,4 +41,4 @@
   disabled by default. Do not enable production recovery, live observers,
   mandatory network access, or deployment.
 - Blockers: none.
-- UTC timestamp: 2026-06-25T16:43:03Z
+- UTC timestamp: 2026-06-25T16:44:11Z
