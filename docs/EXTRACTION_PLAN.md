@@ -67,6 +67,7 @@ performed only when explicitly authorized and only to the official repository.
 
 ## Phase 5 — Recovery verification and loop protection
 
+- Status: complete on `codex/extraction-phase-5`.
 - Goal: add deterministic post-repair verification state transitions and
   prevent repeated or escalating repair loops without production mutation.
 - Outputs: post-repair probes, cooldowns, retry budgets, backoff, circuit

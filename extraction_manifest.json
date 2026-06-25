@@ -3,28 +3,22 @@
   "product_name": "ShieldMendAi",
   "workspace_path": "/root/ShieldMendAi",
   "source_path": "/root/newbasebot",
-  "updated_at_utc": "2026-06-25T16:16:58Z",
-  "current_phase": "Phase 4 - deny-by-default repair authorization and simulation-only execution complete",
+  "updated_at_utc": "2026-06-25T16:41:44Z",
+  "current_phase": "Phase 5 - deterministic recovery verification and loop protection complete",
   "files_created": [
-    "src/shieldmendai/repair.py",
-    "tests/test_phase4.py",
-    "docs/REPAIRS.md",
-    "examples/repair/config.yaml",
-    "examples/repair/policy.yaml",
-    "examples/repair/request.yaml",
-    "examples/repair/scenario-catalog.yaml",
-    "examples/repair/scenarios/success.yaml",
-    "examples/repair/scenarios/verification-failure.yaml",
-    "examples/repair/scenarios/rollback-failure.yaml"
+    "src/shieldmendai/recovery.py",
+    "tests/test_phase5.py",
+    "docs/RECOVERY.md",
+    "examples/recovery/policy.yaml",
+    "examples/recovery/scenario-catalog.yaml",
+    "examples/recovery/scenarios/first-success.yaml",
+    "examples/recovery/scenarios/retry-success.yaml",
+    "examples/recovery/scenarios/rollback-success.yaml",
+    "examples/recovery/scenarios/rollback-failure.yaml"
   ],
   "files_changed": [
-    "src/shieldmendai/models.py",
     "src/shieldmendai/errors.py",
-    "src/shieldmendai/config.py",
     "src/shieldmendai/cli.py",
-    "src/shieldmendai/__init__.py",
-    "tests/test_phase2.py",
-    "pyproject.toml",
     "README.md",
     "INSTALL.md",
     "PROJECT_STATUS.md",
@@ -36,85 +30,134 @@
     "extraction_manifest.json"
   ],
   "implemented_features": [
-    "typed repair requests, policies, authorization contexts, decisions, reasons, plans, preconditions, approvals, retry and cooldown states",
-    "typed verification plans, rollback plans, simulated results, attempt records, and audit events",
-    "deny-by-default authorization with sanitized structured reason codes",
-    "exact target, adapter, action, and target/action allowlists",
-    "risk classification with unknown risk prohibited",
-    "approval matching, expiry, revocation, scope, and one-time consumption validation",
-    "deterministic simulation-only repair executor with production execution unavailable",
-    "verification-failure and rollback-failure simulation paths",
-    "Phase 4 CLI inspection, authorization, planning, and simulation commands",
-    "fictional repair policy, request, scenario catalog, and executable scenarios",
-    "Phase 2 and Phase 3 regression preservation"
+    "typed deterministic recovery controller, policy, transition, attempt, verification, rollback, audit, outcome, and state models",
+    "explicit lifecycle transition allowlist with terminal-state protection",
+    "finite repair, verification, rollback, incident, target/action, and half-open attempt controls",
+    "deterministic cooldown and fixed, linear, exponential, and bounded exponential backoff",
+    "rolling failure windows and closed, open, and half-open circuit behavior",
+    "exact duplicate plan, request/action, and attempt identifier protection",
+    "deterministic verification evaluation and rollback decision logic",
+    "manual-intervention escalation and loop-protection reason codes",
+    "versioned JSON-safe recovery-state serialization and validation",
+    "Phase 5 CLI policy/state/circuit inspection, backoff calculation, and recovery simulation",
+    "fictional deterministic Phase 5 scenario catalog",
+    "Phase 2, Phase 3, and Phase 4 regression preservation"
   ],
-  "repair_policy_modes": [
-    "observe_only",
-    "recommend",
-    "require_approval",
-    "auto_repair_low_risk",
-    "auto_repair_allowlisted"
+  "recovery_states": [
+    "idle",
+    "finding_detected",
+    "authorization_required",
+    "authorization_denied",
+    "authorized",
+    "waiting_for_cooldown",
+    "ready_for_attempt",
+    "simulated_repair_running",
+    "awaiting_verification",
+    "verification_succeeded",
+    "verification_failed",
+    "retry_scheduled",
+    "rollback_required",
+    "simulated_rollback_running",
+    "rollback_succeeded",
+    "rollback_failed",
+    "circuit_open",
+    "manual_intervention_required",
+    "resolved",
+    "abandoned"
   ],
-  "simulated_repair_actions": [
-    "no_action",
-    "collect_evidence",
-    "notify_only",
-    "restart_allowlisted_service",
-    "restore_known_good_file",
-    "apply_allowlisted_permission_fix",
-    "rollback_deployment",
-    "request_manual_intervention"
+  "retry_policy_features": [
+    "finite repair, verification, and rollback budgets",
+    "unknown outcomes default nonretryable",
+    "per-target and per-incident counting",
+    "bounded retry window",
+    "code-patch action remains prohibited"
   ],
-  "authorization_rules": [
-    "target exists and is enabled",
-    "target ID, adapter, action, and exact target/action pair are allowlisted",
-    "finding category, severity, and confidence satisfy policy",
-    "risk does not exceed policy maximum",
-    "required approval is valid, matching, unexpired, unrevoked, and unused",
-    "retry budget remains and cooldown elapsed",
-    "required evidence, verification, and rollback plans exist",
-    "request is unexpired and unconsumed",
-    "simulation is true and production execution is unavailable",
-    "unknown, missing, invalid, duplicate, wildcard, or ambiguous data denies authorization"
+  "cooldown_features": [
+    "supplied deterministic timestamps",
+    "per_target, per_incident, per_action, and per_target_action scopes",
+    "next eligible attempt timestamp",
+    "bypass always disabled",
+    "no sleep"
+  ],
+  "backoff_features": [
+    "fixed",
+    "linear",
+    "exponential",
+    "bounded_exponential",
+    "jitter disabled",
+    "finite bounded calculations and overflow protection"
+  ],
+  "circuit_breaker_features": [
+    "closed, open, and half_open states",
+    "rolling failure threshold",
+    "deterministic open and reset timestamps",
+    "bounded half-open attempts",
+    "successful half-open verification closes circuit",
+    "failed half-open attempt reopens circuit"
+  ],
+  "verification_features": [
+    "pending, passed, failed, inconclusive, skipped, timed_out, and unsupported statuses",
+    "required evidence completeness",
+    "adapter compatibility",
+    "missing and inconclusive verification fail closed",
+    "successful verification required for resolution"
+  ],
+  "rollback_features": [
+    "availability, known-good reference, approval, risk, budget, and circuit inputs",
+    "simulated rollback success requires post-rollback verification",
+    "bounded rollback retry",
+    "missing or exhausted rollback escalates to manual intervention"
+  ],
+  "loop_protection_features": [
+    "maximum attempts per incident and target/action",
+    "verification and rollback attempt limits",
+    "cooldown and backoff",
+    "circuit breaker",
+    "duplicate plan and request rejection",
+    "terminal manual intervention",
+    "bounded half-open attempts",
+    "no recursion or unbounded queue generation"
   ],
   "tests_run": [
-    "PYTHONPATH=src python3 -m unittest discover -s tests -v - 91 tests passed",
-    "PYTHONPATH=src python3 -m unittest tests.test_phase4 -v - 25 grouped Phase 4 tests passed",
+    "Phase 4 baseline: PYTHONPATH=src python3 -m unittest discover -s tests -v - 91 tests passed",
+    "Phase 5 focused: PYTHONPATH=src python3 -m unittest tests.test_phase5 -q - 27 tests passed",
+    "PYTHONPATH=src python3 -m unittest discover -s tests -v - 118 tests passed",
     "python3 -m compileall -q src tests",
-    "Phase 4 CLI policy inspection, authorization, planning, success simulation, verification-failure simulation, and rollback-failure simulation",
-    "python3 -m pip wheel --no-deps --no-build-isolation --wheel-dir /tmp/shieldmendai-phase4-wheel . - built shieldmendai-0.4.0-py3-none-any.whl"
+    "Phase 5 CLI policy inspection, backoff calculation, success, retry, post-rollback verification, manual-intervention, state inspection, and circuit inspection paths",
+    "python3 -m pip wheel --no-deps --no-build-isolation - built shieldmendai-0.4.0-py3-none-any.whl"
   ],
   "checks_run": [
     "exact official origin verification and fetch",
-    "clean Phase 3 baseline and matching local/remote Phase 3 commit",
-    "Phase 3 resume check, 66 baseline tests, compilation, and baseline wheel build",
+    "clean Phase 4 baseline and matching local/remote Phase 4 commit",
+    "Phase 4 resume check, compilation, and baseline wheel build",
+    "focused Phase 5 policy, lifecycle, retry, cooldown, backoff, circuit, verification, rollback, serialization, CLI, and prohibited-operation tests",
     "complete Git diff and whitespace review",
     "tracked secret-category path scan without printing values",
     "implementation and example prohibited-pattern scan",
-    "patched live-operation boundaries in tests",
     "manifest JSON validation",
-    "Phase 4 wheel build"
+    "final resume check",
+    "Phase 5 wheel build"
   ],
   "prohibited_capabilities": [
     "real service restart or systemd access",
     "process termination, spawning, or inspection",
-    "subprocess, shell, arbitrary command, eval, or exec execution",
+    "subprocess, shell, arbitrary command, eval, exec, or pickle execution",
     "file restoration or monitored-target writes",
     "permission or ownership mutation",
     "deployment or customer repository mutation",
     "package, firewall, certificate, database, Docker, Kubernetes, or Windows service mutation",
     "socket, DNS, HTTP, TCP, remote telemetry, or vulnerability scanning",
     "Telegram, email, SMS, webhook, or other notification delivery",
-    "production repair execution or dedicated-server deployment"
+    "production recovery execution or dedicated-server deployment",
+    "real-time sleeps, recursive recovery, or unbounded retry loops"
   ],
-  "source_safety_result": "passed; Phase 4 did not access, inspect, hash, search, copy, or modify /root/newbasebot and used only sanitized repository records",
-  "implementation_commit": "85888b7f8a62cbc5dc63ce602e5985209fdf8b69",
-  "documentation_checkpoint": "9a07dd36a89a75e7851f3462ea4e58e7ebad54de",
-  "last_commit": "9a07dd36a89a75e7851f3462ea4e58e7ebad54de",
-  "remote_status": "origin is exactly https://github.com/shieldmendai/shieldmendai-core; codex/extraction-phase-4 tracks origin/codex/extraction-phase-4",
-  "push_status": "Phase 4 implementation and checkpoint commits pushed successfully without merge or force-push",
+  "source_safety_result": "passed; Phase 5 did not access, inspect, hash, search, copy, or modify /root/newbasebot and used only sanitized repository records",
+  "last_commit": "pending",
+  "remote_status": "origin is exactly https://github.com/shieldmendai/shieldmendai-core; Phase 5 branch is local and not yet pushed",
+  "push_status": "pending",
   "next_actions": [
-    "in separately authorized Phase 5, implement deterministic recovery verification and loop protection without production mutation"
+    "commit and push only codex/extraction-phase-5",
+    "in separately authorized Phase 6, add redacted incident records and optional alert interfaces with delivery disabled"
   ],
   "blockers": []
 }

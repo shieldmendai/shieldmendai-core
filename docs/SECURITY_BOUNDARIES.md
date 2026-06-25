@@ -95,3 +95,19 @@ were excluded from content review. No private source file was copied.
   plans and returns deterministic records.
 - No service, file, permission, ownership, deployment, code, process, network,
   notification, repository, or dedicated-server mutation is implemented.
+
+## Phase 5 Enforcement
+
+- Recovery accepts only authorized Phase 4 simulation plans and supplied
+  fictional outcomes.
+- Retry, verification, rollback, half-open, cooldown, and backoff behavior is
+  finite and deterministic; no sleep, recursive execution, or unbounded queue
+  exists.
+- Exact plan, request/action, and attempt identifiers prevent replay.
+- Versioned recovery state rejects unknown fields, invalid states, impossible
+  combinations, production mode, and credential-like material.
+- Failure windows store only typed timestamps and identifiers, never logs or
+  full evidence.
+- No live repair, verification, rollback, observer, service, process, file,
+  permission, deployment, network, notification, or repository operation is
+  implemented.

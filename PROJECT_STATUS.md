@@ -2,7 +2,7 @@
 
 ## Current Stage
 
-Phase 4 — deny-by-default repair authorization and simulation layer.
+Phase 5 — deterministic recovery verification and loop protection.
 
 ## Implemented
 
@@ -25,12 +25,18 @@ Phase 4 — deny-by-default repair authorization and simulation layer.
 - Exact target/action allowlists and risk thresholds
 - Deterministic simulation-only repair executor
 - Phase 4 repair CLI commands and stable exit codes
+- Explicit recovery lifecycle and validated transitions
+- Bounded repair, verification, and rollback budgets
+- Deterministic cooldown, backoff, failure windows, and circuit breakers
+- Duplicate plan/request suppression and deterministic attempt IDs
+- Verification evaluation, rollback decisions, and manual escalation
+- Versioned JSON-safe recovery snapshots and Phase 5 CLI commands
 
 ## Modeled Only
 
 - Production systemd, process, PID, TCP, HTTP, executable, and file adapters
 - Database, container, Kubernetes, Windows service, and plugin adapters
-- Production repairs, live verification, rollback execution, and persistence
+- Production repairs, live verification, rollback execution, and production persistence
 - Telegram, email, SMS, webhook, and local notification delivery
 - Isolated code-repair workflow
 
@@ -45,7 +51,6 @@ Phase 4 — deny-by-default repair authorization and simulation layer.
 
 ## Next Task
 
-Phase 5 will implement deterministic recovery verification and loop protection:
-bounded retries, cooldown/backoff, circuit breakers, rollback decision rules,
-and non-secret controller state. Production mutation and notification delivery
-remain unavailable.
+Phase 6 will add redacted local incident records, retention controls, notifier
+interfaces, and optional alert modeling. Delivery remains disabled by default,
+and production recovery remains unavailable.

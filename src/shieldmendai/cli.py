@@ -14,9 +14,12 @@ from .errors import (
     ConfigurationError,
     RepairAuthorizationError,
     RepairValidationError,
+    RecoveryTransitionError,
+    RecoveryValidationError,
     ScenarioError,
     ShieldMendAiError,
     UnsafeObservationError,
+    UnsafeRecoveryError,
     UnsafeRepairError,
 )
 from .models import ObservationStatus, SimulatedRepairOutcome, to_primitive
@@ -33,6 +36,13 @@ from .repair import (
     load_repair_scenario,
 )
 from .redaction import redact, sanitize_message
+from .recovery import (
+    RecoveryController,
+    calculate_backoff,
+    load_recovery_policy,
+    load_recovery_scenario,
+    load_recovery_state,
+)
 from .scenarios import load_scenario
 
 
@@ -80,6 +90,31 @@ def build_parser() -> argparse.ArgumentParser:
     repair.add_argument("request_path")
     repair.add_argument("policy_path")
     repair.add_argument("scenario_path")
+    recovery_policy = commands.add_parser(
+        "inspect-recovery-policy", help="validate and summarize a recovery policy"
+    )
+    recovery_policy.add_argument("policy_path")
+    recovery_state = commands.add_parser(
+        "inspect-recovery-state", help="validate and summarize a recovery state snapshot"
+    )
+    recovery_state.add_argument("state_path")
+    recovery = commands.add_parser(
+        "simulate-recovery", help="run deterministic simulation-only recovery control"
+    )
+    recovery.add_argument("config_path")
+    recovery.add_argument("request_path")
+    recovery.add_argument("repair_policy_path")
+    recovery.add_argument("recovery_policy_path")
+    recovery.add_argument("scenario_path")
+    backoff = commands.add_parser(
+        "calculate-backoff", help="calculate deterministic recovery backoff"
+    )
+    backoff.add_argument("recovery_policy_path")
+    backoff.add_argument("attempt_number", type=int)
+    circuit = commands.add_parser(
+        "inspect-circuit", help="inspect circuit state without resetting it"
+    )
+    circuit.add_argument("state_path")
     return parser
 
 
@@ -90,6 +125,58 @@ def _print_json(value: object) -> None:
 def run(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     try:
+        if args.command == "inspect-recovery-policy":
+            policy = load_recovery_policy(args.policy_path)
+            print("RECOVERY POLICY INSPECTION ONLY — NO RECOVERY ACTION")
+            _print_json(to_primitive(policy))
+            return 0
+        if args.command in {"inspect-recovery-state", "inspect-circuit"}:
+            state = load_recovery_state(args.state_path)
+            if args.command == "inspect-circuit":
+                print("CIRCUIT INSPECTION ONLY — NO AUTOMATIC RESET")
+                _print_json(
+                    {
+                        "circuit_state": state.circuit_state.value,
+                        "circuit_opened_at": state.circuit_opened_at,
+                        "circuit_reset_at": state.circuit_reset_at,
+                        "failure_count": len(state.failure_records),
+                        "half_open_attempts": state.half_open_attempts,
+                        "simulation": True,
+                    }
+                )
+            else:
+                print("RECOVERY STATE INSPECTION ONLY — NO RECOVERY ACTION")
+                _print_json(state.to_safe_dict())
+            return 0
+        if args.command == "calculate-backoff":
+            policy = load_recovery_policy(args.recovery_policy_path)
+            print("DETERMINISTIC CALCULATION ONLY — NO SYSTEM CHANGES")
+            _print_json(
+                {
+                    "attempt_number": args.attempt_number,
+                    "delay_seconds": calculate_backoff(policy.backoff, args.attempt_number),
+                    "strategy": policy.backoff.strategy.value,
+                    "simulation": True,
+                }
+            )
+            return 0
+        if args.command == "simulate-recovery":
+            config = load_config(args.config_path)
+            repair_input = load_repair_input(args.request_path)
+            repair_policy = load_repair_policy(args.repair_policy_path)
+            context = authorization_context(config, repair_input, repair_policy)
+            decision = authorize_repair(repair_input.request, context)
+            if not decision.permitted:
+                print("RECOVERY DENIED — NO SYSTEM CHANGES")
+                _print_json(decision.to_safe_dict())
+                return 2
+            plan = create_repair_plan(repair_input.request, context, decision)
+            recovery_policy = load_recovery_policy(args.recovery_policy_path)
+            scenario = load_recovery_scenario(args.scenario_path)
+            result = RecoveryController(recovery_policy).simulate(plan, scenario)
+            print("SIMULATION ONLY — NO LIVE RECOVERY PERFORMED")
+            _print_json(to_primitive(result))
+            return result.exit_code
         if args.command == "list-repair-actions":
             print("SIMULATION ONLY — PRODUCTION REPAIR EXECUTION IS UNAVAILABLE")
             _print_json(action_catalog())
@@ -196,6 +283,15 @@ def run(argv: Sequence[str] | None = None) -> int:
     except UnsafeRepairError as error:
         print(f"Unsafe or unsupported repair: {sanitize_message(str(error))}", file=sys.stderr)
         return 4
+    except UnsafeRecoveryError as error:
+        print(f"Unsafe or unsupported recovery: {sanitize_message(str(error))}", file=sys.stderr)
+        return 4
+    except RecoveryTransitionError as error:
+        print(f"Recovery transition error: {sanitize_message(str(error))}", file=sys.stderr)
+        return 7
+    except RecoveryValidationError as error:
+        print(f"Recovery input error: {sanitize_message(str(error))}", file=sys.stderr)
+        return 1
     except RepairAuthorizationError as error:
         print(f"Repair denied: {sanitize_message(str(error))}", file=sys.stderr)
         return 2

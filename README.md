@@ -8,12 +8,12 @@ roll back failed actions, and report sanitized incidents.
 ShieldMendAi does not guarantee detection or prevention of every vulnerability,
 attack, application failure, or unsafe repair condition.
 
-## Phase 4 Status
+## Phase 5 Status
 
-Phase 4 adds deny-by-default repair authorization, typed approvals, exact
-allowlists, verification and rollback plans, deterministic repair simulation,
-and structured audit records. It retains all Phase 2 and Phase 3 configuration
-and observation behavior.
+Phase 5 adds deterministic recovery verification, explicit lifecycle
+transitions, bounded retries, cooldown and backoff, circuit breakers, rollback
+decisions, idempotency protection, and versioned non-secret controller state.
+It preserves all Phase 2–4 behavior.
 
 It does not monitor live systems, inspect processes, contact systemd, open
 network connections, execute commands, send notifications, repair files,
@@ -39,6 +39,12 @@ Implemented:
   audit events;
 - exact target, adapter, action, and target/action allowlists;
 - simulation-only repair planning and deterministic outcomes.
+- typed recovery policies, snapshots, transitions, attempts, verification
+  evaluations, rollback decisions, outcomes, and audit events;
+- fixed, linear, exponential, and bounded exponential backoff;
+- rolling failure windows, circuit breaking, duplicate suppression, and
+  manual-intervention escalation;
+- JSON-safe recovery-state serialization and inspection.
 
 Unavailable or modeled only:
 
@@ -85,6 +91,9 @@ shieldmendai inspect-repair-policy examples/repair/policy.yaml
 shieldmendai authorize-repair examples/repair/config.yaml examples/repair/request.yaml examples/repair/policy.yaml
 shieldmendai plan-repair examples/repair/config.yaml examples/repair/request.yaml examples/repair/policy.yaml
 shieldmendai simulate-repair examples/repair/config.yaml examples/repair/request.yaml examples/repair/policy.yaml examples/repair/scenarios/success.yaml
+shieldmendai inspect-recovery-policy examples/recovery/policy.yaml
+shieldmendai calculate-backoff examples/recovery/policy.yaml 2
+shieldmendai simulate-recovery examples/repair/config.yaml examples/repair/request.yaml examples/repair/policy.yaml examples/recovery/policy.yaml examples/recovery/scenarios/first-success.yaml
 ```
 
 `plan` remains planning-only. Simulation output is explicitly labeled and
@@ -108,6 +117,7 @@ PYTHONPATH=src python3 -m unittest discover -s tests -v
 - [Configuration and policies](docs/CONFIGURATION.md)
 - [Phase 3 simulation](docs/SIMULATION.md)
 - [Phase 4 repair authorization and simulation](docs/REPAIRS.md)
+- [Phase 5 deterministic recovery](docs/RECOVERY.md)
 - [Architecture](docs/ARCHITECTURE.md)
 - [Security boundaries](docs/SECURITY_BOUNDARIES.md)
 - [Extraction plan](docs/EXTRACTION_PLAN.md)
@@ -122,14 +132,14 @@ PYTHONPATH=src python3 -m unittest discover -s tests -v
 3. Phase 3: safe observation simulations and fixture checks — complete.
 4. Phase 4: deny-by-default controlled repair models and simulation-only
    allowlisted action execution — complete.
-5. Phase 5: recovery verification and loop protection in deterministic
-   simulation.
-6. Later phases: production adapters,
-   incidents and notifications, installer, simulations, and deployment.
+5. Phase 5: deterministic recovery verification and loop protection — complete.
+6. Phase 6: redacted incident records and optional alert interfaces.
+7. Later phases: production adapters, installer, expanded simulations, and
+   deployment.
 
-The exact Phase 5 task is to add bounded verification state transitions,
-retry/cooldown/backoff controls, circuit breakers, rollback decisions, and
-non-secret controller state without production mutation or notification.
+The exact Phase 6 task is to add redacted local incident records, retention
+controls, notifier interfaces, and optional outbound alert modeling with
+delivery disabled by default.
 
 ## License
 

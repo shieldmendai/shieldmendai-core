@@ -126,3 +126,12 @@ rules, supported deterministic states, normalized findings, and exit codes.
 See [Phase 4 repair authorization and simulation](REPAIRS.md) for repair
 request, approval, policy, verification, rollback, scenario, CLI, audit, and
 exit-code details. All repair execution remains deterministic simulation.
+
+## Phase 5 Recovery
+
+See [Phase 5 deterministic recovery](RECOVERY.md) for versioned recovery
+policies and state, lifecycle transitions, retry budgets, cooldown, fixed,
+linear and exponential backoff, circuit breakers, verification evaluation,
+rollback decisions, idempotency, loop protection, CLI commands, and exit
+codes. Cooldown bypass and jitter are disabled. All timestamps and outcomes
+are supplied deterministic data.

@@ -1,6 +1,6 @@
 # ShieldMendAi Development Installation
 
-ShieldMendAi is currently a Phase 4 simulation framework. There is no
+ShieldMendAi is currently a Phase 5 simulation framework. There is no
 production installer, systemd service, live monitoring engine, or repair
 engine yet.
 
@@ -34,6 +34,9 @@ shieldmendai inspect-repair-policy examples/repair/policy.yaml
 shieldmendai authorize-repair examples/repair/config.yaml examples/repair/request.yaml examples/repair/policy.yaml
 shieldmendai plan-repair examples/repair/config.yaml examples/repair/request.yaml examples/repair/policy.yaml
 shieldmendai simulate-repair examples/repair/config.yaml examples/repair/request.yaml examples/repair/policy.yaml examples/repair/scenarios/success.yaml
+shieldmendai inspect-recovery-policy examples/recovery/policy.yaml
+shieldmendai calculate-backoff examples/recovery/policy.yaml 2
+shieldmendai simulate-recovery examples/repair/config.yaml examples/repair/request.yaml examples/repair/policy.yaml examples/recovery/policy.yaml examples/recovery/scenarios/first-success.yaml
 ```
 
 These commands only parse, validate, normalize, redact, authorize, plan,

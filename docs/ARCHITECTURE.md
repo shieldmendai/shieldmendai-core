@@ -13,7 +13,7 @@ The product cannot guarantee protection of every server, detection of every
 vulnerability, prevention of every attack, repair of every code failure, or
 safe automatic repair in every situation.
 
-## Phase 4 Boundary
+## Phase 5 Boundary
 
 Implemented now:
 
@@ -30,13 +30,18 @@ Implemented now:
 - typed requests, approvals, authorization decisions, plans, preconditions,
   verification plans, rollback plans, attempts, results, and audit events;
 - deterministic simulation-only repair execution.
+- explicit deterministic recovery lifecycle and transition validation;
+- bounded retries, cooldown, backoff, failure windows, and circuit breakers;
+- duplicate-attempt and idempotency protection;
+- deterministic verification and rollback decisions;
+- versioned, JSON-safe, non-secret recovery state.
 
 Modeled but not operational:
 
 - production observation and repair, live verification and rollback, incidents on disk,
   notifications, plugins, installers, deployment, and code repair.
 
-Phase 4 performs no live systemd, process, socket, HTTP, DNS, subprocess,
+Phase 5 performs no live systemd, process, socket, HTTP, DNS, subprocess,
 notification, vulnerability scan, package update, or repair operation. Actual
 file reads are limited to explicit fixture or temporary roots.
 
@@ -176,9 +181,9 @@ application metadata remain isolated per installation. The design introduces
 no mandatory cloud service, shared customer database, shared credential,
 automatic telemetry, or automatic upload.
 
-## Exact Phase 5 Task
+## Exact Phase 6 Task
 
-Implement deterministic recovery verification and loop protection: bounded
-retry budgets, cooldowns, backoff, circuit breakers, post-repair state
-transitions, rollback decisions, and non-secret controller state. Do not add
-production mutation, live system access, notifications, or deployment.
+Add redacted local incident records, retention controls, notifier interfaces,
+and optional outbound alert modeling with delivery disabled by default. Do not
+enable production recovery, live observers, mandatory network access, or
+deployment.

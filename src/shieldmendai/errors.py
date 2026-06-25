@@ -31,3 +31,15 @@ class RepairAuthorizationError(ShieldMendAiError):
 
 class UnsafeRepairError(ShieldMendAiError):
     """Raised when a repair would cross the simulation-only boundary."""
+
+
+class RecoveryValidationError(ShieldMendAiError):
+    """Raised when deterministic recovery input or state is invalid."""
+
+
+class RecoveryTransitionError(ShieldMendAiError):
+    """Raised when a recovery lifecycle transition is invalid."""
+
+
+class UnsafeRecoveryError(ShieldMendAiError):
+    """Raised when recovery would cross the simulation-only boundary."""
