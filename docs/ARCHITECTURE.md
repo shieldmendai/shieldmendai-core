@@ -13,23 +13,28 @@ The product cannot guarantee protection of every server, detection of every
 vulnerability, prevention of every attack, repair of every code failure, or
 safe automatic repair in every situation.
 
-## Phase 2 Boundary
+## Phase 3 Boundary
 
 Implemented now:
 
 - typed models and YAML validation;
 - normalized, redacted configuration display;
 - deterministic planning-only output;
-- no-op adapter and action boundaries;
+- observer protocol and typed requests, contexts, results, and findings;
+- fixed adapter registry with explicit capabilities;
+- deterministic simulation adapters for eleven configured adapter types;
+- fixture-root-confined file and structured-file checks;
+- scenario validation, simulation dispatch, and CLI output;
 - automated tests.
 
 Modeled but not operational:
 
-- monitoring, detection, repairs, verification, rollback, incidents on disk,
+- production observation, repairs, verification, rollback, incidents on disk,
   notifications, plugins, installers, deployment, and code repair.
 
-Phase 2 performs no systemd, process, file-health, socket, HTTP, subprocess,
-notification, vulnerability scan, package update, or repair operation.
+Phase 3 performs no live systemd, process, socket, HTTP, DNS, subprocess,
+notification, vulnerability scan, package update, or repair operation. Actual
+file reads are limited to explicit fixture or temporary roots.
 
 ## Platform and Language Independence
 
@@ -60,8 +65,26 @@ background workers are represented as future extension points.
    action, approval, verification, rollback, and notification outcomes.
 8. **Notification protocols** isolate provider failure from core decisions.
 9. **Plugin protocol** reserves a versioned, sanitized JSON boundary.
-10. **Test harness** prohibits live subprocess, network, systemd, notification,
+10. **Adapter registry** maps known adapter types to fixed simulation
+    implementations and rejects duplicate, unknown, or unsafe dispatch.
+11. **Observation coordinator** matches validated configuration targets to
+    validated scenario targets and emits normalized findings.
+12. **Fixture boundary** confines read-only file checks and rejects absolute
+    target paths, traversal, and symlink escapes.
+13. **Test harness** prohibits live subprocess, network, systemd, notification,
     and repair behavior.
+
+## Normalized Observation
+
+Every finding records target ID, adapter type, timestamp, status, severity,
+category, confidence, summary, sanitized evidence, expected and observed
+states, duration, error classification, retry recommendation, manual-review
+requirement, simulation flag, and adapter version.
+
+Statuses include healthy, degraded, unhealthy, unknown, skipped, unsupported,
+and observation error. Phase 3 findings use deterministic confidence because
+their source is controlled scenario or fixture input. They do not claim a real
+production condition or confirmed security vulnerability.
 
 ## Finding and Incident Lifecycle
 
@@ -149,9 +172,10 @@ application metadata remain isolated per installation. The design introduces
 no mandatory cloud service, shared customer database, shared credential,
 automatic telemetry, or automatic upload.
 
-## Exact Phase 3 Task
+## Exact Phase 4 Task
 
-Implement read-only observation interfaces and fake test adapters for systemd,
-file, process, fixed executable, HTTP, and TCP targets. Normalize observations
-without adding repairs, notifications, vulnerability scanning, or live
-production access.
+Design and implement deny-by-default controlled repair action models, policy
+authorization, and simulation-only executors for explicitly configured
+allowlisted actions. Phase 4 must retain dry-run defaults and must not add
+arbitrary shell execution, production service changes, notifications,
+deployment, or unapproved file mutation.

@@ -1,6 +1,6 @@
 # ShieldMendAi Configuration
 
-Phase 2 configuration is YAML and planning-only. The canonical safe example is
+Configuration is YAML and dry-run-only. The canonical planning example is
 `examples/shieldmendai.example.yaml`.
 
 ## Global Settings
@@ -25,7 +25,8 @@ file  json_file  yaml_file  toml_file  executable_check
 database  container  kubernetes  windows_service  plugin
 ```
 
-No adapter executes in Phase 2.
+Phase 3 can dispatch only registered simulation adapters. Production access is
+unavailable for every adapter.
 
 Executable checks accept only an absolute `executable_path`, a structured
 argument list, timeout, and expected exit codes. Shell command strings are
@@ -43,7 +44,8 @@ ownership, disk/memory/CPU pressure, dependency and deployment failures,
 certificate expiry, database unavailability, application test failures,
 unexpected file changes, and unknown failures.
 
-These are classification values only; Phase 2 performs no detection.
+Phase 3 maps deterministic scenario and fixture observations to these
+categories. It performs no production detection.
 
 ## Security Categories
 
@@ -53,7 +55,8 @@ permissions, secret-exposure indicators, outdated software, weak TLS,
 certificate problems, unauthorized file changes, suspicious processes or
 service behavior, baseline violations, and unknown security findings.
 
-These are classification values only; Phase 2 performs no security scanning.
+These remain classification values only; Phase 3 performs no security scan and
+does not confirm vulnerabilities from simulations.
 
 ## Policies
 
@@ -86,7 +89,7 @@ environment secret or sends a notification.
 shieldmendai validate-config examples/shieldmendai.example.yaml
 ```
 
-Validation rejects duplicate or empty IDs, unsupported adapters, invalid
+Configuration validation rejects duplicate or empty IDs, unsupported adapters, invalid
 timing and retry values, invalid severities and policies, invalid ports and
 HTTP methods, direct credential values, unrestricted executable strings,
 private-source references, and legacy private unit names.
@@ -108,3 +111,8 @@ shieldmendai plan examples/shieldmendai.example.yaml
 
 The plan lists target types, policy modes, and notification channel types. It
 performs no live observation or action.
+
+## Phase 3 Scenarios
+
+See [Phase 3 simulation](SIMULATION.md) for the scenario schema, fixture-root
+rules, supported deterministic states, normalized findings, and exit codes.

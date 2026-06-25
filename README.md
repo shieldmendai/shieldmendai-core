@@ -8,12 +8,14 @@ roll back failed actions, and report sanitized incidents.
 ShieldMendAi does not guarantee detection or prevention of every vulnerability,
 attack, application failure, or unsafe repair condition.
 
-## Phase 2 Status
+## Phase 3 Status
 
-Phase 2 provides an installable Python framework for configuration validation
-and dry-run planning. It does not monitor systems, inspect processes, contact
-systemd, open network connections, send notifications, repair files, restart
-services, scan vulnerabilities, modify source code, or deploy anything.
+Phase 3 provides an installable Python framework for configuration validation,
+dry-run planning, deterministic observation simulations, and fixture-confined
+read-only file checks. It does not monitor live systems, inspect processes,
+contact systemd, open network connections, execute commands, send
+notifications, repair files, restart services, scan vulnerabilities, modify
+source code, or deploy anything.
 
 Implemented:
 
@@ -22,12 +24,18 @@ Implemented:
 - recursive redaction utilities;
 - YAML configuration validation;
 - planning-only CLI output;
+- typed observation requests, contexts, findings, and results;
+- fixed adapter registry and capability declarations;
+- simulation-only adapters for systemd, process, PID-file, HTTP, TCP,
+  executable, file, JSON, YAML, and TOML targets;
+- safe scenario validation and fixture-root confinement;
 - safe language-independent example configuration;
 - automated safety and validation tests.
 
-Modeled only:
+Unavailable or modeled only:
 
-- Linux, Windows, container, Kubernetes, database, and plugin adapters;
+- production Linux observers; Windows, container, Kubernetes, database, and
+  plugin adapters;
 - controlled repairs, verification, rollback, and notifications;
 - code-repair workflow;
 - Telegram, email, SMS, webhook, and local incident delivery.
@@ -61,10 +69,14 @@ shieldmendai --version
 shieldmendai validate-config examples/shieldmendai.example.yaml
 shieldmendai plan examples/shieldmendai.example.yaml
 shieldmendai show-config examples/shieldmendai.example.yaml
+shieldmendai list-adapters
+shieldmendai inspect-scenario examples/scenarios/phase3-example.yaml
+shieldmendai simulate examples/simulation-config.yaml examples/scenarios/phase3-example.yaml
 ```
 
-`plan` is always planning-only in Phase 2. `show-config` redacts credential
-references and never resolves environment variables.
+`plan` remains planning-only. Simulation output is explicitly labeled and
+`show-config` redacts credential references without resolving environment
+variables.
 
 Without an editable installation:
 
@@ -81,6 +93,7 @@ PYTHONPATH=src python3 -m unittest discover -s tests -v
 ## Documentation
 
 - [Configuration and policies](docs/CONFIGURATION.md)
+- [Phase 3 simulation](docs/SIMULATION.md)
 - [Architecture](docs/ARCHITECTURE.md)
 - [Security boundaries](docs/SECURITY_BOUNDARIES.md)
 - [Extraction plan](docs/EXTRACTION_PLAN.md)
@@ -92,13 +105,15 @@ PYTHONPATH=src python3 -m unittest discover -s tests -v
 
 1. Phase 1: sanitized inventory and architecture — complete.
 2. Phase 2: safe standalone framework and dry-run CLI — complete.
-3. Phase 3: generic read-only monitoring and detection adapters.
-4. Later phases: controlled repair, verification and loop protection,
+3. Phase 3: safe observation simulations and fixture checks — complete.
+4. Phase 4: deny-by-default controlled repair models and simulation-only
+   allowlisted action execution.
+5. Later phases: production adapters, verification and loop protection,
    incidents and notifications, installer, simulations, and deployment.
 
-The exact Phase 3 task is to implement read-only adapter interfaces and fake
-test adapters for systemd, file, process, command, HTTP, and TCP observations.
-No repair execution belongs in Phase 3.
+The exact Phase 4 task is to add deny-by-default repair authorization and
+simulation-only executors for explicit allowlisted actions. No production
+mutation or notification delivery belongs in Phase 4.
 
 ## License
 

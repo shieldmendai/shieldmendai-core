@@ -1,0 +1,119 @@
+global:
+  schema_version: "1.0"
+  installation_name: phase3-example
+  application_name: Fictional Service Portfolio
+  environment: simulation
+  dry_run: true
+  poll_interval_seconds: 60
+  incident_directory: /var/lib/shieldmendai/incidents
+  log_level: INFO
+  default_policy_mode: observe_only
+  default_retry_limit: 0
+  default_cooldown_seconds: 300
+  default_verification_delay_seconds: 15
+
+repair_policies:
+  - id: observe
+    mode: observe_only
+    allowed_actions: [no_action, collect_evidence]
+
+notification_channels: []
+notification_policies: []
+
+targets:
+  - id: healthy-service
+    display_name: Fictional Healthy Service
+    adapter_type: systemd_service
+    enabled: true
+    severity: high
+    monitoring: {unit: fictional-web.service, expected_state: active}
+    repair_policy: observe
+  - id: failed-service
+    display_name: Fictional Failed Service
+    adapter_type: systemd_service
+    enabled: true
+    severity: high
+    monitoring: {unit: fictional-worker.service, expected_state: active}
+    repair_policy: observe
+  - id: restart-loop
+    display_name: Fictional Restart Loop
+    adapter_type: systemd_service
+    enabled: true
+    severity: critical
+    monitoring: {unit: fictional-jobs.service, expected_state: active}
+    repair_policy: observe
+  - id: node-api
+    display_name: Fictional Node.js API
+    adapter_type: http
+    enabled: true
+    severity: high
+    monitoring:
+      url: https://node-api.example.invalid/health
+      expected_status_codes: [200]
+      timeout_seconds: 5
+      tls_verify: true
+    repair_policy: observe
+  - id: unhealthy-http
+    display_name: Fictional Unhealthy HTTP Endpoint
+    adapter_type: http
+    enabled: true
+    severity: high
+    monitoring:
+      url: https://unhealthy.example.invalid/health
+      expected_status_codes: [200]
+      timeout_seconds: 5
+      tls_verify: true
+    repair_policy: observe
+  - id: java-tcp
+    display_name: Fictional Java TCP Service
+    adapter_type: tcp
+    enabled: true
+    severity: medium
+    monitoring: {host: java-service.example.invalid, port: 8443, timeout_seconds: 5}
+    repair_policy: observe
+  - id: missing-process
+    display_name: Fictional Missing Process
+    adapter_type: process
+    enabled: true
+    severity: high
+    monitoring: {minimum_process_count: 1, maximum_process_count: 1}
+    repair_policy: observe
+  - id: valid-json
+    display_name: Valid Fixture JSON
+    adapter_type: json_file
+    enabled: true
+    severity: medium
+    monitoring: {path: valid.json, required: true, expected_permissions: "0644"}
+    repair_policy: observe
+  - id: invalid-json
+    display_name: Invalid Fixture JSON
+    adapter_type: json_file
+    enabled: true
+    severity: medium
+    monitoring: {path: invalid.json, required: true}
+    repair_policy: observe
+  - id: stale-file
+    display_name: Stale Fixture File
+    adapter_type: file
+    enabled: true
+    severity: medium
+    monitoring: {path: stale.txt, required: true, freshness_threshold_seconds: 1}
+    repair_policy: observe
+  - id: permission-mismatch
+    display_name: Fixture Permission Mismatch
+    adapter_type: file
+    enabled: true
+    severity: medium
+    monitoring: {path: permissions.txt, required: true, expected_permissions: "0600"}
+    repair_policy: observe
+  - id: executable-timeout
+    display_name: Fictional Executable Timeout
+    adapter_type: executable_check
+    enabled: true
+    severity: high
+    monitoring:
+      executable_path: /usr/local/bin/fictional-health-check
+      arguments: ["--format", "json"]
+      timeout_seconds: 5
+      expected_exit_codes: [0]
+    repair_policy: observe

@@ -35,6 +35,35 @@ class Severity(str, Enum):
     CRITICAL = "critical"
 
 
+class ObservationStatus(str, Enum):
+    HEALTHY = "healthy"
+    DEGRADED = "degraded"
+    UNHEALTHY = "unhealthy"
+    UNKNOWN = "unknown"
+    SKIPPED = "skipped"
+    UNSUPPORTED = "unsupported"
+    OBSERVATION_ERROR = "observation_error"
+
+
+class Confidence(str, Enum):
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+    DETERMINISTIC = "deterministic"
+
+
+class ErrorClassification(str, Enum):
+    NONE = "none"
+    VALIDATION = "validation"
+    UNSUPPORTED = "unsupported"
+    TIMEOUT = "timeout"
+    NOT_FOUND = "not_found"
+    PARSE_ERROR = "parse_error"
+    PERMISSION = "permission"
+    MISMATCH = "mismatch"
+    SIMULATED_FAILURE = "simulated_failure"
+
+
 class PolicyMode(str, Enum):
     OBSERVE_ONLY = "observe_only"
     RECOMMEND = "recommend"
@@ -263,6 +292,82 @@ class DryRunPlan:
     dry_run: bool
     planning_only: bool
     targets: tuple[PlannedTarget, ...]
+
+
+@dataclass(frozen=True)
+class AdapterCapabilities:
+    adapter_type: AdapterType
+    supported_checks: tuple[str, ...]
+    platform_requirements: tuple[str, ...] = ()
+    requires_network: bool = False
+    requires_subprocess: bool = False
+    requires_privileged_access: bool = False
+    supports_simulation: bool = True
+    production_available: bool = False
+    adapter_version: str = "1.0"
+
+
+@dataclass(frozen=True)
+class ObservationRequest:
+    target: Target
+    scenario_state: str
+    scenario_data: dict[str, Any]
+
+
+@dataclass(frozen=True)
+class ObservationContext:
+    observed_at: str
+    fixture_root: str | None = None
+    simulation: bool = True
+
+
+@dataclass(frozen=True)
+class FindingEvidence:
+    values: dict[str, Any] = field(default_factory=dict)
+
+    def to_safe_dict(self) -> dict[str, Any]:
+        from .redaction import redact
+
+        return redact(self.values)
+
+
+@dataclass(frozen=True)
+class Finding:
+    target_id: str
+    adapter_type: AdapterType
+    observed_at: str
+    status: ObservationStatus
+    severity: Severity
+    category: ReliabilityCategory | SecurityCategory | None
+    confidence: Confidence
+    summary: str
+    sanitized_evidence: FindingEvidence
+    expected_state: Any
+    observed_state: Any
+    duration_ms: int
+    error_classification: ErrorClassification = ErrorClassification.NONE
+    retry_recommended: bool = False
+    manual_review_required: bool = False
+    simulation: bool = True
+    adapter_version: str = "1.0"
+
+    def to_safe_dict(self) -> dict[str, Any]:
+        from .redaction import redact
+
+        value = to_primitive(self)
+        value["sanitized_evidence"] = self.sanitized_evidence.to_safe_dict()
+        return redact(value)
+
+
+@dataclass(frozen=True)
+class ObservationResult:
+    target_id: str
+    adapter_type: AdapterType
+    status: ObservationStatus
+    findings: tuple[Finding, ...]
+    duration_ms: int
+    simulation: bool
+    adapter_version: str
 
 
 @dataclass(frozen=True)

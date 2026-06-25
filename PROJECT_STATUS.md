@@ -2,7 +2,7 @@
 
 ## Current Stage
 
-Phase 2 — safe standalone framework and dry-run CLI.
+Phase 3 — simulation-only observation and detection layer.
 
 ## Implemented
 
@@ -13,13 +13,18 @@ Phase 2 — safe standalone framework and dry-run CLI.
 - Incident and notification configuration models
 - Recursive redaction utilities
 - Planning-only CLI commands
+- Typed observation models and normalized findings
+- Fixed adapter registry and capability declarations
+- Eleven deterministic simulation adapters
+- Fixture-confined file, JSON, YAML, and TOML checks
+- Scenario validation and simulation CLI commands
 - Language-independent example configuration
 - Automated safety and validation tests
 
 ## Modeled Only
 
-- systemd, process, PID, TCP, HTTP, file, database, container, Kubernetes,
-  Windows service, and plugin adapters
+- Production systemd, process, PID, TCP, HTTP, executable, and file adapters
+- Database, container, Kubernetes, Windows service, and plugin adapters
 - Controlled repairs, verification, rollback, and incident persistence
 - Telegram, email, SMS, webhook, and local notification delivery
 - Isolated code-repair workflow
@@ -35,6 +40,6 @@ Phase 2 — safe standalone framework and dry-run CLI.
 
 ## Next Task
 
-Phase 3 will implement read-only observation interfaces and fake test adapters
-for systemd, file, process, fixed executable, HTTP, and TCP targets. It will not
-implement repair execution.
+Phase 4 will implement deny-by-default repair authorization and simulation-only
+executors for explicit allowlisted actions. It will not implement production
+mutation, arbitrary shell execution, deployment, or notification delivery.

@@ -1,10 +1,28 @@
-"""Future adapter protocols; Phase 2 provides no live implementations."""
+"""Strict adapter protocols for simulation-only Phase 3 observations."""
 
 from __future__ import annotations
 
 from typing import Protocol
 
-from .models import Incident, NotificationChannelType
+from .models import (
+    AdapterCapabilities,
+    Incident,
+    NotificationChannelType,
+    ObservationContext,
+    ObservationRequest,
+    ObservationResult,
+)
+
+
+class ObserverAdapter(Protocol):
+    """A deterministic observer boundary with declared capabilities."""
+
+    capabilities: AdapterCapabilities
+
+    def observe(
+        self, request: ObservationRequest, context: ObservationContext
+    ) -> ObservationResult:
+        """Return normalized findings without mutating or contacting a live target."""
 
 
 class NotificationDeliveryResult(Protocol):

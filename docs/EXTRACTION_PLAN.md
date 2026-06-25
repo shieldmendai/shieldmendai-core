@@ -37,19 +37,25 @@ performed only when explicitly authorized and only to the official repository.
 
 ## Phase 3 — Generic monitoring and detection
 
-- Goal: add read-only systemd, file, process, command, and HTTP health checks.
-- Outputs: adapter interfaces, normalized health results, and fixtures.
+- Status: complete on `codex/extraction-phase-3`.
+- Goal: add safe observation interfaces and deterministic simulated systemd,
+  file, process, executable, HTTP, and TCP health checks.
+- Outputs: typed observation models, fixed adapter registry, capability
+  declarations, normalized findings, validated scenarios, fixture-confined
+  checks, CLI simulation commands, and tests.
 - Tests: unit tests and isolated simulations for healthy, failed, stale,
   missing, invalid, timeout, and permission-denied targets.
 - Stop conditions: a monitor mutates the host or accepts an unconfigured target.
 - Security review: redact command output, URLs, headers, environment values,
   and file contents from incidents.
-- Git checkpoint: commit generic monitors and simulation coverage.
+- Git checkpoint: `feat: add safe ShieldMendAi observation simulations`.
 
 ## Phase 4 — Controlled repair actions
 
-- Goal: execute only explicit, user-configured, allowlisted repairs.
-- Outputs: policy engine, repair action models, dry-run plans, and executor.
+- Goal: implement deny-by-default authorization and simulation-only execution
+  for explicit, user-configured, allowlisted repairs.
+- Outputs: policy engine, repair action models, dry-run plans, and safe
+  simulation executors. Production mutation requires a later explicit phase.
 - Tests: deny-by-default tests, allowlist tests, argument validation, timeout
   tests, and simulations that cannot affect host services.
 - Stop conditions: arbitrary shell execution, implicit targets, or missing

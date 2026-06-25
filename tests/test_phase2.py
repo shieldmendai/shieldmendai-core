@@ -52,14 +52,14 @@ def run_cli(*args: str) -> tuple[int, str, str]:
 
 class PackageAndCliTests(unittest.TestCase):
     def test_package_imports_and_version(self) -> None:
-        self.assertEqual(shieldmendai.__version__, "0.2.0")
+        self.assertEqual(shieldmendai.__version__, "0.3.0")
 
     def test_cli_version_works(self) -> None:
         with self.assertRaises(SystemExit) as result:
             with contextlib.redirect_stdout(io.StringIO()) as stdout:
                 run(["--version"])
         self.assertEqual(result.exception.code, 0)
-        self.assertIn("ShieldMendAi 0.2.0", stdout.getvalue())
+        self.assertIn("ShieldMendAi 0.3.0", stdout.getvalue())
 
     def test_valid_example_configuration_loads(self) -> None:
         code, stdout, stderr = run_cli("validate-config", str(EXAMPLE))
@@ -330,7 +330,7 @@ class ModelsAndRepositoryTests(unittest.TestCase):
             text = path.read_text(encoding="utf-8")
             with self.subTest(path=path):
                 self.assertNotIn("Guardian", text)
-        self.assertEqual(shieldmendai.__version__, "0.2.0")
+        self.assertEqual(shieldmendai.__version__, "0.3.0")
 
     def test_example_is_language_independent(self) -> None:
         data = example_data()

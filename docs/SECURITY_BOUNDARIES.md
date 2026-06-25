@@ -60,16 +60,23 @@ were excluded from content review. No private source file was copied.
 - secret files readable only by the service identity;
 - no access to unrelated trading directories or wallet material.
 
-## Phase 2 Enforcement
+## Phase 3 Enforcement
 
 - Configuration parsing is local and does not resolve environment variables.
 - `dry_run` must be true.
 - Direct credential values, authenticated URLs, unrestricted shell command
   strings, private-source paths, and legacy private unit names are rejected.
-- The planner performs no subprocess, socket, HTTP, process, systemd,
-  notification, vulnerability-scan, or repair action.
+- The planner and simulation coordinator perform no subprocess, socket, HTTP,
+  DNS, process, systemd, notification, vulnerability-scan, or repair action.
+- Every registered Phase 3 adapter reports production access unavailable.
+- Scenario validation rejects credential-like values, command strings, unknown
+  targets, duplicate IDs, adapter mismatches, unsupported states, invalid
+  timestamps, and negative durations.
+- Fixture paths must remain inside an explicit fixture or temporary root;
+  traversal, absolute target paths, arbitrary server roots, and symlink escapes
+  are rejected.
 - Display output recursively redacts secret-like fields and credential
   references.
 - The example uses reserved `.invalid` domains and placeholder environment
   variable names only.
-- Tests mock or prohibit live operation boundaries.
+- Tests mock or prohibit live operation and action boundaries.
