@@ -2,43 +2,44 @@
 
 - Product name: ShieldMendAi
 - Workspace: `/root/ShieldMendAi`
-- Current branch: `codex/extraction-phase-3`
-- Current phase: Phase 3 — safe simulation-only observation and detection,
-  implementation and validation complete
-- Completed work: preserved all Phase 1 and Phase 2 content; added typed
-  observation requests, contexts, capabilities, findings, and results; fixed
-  adapter registry and coordinator; eleven deterministic simulation adapters;
-  fixture-root-confined file, JSON, YAML, and TOML checks; scenario validation;
-  normalized detection mappings; evidence redaction; CLI adapter listing,
-  scenario inspection, and simulation; examples and automated tests.
-- Deferred work: all production systemd, process, PID-file, HTTP, TCP,
-  executable, and arbitrary-file observation; database, container, Kubernetes,
-  Windows, and plugin adapters; repairs; verification; rollback; incident
-  persistence; notifications; vulnerability scans; deployment; installation
-  services; and customer repository modification.
-- Tests performed: 66 `unittest` tests passed, including all 34 Phase 2 tests
-  and Phase 3 registry, capability, mapping, fixture confinement, structured
-  parsing, redaction, scenario, CLI exit-code, and prohibited-operation tests;
-  Python compilation; configuration and scenario validation; healthy and
-  unhealthy CLI simulations; package wheel build.
-- Safety checks performed: exact official origin verified; clean Phase 2
-  baseline and matching local/remote commit verified; Phase 3 branch based on
-  Phase 2; private source not reopened; no live adapter, subprocess, socket,
-  HTTP, DNS, systemd, repair, notification, or service action implemented;
-  fixture traversal, absolute server roots, and symlink escapes rejected; full
-  diff, whitespace, tracked-file credential/artifact, and prohibited-pattern
-  reviews passed; manifest and resume checks passed.
-- Last implementation commit:
-  `79ebf55b82217e0a21998c6206a91a6a95203f62`.
-- Documentation checkpoint:
-  `60dac532bc97635748e6d46f2f0ba2b94eba0fa6`.
-- Remote branch: `origin/codex/extraction-phase-3`, upstream tracking
-  configured.
-- Push status: Phase 3 implementation and checkpoint commits pushed
-  successfully; no merge or force-push performed.
-- Exact Phase 4 task: implement deny-by-default repair authorization and
-  simulation-only executors for explicit user-configured allowlisted actions,
-  retaining dry-run defaults and excluding arbitrary shell execution,
-  production mutation, deployment, and notification delivery.
+- Current branch: `codex/extraction-phase-4`
+- Current phase: Phase 4 — deny-by-default repair authorization and
+  simulation-only execution, implementation and validation complete
+- Completed work: preserved all Phase 1–3 behavior; added typed repair
+  requests, policies, approvals, authorization contexts and decisions,
+  structured reason codes, exact target/action allowlists, risk
+  classification, preconditions, verification and rollback plans,
+  deterministic simulation execution, attempt records, audit events, repair
+  CLI commands, fictional examples, and Phase 4 safety tests.
+- Intentionally deferred: production repair executors; live service restart,
+  file restoration, permission or ownership changes, deployment rollback,
+  code patch application, production observation, real verification,
+  persistent controller state, notifications, vulnerability scans,
+  installation, deployment, and Phase 5.
+- Tests performed: 91 `unittest` tests passed, including all 34 Phase 2 tests,
+  all 32 Phase 3 tests, and 25 Phase 4 grouped tests covering the required
+  authorization, approval, allowlist, risk, planning, execution, audit, CLI,
+  and prohibited-operation cases; Python compilation; policy, request,
+  approval, success, verification-failure, and rollback-failure CLI paths;
+  package wheel build.
+- Safety checks performed: exact official origin and matching Phase 3
+  local/remote tip verified before branch creation; clean baseline verified;
+  private source not accessed; complete diff and whitespace review; tracked
+  secret-category path scan; implementation/example prohibited-pattern scan;
+  patched subprocess, shell, socket, HTTP, chmod, and chown boundaries; no
+  service, target file, permission, ownership, deployment, repository,
+  network, or notification mutation; manifest JSON validation and resume
+  checks.
+- Implementation commit:
+  `85888b7f8a62cbc5dc63ce602e5985209fdf8b69`.
+- Documentation checkpoint: pending.
+- Remote branch: `origin/codex/extraction-phase-4` pending initial push.
+- Push status: pending; no merge, force-push, rebase, release, or deployment
+  performed.
+- Exact Phase 5 task: implement deterministic recovery verification and loop
+  protection with bounded retry budgets, cooldown and backoff evaluation,
+  circuit breakers, post-repair verification state transitions, rollback
+  decision rules, and non-secret controller state. Do not add production
+  mutation, live observers, notification delivery, or deployment.
 - Blockers: none.
-- UTC timestamp: 2026-06-25T05:24:39Z
+- UTC timestamp: 2026-06-25T16:11:23Z
