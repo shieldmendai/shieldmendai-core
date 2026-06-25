@@ -95,6 +95,21 @@ button, input, select { font: inherit; }
   gap: 22px;
   margin-left: auto;
 }
+.site-nav-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 55;
+  background: rgba(3, 7, 16, 0.72);
+  backdrop-filter: blur(10px);
+  opacity: 0;
+  pointer-events: none;
+}
+.site-nav-backdrop.open {
+  display: block;
+  opacity: 1;
+  pointer-events: auto;
+}
 .site-nav a {
   color: var(--muted);
   text-decoration: none;
@@ -126,6 +141,16 @@ button, input, select { font: inherit; }
   height: 1px;
   margin: 5px auto;
   background: currentColor;
+}
+.menu-close {
+  display: none;
+  align-self: flex-end;
+  margin: 0 0 6px auto;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 10px;
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.02);
 }
 main { overflow: hidden; }
 .container {
@@ -698,8 +723,12 @@ summary {
     border: 1px solid var(--line);
     border-radius: 18px;
     background: rgba(5, 10, 20, .98);
+    z-index: 60;
+    max-height: calc(100vh - 96px);
+    overflow: auto;
   }
   .site-nav.open { display: flex; }
+  .menu-close { display: inline-flex; }
   .site-nav a { padding: 12px; }
   .nav-cta { border: 0; border-radius: 8px; }
   .hero-grid, .section-head, .roadmap-preview, .progress-panel { grid-template-columns: 1fr; }
@@ -743,4 +772,5 @@ summary {
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
+  .site-nav-backdrop { backdrop-filter: none; }
 }

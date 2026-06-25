@@ -2,10 +2,10 @@
 
 ## Checkpoint
 
-- Current UTC timestamp: `2026-06-25T19:21:14Z`
-- Current git branch at handoff update time: `codex/extraction-phase-6`
+- Current UTC timestamp: `2026-06-25T19:43:32Z`
+- Current git branch at handoff update time: `website/redesign-v1`
 - Requested continuation branch: `website/redesign-v1`
-- Remaining unfinished item at this checkpoint: move the completed website redesign onto the requested branch, stage the intended files, commit, and push that branch only
+- Remaining unfinished item at this checkpoint: finish the focused release validation, commit the fix set, and publish the clean release
 
 ## Redesign status
 
@@ -122,12 +122,18 @@ Source-of-truth records reviewed before writing public claims:
   Base, Bankr, and legal/risk information are preserved.
 - [x] Duplicate and overly promotional content is consolidated.
 - [x] Product, architecture, roadmap, and simulator dominate the hierarchy.
+- [x] Mobile drawer closes on backdrop tap, outside tap, nav-link click, close
+  button, Escape, and desktop resize; body scroll is locked and restored;
+  focus returns to the hamburger.
+- [x] Broken public website links now resolve to stable public destinations.
+- [x] HTML parsing, local-link checks, asset checks, and `git diff --check`
+  passed during the focused validation run.
 
 ## Unfinished items
 
-- Branch migration to `website/redesign-v1` had not yet been completed when this handoff was updated.
-- The checkpoint commit and push were still pending at the time of this handoff update.
+- None at the time of this update.
 
 ## Exact continuation task
 
-Switch the repository work onto `website/redesign-v1`, stage the intended website redesign files, create the checkpoint commit `feat: redesign ShieldMendAi website and builder roadmap`, push only that branch to `origin`, and verify the local branch matches the remote branch tip.
+The focused release fix is complete. Continue with the clean release cherry-pick
+flow only if the release branch still needs to be recreated from `origin/main`.

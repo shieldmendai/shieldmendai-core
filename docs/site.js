@@ -2,17 +2,148 @@ const menuButton = document.querySelector(".menu-button");
 const siteNav = document.querySelector(".site-nav");
 
 if (menuButton && siteNav) {
-  menuButton.addEventListener("click", () => {
-    const open = siteNav.classList.toggle("open");
+  const mobileQuery = window.matchMedia("(max-width: 1040px)");
+  const focusSelector = 'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])';
+  const backdrop = document.createElement("div");
+  const closeButton = document.createElement("button");
+  let isOpen = false;
+  let scrollY = 0;
+
+  if (!siteNav.id) {
+    siteNav.id = "site-nav";
+  }
+
+  menuButton.setAttribute("aria-controls", siteNav.id);
+  backdrop.className = "site-nav-backdrop";
+  backdrop.setAttribute("aria-hidden", "true");
+  backdrop.hidden = true;
+  closeButton.type = "button";
+  closeButton.className = "menu-close";
+  closeButton.setAttribute("aria-label", "Close navigation");
+  closeButton.textContent = "Close";
+  siteNav.prepend(closeButton);
+  document.body.append(backdrop);
+
+  const focusFirstControl = () => {
+    const firstControl = siteNav.querySelector(focusSelector);
+    if (firstControl) {
+      firstControl.focus({ preventScroll: true });
+    }
+  };
+
+  const lockBodyScroll = () => {
+    scrollY = window.scrollY;
+    document.body.style.position = "fixed";
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.left = "0";
+    document.body.style.right = "0";
+    document.body.style.width = "100%";
+  };
+
+  const unlockBodyScroll = () => {
+    document.body.style.position = "";
+    document.body.style.top = "";
+    document.body.style.left = "";
+    document.body.style.right = "";
+    document.body.style.width = "";
+    window.scrollTo(0, scrollY);
+  };
+
+  const setExpandedState = (open) => {
     menuButton.setAttribute("aria-expanded", String(open));
+    siteNav.setAttribute("aria-hidden", String(mobileQuery.matches && !open));
+  };
+
+  const closeMenu = ({ restoreFocus = true } = {}) => {
+    if (!isOpen) {
+      setExpandedState(false);
+      return;
+    }
+
+    isOpen = false;
+    siteNav.classList.remove("open");
+    backdrop.classList.remove("open");
+    backdrop.hidden = true;
+    unlockBodyScroll();
+    setExpandedState(false);
+
+    if (restoreFocus) {
+      menuButton.focus({ preventScroll: true });
+    }
+  };
+
+  const openMenu = () => {
+    if (isOpen) {
+      return;
+    }
+
+    isOpen = true;
+    siteNav.classList.add("open");
+    backdrop.hidden = false;
+    backdrop.classList.add("open");
+    lockBodyScroll();
+    setExpandedState(true);
+    window.requestAnimationFrame(focusFirstControl);
+  };
+
+  menuButton.addEventListener("click", () => {
+    if (isOpen) {
+      closeMenu();
+    } else {
+      openMenu();
+    }
   });
 
-  siteNav.querySelectorAll("a").forEach((link) => {
-    link.addEventListener("click", () => {
-      siteNav.classList.remove("open");
-      menuButton.setAttribute("aria-expanded", "false");
-    });
+  closeButton.addEventListener("click", () => closeMenu());
+  backdrop.addEventListener("click", () => closeMenu());
+
+  siteNav.addEventListener("click", (event) => {
+    if (event.target.closest("a")) {
+      closeMenu();
+    }
   });
+
+  document.addEventListener("keydown", (event) => {
+    if (isOpen && event.key === "Escape") {
+      closeMenu();
+    }
+  });
+
+  document.addEventListener("pointerdown", (event) => {
+    if (!isOpen || !mobileQuery.matches) {
+      return;
+    }
+
+    const path = typeof event.composedPath === "function" ? event.composedPath() : [];
+    if (path.includes(siteNav) || path.includes(menuButton)) {
+      return;
+    }
+
+    closeMenu();
+  });
+
+  const handleViewportChange = () => {
+    if (!mobileQuery.matches) {
+      closeMenu({ restoreFocus: false });
+      siteNav.setAttribute("aria-hidden", "false");
+      backdrop.hidden = true;
+      backdrop.classList.remove("open");
+      return;
+    }
+
+    if (!isOpen) {
+      siteNav.setAttribute("aria-hidden", "true");
+      backdrop.hidden = true;
+    }
+  };
+
+  if (typeof mobileQuery.addEventListener === "function") {
+    mobileQuery.addEventListener("change", handleViewportChange);
+  } else {
+    mobileQuery.addListener(handleViewportChange);
+  }
+
+  handleViewportChange();
 }
 
 const simulatorForm = document.querySelector("#simulator-form");
