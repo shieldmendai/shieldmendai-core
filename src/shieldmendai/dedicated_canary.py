@@ -4,13 +4,16 @@ from __future__ import annotations
 
 import hashlib
 import json
+import grp
 import re
 import socket
 import tempfile
 import zipfile
 from dataclasses import asdict, dataclass
 from enum import Enum
+from os import chown as _chown
 from pathlib import Path, PurePosixPath
+import pwd
 from subprocess import run as _run_process
 from typing import Any, TypeVar
 
@@ -163,6 +166,7 @@ class RuntimeInstallationResult:
     wheel: RuntimeWheelVerification
     commands: tuple[tuple[str, ...], ...]
     conflicts: tuple[str, ...] = ()
+    ownership_actions: tuple[dict[str, str], ...] = ()
 
 
 @dataclass(frozen=True)
@@ -630,6 +634,106 @@ def _mode_string(path: Path) -> str:
     return f"{path.stat().st_mode & 0o777:04o}"
 
 
+def _uid_gid(owner: str, group: str) -> tuple[int, int]:
+    try:
+        uid = pwd.getpwnam(owner).pw_uid
+        gid = grp.getgrnam(group).gr_gid
+    except KeyError:
+        raise InstallationValidationError("required service user or group is missing") from None
+    return uid, gid
+
+
+def _validate_ownership_identities(actions: tuple[dict[str, str], ...]) -> None:
+    for action in actions:
+        _uid_gid(action["owner"], action["group"])
+
+
+def _validate_live_runtime_present() -> None:
+    for path in (
+        Path("/opt/shieldmendai"),
+        Path("/opt/shieldmendai/venv"),
+        Path("/opt/shieldmendai/venv/bin"),
+        Path(RUNTIME_CLI),
+    ):
+        try:
+            resolved = path.resolve(strict=True)
+        except OSError:
+            raise InstallationValidationError("live runtime must be installed before package apply") from None
+        if path.is_symlink() or path.absolute() != resolved:
+            raise InstallationValidationError("live runtime path cannot be a symlink or traverse symlinks")
+
+
+def _ownership_action(path: str, owner: str, group: str, mode: int) -> dict[str, str]:
+    return {"path": path, "owner": owner, "group": group, "mode": f"{mode:04o}"}
+
+
+def _runtime_ownership_actions(runtime_path: Path) -> tuple[dict[str, str], ...]:
+    actions = [
+        _ownership_action(str(runtime_path), "root", SERVICE_GROUP, 0o750),
+        _ownership_action(str(runtime_path / "bin"), "root", SERVICE_GROUP, 0o750),
+        _ownership_action(str(runtime_path / "bin/shieldmendai"), "root", SERVICE_GROUP, 0o750),
+    ]
+    if runtime_path == Path("/opt/shieldmendai/venv"):
+        actions.insert(0, _ownership_action("/opt/shieldmendai", "root", SERVICE_GROUP, 0o750))
+    return tuple(actions)
+
+
+def _package_ownership_actions(root: Path) -> tuple[dict[str, str], ...]:
+    actions = [
+        _ownership_action("/opt/shieldmendai", "root", SERVICE_GROUP, 0o750),
+        _ownership_action("/etc/shieldmendai", "root", SERVICE_GROUP, 0o750),
+        _ownership_action("/var/lib/shieldmendai", SERVICE_USER, SERVICE_GROUP, 0o750),
+        _ownership_action("/var/lib/shieldmendai/incidents", SERVICE_USER, SERVICE_GROUP, 0o750),
+        _ownership_action("/var/lib/shieldmendai/demo", SERVICE_USER, SERVICE_GROUP, 0o750),
+        _ownership_action("/var/log/shieldmendai", SERVICE_USER, SERVICE_GROUP, 0o750),
+        _ownership_action("/run/shieldmendai", SERVICE_USER, SERVICE_GROUP, 0o750),
+    ]
+    for name in ("dedicated-canary.yaml", "retention.yaml"):
+        actions.append(_ownership_action(f"/etc/shieldmendai/{name}", "root", SERVICE_GROUP, 0o640))
+    for name in render_canary_systemd_units():
+        actions.append(_ownership_action(f"/etc/systemd/system/{name}", "root", "root", 0o644))
+    actions.extend(_runtime_ownership_actions(Path("/opt/shieldmendai/venv"))[1:])
+    return tuple(actions)
+
+
+def _live_path_from_action(root: Path, action: dict[str, str]) -> Path:
+    path = Path(action["path"])
+    if not path.is_absolute() or ".." in path.parts:
+        raise InstallationValidationError("ownership path must be absolute and normalized")
+    if root == Path("/"):
+        return path
+    return root.joinpath(*PurePosixPath(str(path)).parts[1:])
+
+
+def _enforce_ownership_actions(
+    root: Path,
+    actions: tuple[dict[str, str], ...],
+    *,
+    apply: bool,
+    live_reviewed: bool,
+) -> None:
+    if not apply or not live_reviewed:
+        return
+    resolved_root = root.resolve(strict=True)
+    for action in actions:
+        path = _live_path_from_action(root, action)
+        try:
+            resolved = path.resolve(strict=True)
+        except OSError:
+            raise InstallationValidationError("ownership target is missing") from None
+        if path.is_symlink() or path.absolute() != resolved:
+            raise InstallationValidationError("ownership target cannot be a symlink or traverse symlinks")
+        if root != Path("/") and not resolved.is_relative_to(resolved_root):
+            raise InstallationValidationError("ownership target escaped canary root")
+        uid, gid = _uid_gid(action["owner"], action["group"])
+        mode = int(action["mode"], 8)
+        current = path.stat()
+        if current.st_uid != uid or current.st_gid != gid:
+            _chown(path, uid, gid)
+        if (current.st_mode & 0o777) != mode:
+            path.chmod(mode)
+
+
 def _chmod_inside_root(path: Path, root: Path, mode: int) -> None:
     resolved = path.resolve(strict=True)
     if not resolved.is_relative_to(root):
@@ -688,6 +792,30 @@ def _write_json(path: Path, payload: dict[str, Any]) -> None:
     path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
+def _ensure_package_directories(install_root: Path) -> None:
+    for relative in (
+        "opt/shieldmendai",
+        "etc/shieldmendai",
+        "var/lib/shieldmendai",
+        "var/lib/shieldmendai/incidents",
+        "var/lib/shieldmendai/demo",
+        "var/log/shieldmendai",
+        "run/shieldmendai",
+    ):
+        _mkdir_inside_root(install_root / relative, install_root)
+
+
+def _ensure_temporary_runtime_fixture(install_root: Path) -> None:
+    runtime_cli = install_root / "opt/shieldmendai/venv/bin/shieldmendai"
+    if runtime_cli.exists():
+        if runtime_cli.is_symlink():
+            raise InstallationValidationError("runtime fixture symlink rejected")
+        return
+    _mkdir_inside_root(runtime_cli.parent, install_root)
+    runtime_cli.write_text(_observer_stub(), encoding="utf-8")
+    _chmod_inside_root(runtime_cli, install_root, 0o750)
+
+
 def install_canary_package(
     config: DedicatedCanaryConfig,
     root: str | Path,
@@ -717,6 +845,7 @@ def install_canary_package(
                 unchanged.append("/" + relative)
     if conflicts:
         raise InstallationConflictError("conflicting existing files block overwrite")
+    ownership_actions = _package_ownership_actions(install_root)
     audit = {
         "schema_version": SCHEMA_VERSION,
         "application_id": config.application_id,
@@ -729,6 +858,7 @@ def install_canary_package(
         "repairs_enabled": False,
         "network_enabled": False,
         "preserved_paths": ["/root/shieldmend_demo.sh"],
+        "ownership_actions": ownership_actions,
     }
     audit_bytes = json.dumps(redact(audit), sort_keys=True).encode()
     if not apply:
@@ -746,7 +876,11 @@ def install_canary_package(
             None,
             redact(audit),
         )
+    if live_reviewed:
+        _validate_ownership_identities(ownership_actions)
+        _validate_live_runtime_present()
     created: list[str] = []
+    _ensure_package_directories(install_root)
     for relative, content in files.items():
         path = install_root / relative
         _mkdir_inside_root(path.parent, install_root)
@@ -754,6 +888,8 @@ def install_canary_package(
             created.append("/" + relative)
         path.write_bytes(content)
         _chmod_inside_root(path, install_root, _mode_for_relative(relative))
+    if not live_reviewed:
+        _ensure_temporary_runtime_fixture(install_root)
     audit_path = install_root / "var/lib/shieldmendai/installation" / AUDIT_NAME
     _mkdir_inside_root(audit_path.parent, install_root)
     _write_json(audit_path, redact(audit))
@@ -763,6 +899,7 @@ def install_canary_package(
     manifest_path = install_root / "var/lib/shieldmendai/installation" / MANIFEST_NAME
     _write_json(manifest_path, safe_canary_dict(manifest))
     _chmod_inside_root(manifest_path, install_root, _mode_for_relative(str(manifest_path.relative_to(install_root))))
+    _enforce_ownership_actions(install_root, ownership_actions, apply=True, live_reviewed=live_reviewed)
     return CanaryOperationResult(
         CanaryAction.INSTALL_APPLY,
         False,
@@ -921,6 +1058,7 @@ def install_offline_runtime(
         "--disable-pip-version-check",
         wheel.wheel_path,
     )
+    ownership_actions = _runtime_ownership_actions(runtime)
     if not apply:
         return RuntimeInstallationResult(
             "runtime_install_preview",
@@ -931,7 +1069,10 @@ def install_offline_runtime(
             str(runtime / "bin/shieldmendai"),
             wheel,
             (create_cmd, install_cmd),
+            ownership_actions=ownership_actions,
         )
+    if live_reviewed:
+        _validate_ownership_identities(ownership_actions)
     runtime.parent.mkdir(parents=True, exist_ok=True)
     _run_process(create_cmd, check=True, shell=False)
     _run_process(
@@ -955,6 +1096,7 @@ def install_offline_runtime(
     if not cli.exists() or cli.is_symlink() or not (cli.stat().st_mode & 0o111):
         raise InstallationValidationError("runtime CLI is missing or not executable")
     cli.chmod(0o750)
+    _enforce_ownership_actions(Path("/"), ownership_actions, apply=True, live_reviewed=live_reviewed)
     return RuntimeInstallationResult(
         "runtime_install_apply",
         False,
@@ -964,6 +1106,7 @@ def install_offline_runtime(
         str(cli),
         wheel,
         (create_cmd, install_cmd),
+        ownership_actions=ownership_actions,
     )
 
 

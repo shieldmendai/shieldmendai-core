@@ -3,8 +3,8 @@
   "product_name": "ShieldMendAi",
   "workspace_path": "/root/ShieldMendAi",
   "updated_at_utc": "2026-06-26T00:00:00Z",
-  "current_phase": "Phase 8 - dedicated-server read-only canary deployment readiness fix prepared",
-  "deployment_status": "not deployed; readiness audit blockers fixed locally; manual dedicated-server execution pending",
+  "current_phase": "Phase 8 - dedicated-server read-only canary ownership defect fix prepared",
+  "deployment_status": "not deployed; runtime CLI ownership defect fixed locally; manual dedicated-server execution pending",
   "phase_7_baseline_commit": "ce6199c55253a733b9461d1891e24ac571827703",
   "files_created": [
     "src/shieldmendai/dedicated_canary.py",
@@ -55,7 +55,13 @@
     "wheel name, version, checksum, traversal, and symlink validation",
     "isolated runtime CLI path in systemd ExecStart",
     "service-user ownership plan command",
-    "static temporary-root systemd fixture verification"
+    "static temporary-root systemd fixture verification",
+    "live ownership enforcement with user/group name resolution",
+    "runtime CLI ownership correction to root:shieldmendai 0750",
+    "symlink and path-escape rejection for ownership targets",
+    "explicit allowlisted non-recursive ownership correction",
+    "temporary fixtures avoid host ownership changes",
+    "complete temporary canary fixture includes offline runtime CLI"
   ],
   "service_user_plan": {
     "user": "shieldmendai",
@@ -73,6 +79,7 @@
     "/etc/shieldmendai",
     "/var/lib/shieldmendai",
     "/var/lib/shieldmendai/incidents",
+    "/var/lib/shieldmendai/demo",
     "/var/log/shieldmendai",
     "/run/shieldmendai",
     "/etc/systemd/system/shieldmendai-observer.service",
@@ -125,25 +132,22 @@
     "baseline: python3 -m json.tool extraction_manifest.json",
     "baseline: scripts/resume_check.sh",
     "baseline: python3 -m pip wheel . --no-deps --no-build-isolation -w /tmp/shieldmendai-baseline-wheel",
-    "final: python3 -m unittest discover -s tests -v - 206 tests passed",
-    "final: python3 -m compileall -q src tests",
-    "final: python3 -m json.tool extraction_manifest.json",
-    "final: scripts/resume_check.sh",
-    "final: python3 -m pip wheel . --no-deps --no-build-isolation -w /tmp/shieldmendai-phase8-wheel-fixed - wheel sha256 4fbb00cdf43551372df35520af5e8a25b35246efa49ac99a1a92509b54995665",
-    "final: offline runtime install smoke in temporary root with PYTHONPATH unset - passed",
-    "final: complete readiness fixture CLI smoke - passed",
-    "final: static systemd fixture verification - valid",
-    "final: git diff --check",
-    "final: Phase 8 CLI smoke tests for canary config, systemd rendering, install preview/apply, observe, and rollback preview",
-    "final: Phase 8 refined IP and prohibited-boundary safety scans"
+        "ownership fix: python3 -m unittest tests.test_phase8 - 35 tests passed",
+        "ownership fix: python3 -m unittest discover -s tests -v - 213 tests passed",
+        "ownership fix: python3 -m compileall -q src tests",
+        "ownership fix: python3 -m json.tool extraction_manifest.json",
+        "ownership fix: scripts/resume_check.sh",
+        "ownership fix: git diff --check",
+        "ownership fix: python3 -m pip wheel . --no-deps --no-build-isolation -w /tmp/shieldmendai-phase8-ownership-wheel-final - wheel sha256 b71d960ef147b74364fb9a037ef72dbf8552b5c04de14d6f9aaabec55d668b50",
+        "ownership fix: offline runtime install smoke in temporary root with PYTHONPATH unset - passed",
+        "ownership fix: temporary runtime CLI mode verification - 0750",
+        "final: Phase 8 CLI smoke tests for canary config, systemd rendering, install preview/apply, observe, and rollback preview",
+        "final: Phase 8 refined IP and prohibited-boundary safety scans"
   ],
-  "safety_result": "No server contacted, no deployment occurred, no SSH used, no host user/group/systemd operation executed, no real installation occurred, no repair capability enabled, no notification capability enabled, no public package download path added, and no real IP address tracked.",
+  "safety_result": "No server contacted, no deployment occurred, no SSH used, no host user/group/systemd operation executed, no production-path installation occurred, no repair capability enabled, no notification capability enabled, no public package download path added, and no real IP address tracked.",
   "remote_status": "origin is exactly https://github.com/shieldmendai/shieldmendai-core; codex/extraction-phase-8 branched from origin/codex/extraction-phase-7",
   "next_actions": [
-    "Run final Phase 8 regression, wheel build, runtime smoke, systemd fixture verification, and safety scans",
-    "Commit requested readiness checkpoints",
-    "Push only codex/extraction-phase-8",
-    "Manual operator deployment remains pending"
+        "Manual operator deployment remains pending"
   ],
   "blockers": []
 }

@@ -3,8 +3,9 @@
 ShieldMendAi is currently a Phase 8 read-only dedicated canary deployment
 package with a deployment readiness fix. A manual readiness audit found the
 first Phase 8 package was not live-ready because actual file modes and runtime
-installation were incomplete. The blockers were caught before live
-installation; deployment has not been applied.
+installation were incomplete, including runtime CLI ownership for the service
+user. The blockers were caught before live installation; deployment has not
+been applied.
 
 ## Requirements
 
@@ -82,7 +83,8 @@ ports, copies secrets, enables repairs, or enables notifications.
 The live runtime path is `/opt/shieldmendai/venv`. Runtime installation accepts
 only a local ShieldMendAi wheel, validates the expected version and checksum,
 uses `--no-index --no-deps`, rejects traversal and symlink escapes, and requires
-explicit `--apply`.
+explicit `--apply`. Live apply resolves `shieldmendai` by name and corrects the
+runtime CLI to `root:shieldmendai 0750`.
 
 All mutating canary CLI commands require `--apply`; preview is the default. The
 future live service identity is `shieldmendai:shieldmendai` with

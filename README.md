@@ -13,14 +13,17 @@ attack, application failure, or unsafe repair condition.
 Phase 8 is a dedicated-server read-only canary package with a deployment
 readiness fix. A manual readiness audit found the first Phase 8 package was not
 live-ready because launcher/config file modes and the isolated runtime
-installation were incomplete. The audit caught those blockers before any live
-installation.
+installation were incomplete, including a runtime CLI ownership defect that
+could leave `/opt/shieldmendai/venv/bin/shieldmendai` inaccessible to the
+service user. The audit caught those blockers before any live installation.
 
 The current package enforces actual temporary-root file modes, supports
 `python3 -m shieldmendai`, validates and installs a local ShieldMendAi wheel
 into `/opt/shieldmendai/venv` with `--no-index --no-deps`, renders systemd
 units that execute `/opt/shieldmendai/venv/bin/shieldmendai`, and documents the
-operator-reviewed service-user and ownership commands.
+operator-reviewed service-user and ownership plan. Live apply resolves
+`shieldmendai` by name and automatically corrects allowlisted ownership/modes,
+including the runtime CLI as `root:shieldmendai 0750`.
 
 It performs no dedicated-server contact, SSH, real installation, user creation,
 ownership change, systemd operation, live observation, repair, notification,

@@ -155,8 +155,9 @@ were excluded from content review. No private source file was copied.
 ## Phase 8 Enforcement
 
 - The original Phase 8 package was not live-ready because actual file modes
-  and runtime installation were incomplete. The readiness audit caught those
-  blockers before live installation.
+  and runtime installation were incomplete, including a live runtime CLI that
+  could remain `root:root 0750` and deny service-user execution. The readiness
+  audit caught those blockers before live installation.
 - The dedicated canary configuration rejects unknown fields, wildcards,
   non-local targets, mutation-enabled targets, network targets, process
   enumeration, automatic discovery, repairs, and notification delivery.
@@ -172,11 +173,17 @@ were excluded from content review. No private source file was copied.
 - Offline runtime installation accepts only a local ShieldMendAi wheel, checks
   expected name, expected version, checksum, traversal, symlink escapes, and
   conflicting runtimes, and runs fixed `venv` and `pip install --no-index
-  --no-deps` commands with `shell=False`.
+  --no-deps` commands with `shell=False`. Live apply resolves the service
+  user/group by name, fails closed if either is missing, and corrects the
+  runtime CLI to `root:shieldmendai 0750`.
 - The service-user plan is `shieldmendai:shieldmendai`,
-  `/usr/sbin/nologin`, no home, no sudo, and no root runtime. `/opt` and
-  `/etc` are root-owned and service-readable; state, incident, demo, log, and
-  runtime directories are service-owned.
+  `/usr/sbin/nologin`, no home, no sudo, and no root runtime.
+  `/opt/shieldmendai`, runtime traversal directories, and `/etc/shieldmendai`
+  are root-owned and service-readable/executable but not service-writable;
+  state, incident, demo, log, and `/run/shieldmendai` directories are
+  service-owned.
+- Live ownership correction rejects symlinks and path escapes, never
+  recursively chowns, and touches only explicit ShieldMendAi allowlisted paths.
 - The manifest is checksummed. Rollback stops/disables canary units first,
   removes only manifest-owned unchanged files, preserves modified or unknown
   files, preserves unrelated `/root/shieldmend_demo.sh`, and leaves service

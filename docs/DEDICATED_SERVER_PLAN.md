@@ -28,9 +28,10 @@ backups, databases, or state to the dedicated ShieldMendAi server.
 
 The Phase 8 repository output is a deployment package and runbook only. A
 manual readiness audit found the first Phase 8 package was not live-ready
-because actual file modes and runtime installation were incomplete. Those
-blockers were fixed locally and caught before live installation. No server was
-contacted and no deployment was performed during the fix.
+because actual file modes, runtime installation, and runtime CLI service-user
+ownership were incomplete. Those blockers were fixed locally and caught before
+live installation. No server was contacted and no deployment was performed
+during the fix.
 
 Manual execution starts with [Phase 8 canary runbook](PHASE8_CANARY_RUNBOOK.md).
 The operator must separately review swap creation and Ubuntu Python packaging
@@ -41,8 +42,8 @@ The revised order builds a local wheel, records its checksum, previews the
 service-user and ownership plan, creates `shieldmendai:shieldmendai` only by
 operator-reviewed commands, installs the wheel offline into
 `/opt/shieldmendai/venv` with `--no-index --no-deps`, verifies the CLI with
-`PYTHONPATH` unset, then applies canary files and validates systemd before any
-daemon reload.
+`PYTHONPATH` unset, lets runtime/package apply enforce the reviewed ownership
+plan automatically, then validates systemd before any daemon reload.
 
 The canary uses only ShieldMendAi-owned demo files and the service identity
 `shieldmendai:shieldmendai`. ShieldMendAi remains read-only: it observes the

@@ -91,9 +91,10 @@ Phase 8 — dedicated-server read-only canary deployment readiness fix prepared.
 ## Phase 8 Status
 
 Readiness fix prepared. The original Phase 8 package was not live-ready because
-actual permissions and runtime installation were incomplete; the readiness
-audit caught the blockers before live installation. Deployment is still pending
-manual operator execution on the verified dedicated server. The dedicated
-server was not contacted during this fix. ShieldMendAi remains read-only: no
-repairs, no restarts, no notifications, no network access, no customer
-deployment, no trading-bot dependency, and no code rewriting.
+actual permissions, runtime installation, and runtime CLI service-user
+ownership were incomplete; the readiness audit caught the blockers before live
+installation. Deployment is still pending manual operator execution on the
+verified dedicated server. The dedicated server was not contacted during this
+fix. ShieldMendAi remains read-only: no repairs, no restarts, no notifications,
+no network access, no customer deployment, no trading-bot dependency, and no
+code rewriting.

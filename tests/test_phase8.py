@@ -29,6 +29,8 @@ from shieldmendai.dedicated_canary import (
     DEMO_TARGET_ID,
     FORBIDDEN_PRIVATE_PATH,
     RUNTIME_CLI,
+    _enforce_ownership_actions,
+    _ownership_action,
     default_canary_config,
     install_canary_package,
     install_offline_runtime,
@@ -204,6 +206,43 @@ class CanaryInstallationTests(unittest.TestCase):
         self.assertEqual(recorded["/etc/shieldmendai/dedicated-canary.yaml"], "0640")
         self.assertEqual(recorded["/etc/systemd/system/shieldmendai-observer.service"], "0644")
 
+    def test_temporary_package_fixture_includes_state_log_run_and_runtime_cli(self) -> None:
+        install_canary_package(self.config, self.root, apply=True, actual_hostname="shieldmendai")
+        for relative in (
+            "var/lib/shieldmendai",
+            "var/lib/shieldmendai/incidents",
+            "var/lib/shieldmendai/demo",
+            "var/log/shieldmendai",
+            "run/shieldmendai",
+        ):
+            path = self.root / relative
+            self.assertTrue(path.is_dir(), relative)
+            self.assertEqual(stat.S_IMODE(path.stat().st_mode), 0o750)
+        runtime_cli = self.root / "opt/shieldmendai/venv/bin/shieldmendai"
+        self.assertTrue(runtime_cli.exists())
+        self.assertFalse(runtime_cli.is_symlink())
+        self.assertEqual(stat.S_IMODE(runtime_cli.stat().st_mode), 0o750)
+
+    def test_service_account_permission_model_for_config_state_logs_and_runtime(self) -> None:
+        install_canary_package(self.config, self.root, apply=True, actual_hostname="shieldmendai")
+        config = self.root / "etc/shieldmendai/dedicated-canary.yaml"
+        self.assertTrue(config.stat().st_mode & stat.S_IRGRP)
+        self.assertFalse(config.stat().st_mode & stat.S_IWGRP)
+        self.assertFalse(config.stat().st_mode & stat.S_IWOTH)
+        for relative in (
+            "var/lib/shieldmendai",
+            "var/lib/shieldmendai/incidents",
+            "var/lib/shieldmendai/demo",
+            "var/log/shieldmendai",
+            "run/shieldmendai",
+        ):
+            mode = (self.root / relative).stat().st_mode
+            self.assertTrue(mode & stat.S_IWUSR, relative)
+            self.assertTrue(mode & stat.S_IXGRP, relative)
+            self.assertFalse(mode & stat.S_IWGRP, relative)
+        runtime_cli = self.root / "opt/shieldmendai/venv/bin/shieldmendai"
+        self.assertTrue(runtime_cli.stat().st_mode & stat.S_IXGRP)
+
     def test_chmod_remains_confined_to_temporary_root(self) -> None:
         touched: list[Path] = []
         original = Path.chmod
@@ -225,6 +264,17 @@ class CanaryInstallationTests(unittest.TestCase):
         )
         self.assertTrue(unrelated.exists())
         self.assertIn("/root/shieldmend_demo.sh", json.dumps(result.audit_record))
+
+    def test_install_preview_reports_ownership_and_changes_nothing(self) -> None:
+        before = tuple(self.root.rglob("*"))
+        result = install_canary_package(self.config, self.root, actual_hostname="shieldmendai")
+        self.assertTrue(result.preview_only)
+        self.assertEqual(before, tuple(self.root.rglob("*")))
+        actions = result.audit_record["ownership_actions"] if result.audit_record else ()
+        self.assertIn(
+            {"path": "/opt/shieldmendai/venv/bin/shieldmendai", "owner": "root", "group": "shieldmendai", "mode": "0750"},
+            actions,
+        )
 
     def test_service_user_runtime_and_systemd_units_are_least_privilege(self) -> None:
         units = render_canary_systemd_units()
@@ -289,10 +339,6 @@ class CanaryInstallationTests(unittest.TestCase):
 
     def test_static_systemd_fixture_verification(self) -> None:
         install_canary_package(self.config, self.root, apply=True, actual_hostname="shieldmendai")
-        runtime_cli = self.root / "opt/shieldmendai/venv/bin/shieldmendai"
-        runtime_cli.parent.mkdir(parents=True)
-        runtime_cli.write_text("#!/usr/bin/env python3\nprint('ok')\n", encoding="utf-8")
-        runtime_cli.chmod(0o750)
         result = verify_canary_systemd_fixture(self.root)
         self.assertTrue(result.valid)
         self.assertIn("temporary-root fixture", result.limitation)
@@ -340,6 +386,10 @@ class CanaryRuntimeInstallationTests(unittest.TestCase):
         preview = install_offline_runtime(self.wheel, runtime)
         self.assertTrue(preview.preview_only)
         self.assertFalse(runtime.exists())
+        self.assertIn(
+            {"path": str(runtime / "bin/shieldmendai"), "owner": "root", "group": "shieldmendai", "mode": "0750"},
+            preview.ownership_actions,
+        )
         def create_runtime(command: tuple[str, ...], **_: object) -> None:
             runtime.mkdir(exist_ok=True)
             bin_dir = runtime / "bin"
@@ -363,6 +413,23 @@ class CanaryRuntimeInstallationTests(unittest.TestCase):
         self.assertNotIn("http", " ".join(pip_calls[0]).lower())
         self.assertTrue((runtime / "shieldmendai-runtime-installation.json").exists())
 
+    def test_temporary_runtime_apply_never_chowns_host_files(self) -> None:
+        runtime = self.root / "runtime"
+
+        def create_runtime(command: tuple[str, ...], **_: object) -> None:
+            runtime.mkdir(exist_ok=True)
+            bin_dir = runtime / "bin"
+            bin_dir.mkdir(exist_ok=True)
+            (bin_dir / "python").write_text("#!/usr/bin/env python3\n", encoding="utf-8")
+            cli = bin_dir / "shieldmendai"
+            cli.write_text("#!/usr/bin/env python3\n", encoding="utf-8")
+            cli.chmod(0o750)
+
+        with mock.patch("shieldmendai.dedicated_canary._run_process", side_effect=create_runtime), mock.patch(
+            "shieldmendai.dedicated_canary._chown", side_effect=AssertionError("chown")
+        ):
+            install_offline_runtime(self.wheel, runtime, apply=True)
+
     def test_runtime_install_rejects_traversal_symlink_and_conflicting_runtime(self) -> None:
         with self.assertRaises(InstallationValidationError):
             install_offline_runtime(self.wheel, str(self.root / "../runtime"))
@@ -377,6 +444,43 @@ class CanaryRuntimeInstallationTests(unittest.TestCase):
         (runtime / "foreign.txt").write_text("not owned\n", encoding="utf-8")
         with self.assertRaises(InstallationConflictError):
             install_offline_runtime(self.wheel, runtime, apply=True)
+
+    def test_live_runtime_missing_user_or_group_fails_before_processes(self) -> None:
+        with mock.patch("shieldmendai.dedicated_canary._validate_runtime_path", return_value=Path("/opt/shieldmendai/venv")), mock.patch(
+            "shieldmendai.dedicated_canary.pwd.getpwnam", side_effect=KeyError
+        ), mock.patch("shieldmendai.dedicated_canary._run_process") as run_mock:
+            with self.assertRaises(InstallationValidationError):
+                install_offline_runtime(self.wheel, apply=True, live_reviewed=True)
+        run_mock.assert_not_called()
+
+    def test_live_ownership_corrects_root_root_cli_defect_and_idempotent_modes(self) -> None:
+        runtime = self.root / "opt/shieldmendai/venv"
+        cli = runtime / "bin/shieldmendai"
+        cli.parent.mkdir(parents=True)
+        cli.write_text("#!/usr/bin/env python3\n", encoding="utf-8")
+        cli.chmod(0o750)
+        actions = (_ownership_action("/opt/shieldmendai/venv/bin/shieldmendai", "root", "shieldmendai", 0o750),)
+        stat_result = cli.stat()
+        fake_user = mock.Mock(pw_uid=stat_result.st_uid)
+        fake_group = mock.Mock(gr_gid=stat_result.st_gid + 1)
+        with mock.patch("shieldmendai.dedicated_canary.pwd.getpwnam", return_value=fake_user), mock.patch(
+            "shieldmendai.dedicated_canary.grp.getgrnam", return_value=fake_group
+        ), mock.patch("shieldmendai.dedicated_canary._chown") as chown_mock:
+            _enforce_ownership_actions(self.root, actions, apply=True, live_reviewed=True)
+        chown_mock.assert_called_once_with(cli, stat_result.st_uid, stat_result.st_gid + 1)
+
+    def test_live_ownership_rejects_symlink_attacks_and_path_escapes(self) -> None:
+        target = self.root / "target"
+        target.write_text("ok\n", encoding="utf-8")
+        link = self.root / "opt/shieldmendai/venv/bin/shieldmendai"
+        link.parent.mkdir(parents=True)
+        link.symlink_to(target)
+        actions = (_ownership_action("/opt/shieldmendai/venv/bin/shieldmendai", "root", "shieldmendai", 0o750),)
+        with self.assertRaises(InstallationValidationError):
+            _enforce_ownership_actions(self.root, actions, apply=True, live_reviewed=True)
+        escape = (_ownership_action("/../opt/shieldmendai/venv/bin/shieldmendai", "root", "shieldmendai", 0o750),)
+        with self.assertRaises(InstallationValidationError):
+            _enforce_ownership_actions(self.root, escape, apply=True, live_reviewed=True)
 
     def test_runtime_install_idempotent_existing_marker(self) -> None:
         runtime = self.root / "runtime"
