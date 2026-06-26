@@ -154,6 +154,9 @@ were excluded from content review. No private source file was copied.
 
 ## Phase 8 Enforcement
 
+- The original Phase 8 package was not live-ready because actual file modes
+  and runtime installation were incomplete. The readiness audit caught those
+  blockers before live installation.
 - The dedicated canary configuration rejects unknown fields, wildcards,
   non-local targets, mutation-enabled targets, network targets, process
   enumeration, automatic discovery, repairs, and notification delivery.
@@ -163,11 +166,25 @@ were excluded from content review. No private source file was copied.
   `--apply`; reviewed live-root use additionally requires `--live-reviewed`.
 - Installation refuses repository paths, prohibited private paths, traversal,
   symlink escapes, and conflicting existing files.
-- The manifest is checksummed. Rollback removes only manifest-owned unchanged
-  files and preserves unknown files.
+- Installation enforces actual modes under the explicit temporary root:
+  launchers `0750`, configuration `0640`, manifest/audit `0640`, and systemd
+  units `0644`. The manifest records actual resulting file modes.
+- Offline runtime installation accepts only a local ShieldMendAi wheel, checks
+  expected name, expected version, checksum, traversal, symlink escapes, and
+  conflicting runtimes, and runs fixed `venv` and `pip install --no-index
+  --no-deps` commands with `shell=False`.
+- The service-user plan is `shieldmendai:shieldmendai`,
+  `/usr/sbin/nologin`, no home, no sudo, and no root runtime. `/opt` and
+  `/etc` are root-owned and service-readable; state, incident, demo, log, and
+  runtime directories are service-owned.
+- The manifest is checksummed. Rollback stops/disables canary units first,
+  removes only manifest-owned unchanged files, preserves modified or unknown
+  files, preserves unrelated `/root/shieldmend_demo.sh`, and leaves service
+  user removal as a separate explicit operator action.
 - Hardened units use a non-root service user, empty capabilities, strict
   filesystem protection, exact read/write paths, private networking, and no
-  repair or notification command.
+  repair or notification command. ExecStart references
+  `/opt/shieldmendai/venv/bin/shieldmendai`.
 - The observer reads one ShieldMendAi-owned JSON health artifact per invocation
   and records sanitized local incidents only. It does not restart, kill, start,
   rewrite, invoke `os.system`, call HTTP, open sockets, send Telegram, resolve

@@ -8,19 +8,24 @@ roll back failed actions, and report sanitized incidents.
 ShieldMendAi does not guarantee detection or prevention of every vulnerability,
 attack, application failure, or unsafe repair condition.
 
-## Phase 7 Status
+## Phase 8 Status
 
-Phase 7 adds typed installation and uninstall planning, temporary-root sandbox
-installation, checksummed manifests, least-privilege service-user and
-filesystem plans, safe bootstrap configuration, template-only systemd units,
-exact Linux target allowlists, a local-only read-only pilot policy,
-fixture-backed Linux observers, one-cycle pilot control, observation audits,
-and local checksummed incident persistence. It preserves all Phase 2–6
-behavior.
+Phase 8 is a dedicated-server read-only canary package with a deployment
+readiness fix. A manual readiness audit found the first Phase 8 package was not
+live-ready because launcher/config file modes and the isolated runtime
+installation were incomplete. The audit caught those blockers before any live
+installation.
 
-It performs no real installation, user creation, permission or ownership
-change, systemd operation, live observation, repair, notification, network
-connection, customer deployment, or production-path modification.
+The current package enforces actual temporary-root file modes, supports
+`python3 -m shieldmendai`, validates and installs a local ShieldMendAi wheel
+into `/opt/shieldmendai/venv` with `--no-index --no-deps`, renders systemd
+units that execute `/opt/shieldmendai/venv/bin/shieldmendai`, and documents the
+operator-reviewed service-user and ownership commands.
+
+It performs no dedicated-server contact, SSH, real installation, user creation,
+ownership change, systemd operation, live observation, repair, notification,
+network connection, customer deployment, or production-path modification during
+development and tests.
 
 Implemented:
 
@@ -125,6 +130,8 @@ shieldmendai inspect-pilot-policy examples/pilot/policy.yaml
 shieldmendai list-linux-observers
 shieldmendai inspect-canary-config examples/canary/dedicated-canary.yaml
 shieldmendai render-canary-systemd-units
+shieldmendai show-canary-service-user-plan
+shieldmendai canary-runtime-install-preview /absolute/path/to/shieldmendai-0.4.0-py3-none-any.whl --runtime-path /tmp/shieldmendai-runtime
 ```
 
 `plan` remains planning-only. Simulation output is explicitly labeled and
@@ -134,7 +141,7 @@ variables.
 Without an editable installation:
 
 ```bash
-PYTHONPATH=src python3 -m shieldmendai.main --version
+PYTHONPATH=src python3 -m shieldmendai --version
 ```
 
 ## Tests
@@ -174,10 +181,11 @@ PYTHONPATH=src python3 -m unittest discover -s tests -v
 8. Phase 8: dedicated test-server read-only canary deployment package —
    prepared for manual execution.
 
-Phase 8 has not been deployed. The package is read-only observation only:
-no repairs, no restarts by ShieldMendAi, no notifications, no customer
-deployment, no trading-bot dependency, no code rewriting, and no access to the
-prohibited unrelated private source tree.
+Phase 8 has not been deployed. The dedicated server was not contacted during
+the readiness fix. The package is read-only observation only: no repairs, no
+restarts by ShieldMendAi, no notifications, no customer deployment, no
+trading-bot dependency, no code rewriting, and no access to the prohibited
+unrelated private source tree.
 
 ## License
 

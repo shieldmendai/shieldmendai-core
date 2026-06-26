@@ -2,7 +2,7 @@
 
 ## Current Stage
 
-Phase 8 — dedicated-server read-only canary deployment package prepared.
+Phase 8 — dedicated-server read-only canary deployment readiness fix prepared.
 
 ## Implemented
 
@@ -58,6 +58,13 @@ Phase 8 — dedicated-server read-only canary deployment package prepared.
 - Read-only demo observation workflow with local incident creation and recovery
 - Preview-first rollback that removes only manifest-owned unchanged files
 - Phase 8 canary CLI commands and focused tests
+- Actual canary package file-mode enforcement under explicit temporary roots
+- `python3 -m shieldmendai` package entry point
+- Offline isolated runtime installation preview/apply for a local verified
+  ShieldMendAi wheel
+- Systemd ExecStart templates pointing at `/opt/shieldmendai/venv/bin/shieldmendai`
+- Reviewed service-user and filesystem ownership plan
+- Static temporary-root systemd fixture verification
 
 ## Modeled Only
 
@@ -68,6 +75,7 @@ Phase 8 — dedicated-server read-only canary deployment package prepared.
 - Production incident persistence and production retention deletion
 - Isolated code-repair workflow
 - Manual live application of the dedicated canary package
+- Service user/group creation and ownership changes
 
 ## Not Available
 
@@ -78,10 +86,14 @@ Phase 8 — dedicated-server read-only canary deployment package prepared.
 - Notification delivery
 - Customer deployment
 - Automatic deployment to the dedicated server
+- Public package download during runtime installation
 
 ## Phase 8 Status
 
-Deployment package prepared. Deployment is still pending manual operator
-execution on the verified dedicated server. ShieldMendAi remains read-only:
-no repairs, no restarts, no notifications, no network access, no customer
+Readiness fix prepared. The original Phase 8 package was not live-ready because
+actual permissions and runtime installation were incomplete; the readiness
+audit caught the blockers before live installation. Deployment is still pending
+manual operator execution on the verified dedicated server. The dedicated
+server was not contacted during this fix. ShieldMendAi remains read-only: no
+repairs, no restarts, no notifications, no network access, no customer
 deployment, no trading-bot dependency, and no code rewriting.

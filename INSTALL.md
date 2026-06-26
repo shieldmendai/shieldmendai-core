@@ -1,8 +1,10 @@
 # ShieldMendAi Development Installation
 
 ShieldMendAi is currently a Phase 8 read-only dedicated canary deployment
-package. The package has been prepared for manual operator execution; deployment
-has not been applied.
+package with a deployment readiness fix. A manual readiness audit found the
+first Phase 8 package was not live-ready because actual file modes and runtime
+installation were incomplete. The blockers were caught before live
+installation; deployment has not been applied.
 
 ## Requirements
 
@@ -49,6 +51,7 @@ shieldmendai inspect-pilot-policy examples/pilot/policy.yaml
 shieldmendai list-linux-observers
 shieldmendai inspect-canary-config examples/canary/dedicated-canary.yaml
 shieldmendai render-canary-systemd-units
+shieldmendai show-canary-service-user-plan
 ```
 
 These commands only parse, validate, normalize, redact, authorize, plan,
@@ -76,6 +79,12 @@ swap creation and Ubuntu package installation as separate operator-reviewed
 commands. The ShieldMendAi package never installs OS packages, opens firewall
 ports, copies secrets, enables repairs, or enables notifications.
 
-All mutating canary CLI commands require `--apply`; preview is the default.
-The future live service identity is `shieldmendai:shieldmendai` with
+The live runtime path is `/opt/shieldmendai/venv`. Runtime installation accepts
+only a local ShieldMendAi wheel, validates the expected version and checksum,
+uses `--no-index --no-deps`, rejects traversal and symlink escapes, and requires
+explicit `--apply`.
+
+All mutating canary CLI commands require `--apply`; preview is the default. The
+future live service identity is `shieldmendai:shieldmendai` with
 `/usr/sbin/nologin`, no interactive home, no sudo access, and no root runtime.
+The generated units execute `/opt/shieldmendai/venv/bin/shieldmendai`.

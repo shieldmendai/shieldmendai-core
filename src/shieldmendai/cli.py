@@ -12,11 +12,14 @@ from .config import load_config
 from .dedicated_canary import (
     default_canary_config,
     install_canary_package,
+    install_offline_runtime,
     load_canary_config,
     observe_demo_health,
     render_canary_systemd_units,
     rollback_canary_package,
     safe_canary_dict,
+    service_user_ownership_plan,
+    verify_canary_systemd_fixture,
 )
 from .errors import (
     AdapterError,
@@ -271,6 +274,34 @@ def build_parser() -> argparse.ArgumentParser:
         "render-canary-systemd-units",
         help="render dedicated canary systemd units without installing them",
     )
+    commands.add_parser(
+        "show-canary-service-user-plan",
+        help="show the reviewed canary service user and ownership plan",
+    )
+    systemd_fixture = commands.add_parser(
+        "verify-canary-systemd-fixture",
+        help="statically verify a complete temporary-root canary systemd fixture",
+    )
+    systemd_fixture.add_argument("root")
+    runtime_preview = commands.add_parser(
+        "canary-runtime-install-preview",
+        help="preview isolated offline runtime installation without writing files",
+    )
+    runtime_preview.add_argument("wheel_path")
+    runtime_preview.add_argument("--runtime-path", default="/opt/shieldmendai/venv")
+    runtime_preview.add_argument("--expected-version")
+    runtime_preview.add_argument("--expected-sha256")
+    runtime_preview.add_argument("--live-reviewed", action="store_true")
+    runtime_apply = commands.add_parser(
+        "canary-runtime-install-apply",
+        help="apply isolated offline runtime installation from a local wheel",
+    )
+    runtime_apply.add_argument("wheel_path")
+    runtime_apply.add_argument("--runtime-path", default="/opt/shieldmendai/venv")
+    runtime_apply.add_argument("--expected-version")
+    runtime_apply.add_argument("--expected-sha256")
+    runtime_apply.add_argument("--apply", action="store_true")
+    runtime_apply.add_argument("--live-reviewed", action="store_true")
     canary_preview = commands.add_parser(
         "canary-install-preview", help="preview dedicated canary installation without writing files"
     )
@@ -387,6 +418,33 @@ def run(argv: Sequence[str] | None = None) -> int:
         if args.command == "render-canary-systemd-units":
             print("PREVIEW ONLY — DEDICATED CANARY SYSTEMD UNITS NOT INSTALLED")
             _print_json(render_canary_systemd_units())
+            return 0
+        if args.command == "show-canary-service-user-plan":
+            print("PREVIEW ONLY — SERVICE USER AND OWNERSHIP COMMANDS NOT RUN")
+            _print_json(safe_canary_dict(service_user_ownership_plan()))
+            return 0
+        if args.command == "verify-canary-systemd-fixture":
+            print("STATIC SYSTEMD FIXTURE VERIFICATION — NO SYSTEMD OPERATION")
+            result = verify_canary_systemd_fixture(args.root)
+            _print_json(safe_canary_dict(result))
+            return 0 if result.valid else 5
+        if args.command in {"canary-runtime-install-preview", "canary-runtime-install-apply"}:
+            if args.command == "canary-runtime-install-apply" and not args.apply:
+                raise InstallationValidationError("runtime installation apply requires explicit --apply")
+            result = install_offline_runtime(
+                args.wheel_path,
+                args.runtime_path,
+                apply=args.command == "canary-runtime-install-apply",
+                expected_version=args.expected_version or __version__,
+                expected_sha256=args.expected_sha256,
+                live_reviewed=args.live_reviewed,
+            )
+            print(
+                "RUNTIME INSTALLATION APPLY — LOCAL WHEEL INSTALLED OFFLINE"
+                if args.command == "canary-runtime-install-apply"
+                else "PREVIEW ONLY — RUNTIME INSTALLATION CHANGES NOT WRITTEN"
+            )
+            _print_json(safe_canary_dict(result))
             return 0
         if args.command in {"canary-install-preview", "canary-install-apply"}:
             if args.command == "canary-install-apply" and not args.apply:
