@@ -1,0 +1,28 @@
+schema_version: "1.0"
+application_id: shieldmendai-dedicated-canary
+canary_identity: shieldmendai-dedicated-read-only-canary
+expected_hostname: shieldmendai
+environment: dedicated_canary
+local_only: true
+read_only: true
+observation_enabled: true
+repairs_enabled: false
+notification_delivery_enabled: false
+network_access_enabled: false
+process_enumeration_enabled: false
+automatic_target_discovery: false
+incident_store_path: /var/lib/shieldmendai/incidents
+state_store_path: /var/lib/shieldmendai
+log_level: INFO
+observation_interval_seconds: 300
+targets:
+  - target_id: shieldmendai-demo-health-json
+    adapter_type: json_file
+    local_only: true
+    read_only: true
+    mutation_enabled: false
+    network_required: false
+    allowed_read_paths:
+      - /var/lib/shieldmendai/demo/health.json
+    incident_category: application_test_failure
+    severity: low

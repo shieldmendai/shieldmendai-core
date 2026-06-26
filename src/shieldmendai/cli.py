@@ -9,6 +9,15 @@ from collections.abc import Sequence
 
 from . import __version__
 from .config import load_config
+from .dedicated_canary import (
+    default_canary_config,
+    install_canary_package,
+    load_canary_config,
+    observe_demo_health,
+    render_canary_systemd_units,
+    rollback_canary_package,
+    safe_canary_dict,
+)
 from .errors import (
     AdapterError,
     ConfigurationError,
@@ -254,6 +263,44 @@ def build_parser() -> argparse.ArgumentParser:
     pilot.add_argument("policy_path")
     pilot.add_argument("scenario_path")
     pilot.add_argument("sandbox_root")
+    canary_config = commands.add_parser(
+        "inspect-canary-config", help="validate the dedicated-server canary configuration"
+    )
+    canary_config.add_argument("config_path")
+    commands.add_parser(
+        "render-canary-systemd-units",
+        help="render dedicated canary systemd units without installing them",
+    )
+    canary_preview = commands.add_parser(
+        "canary-install-preview", help="preview dedicated canary installation without writing files"
+    )
+    canary_preview.add_argument("root")
+    canary_preview.add_argument("--config-path")
+    canary_preview.add_argument("--actual-hostname")
+    canary_preview.add_argument("--canary-identity")
+    canary_apply = commands.add_parser(
+        "canary-install-apply", help="apply dedicated canary package to an explicit reviewed root"
+    )
+    canary_apply.add_argument("root")
+    canary_apply.add_argument("--config-path")
+    canary_apply.add_argument("--actual-hostname")
+    canary_apply.add_argument("--canary-identity")
+    canary_apply.add_argument("--apply", action="store_true")
+    canary_observe = commands.add_parser(
+        "canary-observe", help="run one read-only dedicated canary observation cycle"
+    )
+    canary_observe.add_argument("root")
+    canary_observe.add_argument("--config-path")
+    canary_observe.add_argument("--observed-at", default="2026-06-26T00:00:00Z")
+    canary_rollback_preview = commands.add_parser(
+        "canary-rollback-preview", help="preview dedicated canary rollback without removing files"
+    )
+    canary_rollback_preview.add_argument("root")
+    canary_rollback_apply = commands.add_parser(
+        "canary-rollback-apply", help="apply dedicated canary rollback for manifest-owned files only"
+    )
+    canary_rollback_apply.add_argument("root")
+    canary_rollback_apply.add_argument("--apply", action="store_true")
     return parser
 
 
@@ -328,6 +375,52 @@ def run(argv: Sequence[str] | None = None) -> int:
                 }
             )
             return result.exit_code
+        if args.command == "inspect-canary-config":
+            print("VERIFICATION ONLY — DEDICATED CANARY CONFIGURATION")
+            _print_json(safe_canary_dict(load_canary_config(args.config_path)))
+            return 0
+        if args.command == "render-canary-systemd-units":
+            print("PREVIEW ONLY — DEDICATED CANARY SYSTEMD UNITS NOT INSTALLED")
+            _print_json(render_canary_systemd_units())
+            return 0
+        if args.command in {"canary-install-preview", "canary-install-apply"}:
+            if args.command == "canary-install-apply" and not args.apply:
+                raise InstallationValidationError("installation apply requires explicit --apply")
+            config = load_canary_config(args.config_path) if args.config_path else default_canary_config()
+            result = install_canary_package(
+                config,
+                args.root,
+                apply=args.command == "canary-install-apply",
+                actual_hostname=args.actual_hostname,
+                canary_identity=args.canary_identity,
+            )
+            print(
+                "INSTALLATION APPLY — DEDICATED CANARY PACKAGE WRITTEN"
+                if args.command == "canary-install-apply"
+                else "PREVIEW ONLY — DEDICATED CANARY INSTALLATION CHANGES NOT WRITTEN"
+            )
+            _print_json(safe_canary_dict(result))
+            return 0
+        if args.command == "canary-observe":
+            config = load_canary_config(args.config_path) if args.config_path else default_canary_config()
+            result = observe_demo_health(config, args.root, observed_at=args.observed_at)
+            print("READ-ONLY CANARY OBSERVATION — NO REPAIR OR NOTIFICATION")
+            _print_json(safe_canary_dict(result))
+            return 0 if result.status is ObservationStatus.HEALTHY else 3
+        if args.command in {"canary-rollback-preview", "canary-rollback-apply"}:
+            if args.command == "canary-rollback-apply" and not args.apply:
+                raise InstallationValidationError("rollback apply requires explicit --apply")
+            result = rollback_canary_package(
+                args.root,
+                apply=args.command == "canary-rollback-apply",
+            )
+            print(
+                "ROLLBACK APPLY — MANIFEST-OWNED CANARY FILES REMOVED"
+                if args.command == "canary-rollback-apply"
+                else "ROLLBACK PREVIEW ONLY — NOTHING REMOVED"
+            )
+            _print_json(safe_canary_dict(result))
+            return 0
         if args.command == "list-notifiers":
             print("SIMULATION ONLY — PRODUCTION NOTIFICATION DELIVERY IS UNAVAILABLE")
             _print_json(
