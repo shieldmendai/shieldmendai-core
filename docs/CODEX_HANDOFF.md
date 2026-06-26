@@ -2,9 +2,9 @@
 
 - Product name: ShieldMendAi
 - Workspace: `/root/ShieldMendAi`
-- Current branch: `codex/extraction-phase-7`
-- Current phase: Phase 7 — controlled installation sandbox and local-only
-  read-only Linux observation pilot complete.
+- Current branch: `codex/extraction-phase-8`
+- Current phase: Phase 8 — dedicated-server read-only canary deployment
+  package prepared; deployment not applied.
 - Completed work: preserved the Phase 6 baseline; added typed installation,
   manifest, target, path, file, service-user, permission, ownership, bootstrap,
   unit-template, validation, audit, simulation, uninstall-plan, and uninstall
@@ -18,7 +18,7 @@
   executable, file, and structured-file observation; one-cycle deterministic
   pilot control; observation audits; and checksummed local incident creation
   and healthy-recheck resolution.
-- Deferred work: Phase 8 dedicated test-server read-only canary deployment.
+- Deferred work: manual operator execution on the verified dedicated server.
 - Baseline verified: workspace and exact official origin; clean Phase 6
   worktree; local/remote Phase 6 tip
   `715116403704dfcb4fb3a86b93840284c01df8e7`; repository-local ShieldMendAi
@@ -39,11 +39,16 @@
 - Remote branch: `origin/codex/extraction-phase-7`.
 - Push status: Checkpoints 1, 2, and 3 pushed; remote tip confirmed at
   `9b883f55fb90561fd6a9581267eea573e5ef6395`.
-- Exact Phase 8 task: Deploy ShieldMendAi to its dedicated test server in a
-  strictly read-only canary configuration, with verified server identity,
-  dedicated service user, controlled installation, checksummed manifest, real
-  local layout, installed observer service/timer, ShieldMendAi-owned test
-  targets only, local incidents, no automatic repairs, no restarts, no
-  production notifications, no customer deployment, and verified uninstall.
+- Phase 8 package: added dedicated canary configuration, host identity
+  validation, preview/apply installation model, checksummed manifest, sanitized
+  audit, hardened systemd unit rendering, local demo health JSON target,
+  read-only observation, local incident creation and recovery verification,
+  rollback preview/apply, and operator runbook.
+- Safety status: no server contacted, no SSH used, no deployment applied, no
+  user/group/systemd/apt/pip/chmod/chown host modification executed, no repair
+  capability enabled, no notification capability enabled, and no real IP
+  address tracked.
+- Checkpoint 1 commit: `ad1f81a`.
+- Checkpoint 2 commit: `1ba8b0e`.
 - Blockers: none.
-- UTC timestamp: 2026-06-26T00:45:55Z
+- UTC timestamp: 2026-06-26T00:00:00Z

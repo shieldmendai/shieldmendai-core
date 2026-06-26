@@ -199,11 +199,16 @@ application metadata remain isolated per installation. The design introduces
 no mandatory cloud service, shared customer database, shared credential,
 automatic telemetry, or automatic upload.
 
-## Exact Phase 8 Task
+## Phase 8 Dedicated Canary Package
 
-Deploy ShieldMendAi to its dedicated test server in a strictly read-only canary
-configuration with verified server identity, a dedicated service user,
-controlled checksummed installation, installed observer service and timer,
-ShieldMendAi-owned test targets only, local incidents, and verified
-rollback/uninstallation. Keep repairs, restarts, production notifications, and
-customer deployment disabled.
+The Phase 8 package prepares a manual dedicated-server read-only canary. It
+adds a strict canary configuration, host identity validation, explicit preview
+and apply installation modeling, checksummed manifests, sanitized audit
+records, hardened systemd unit rendering, a ShieldMendAi-owned demo health JSON
+target, read-only observation, local incident creation, manual recovery
+verification, and rollback.
+
+Deployment has not occurred. The package does not contact the server, use SSH,
+create users or groups, run systemd, install packages, change ownership or
+permissions, enable repairs, enable notifications, open network connections,
+rewrite code, inspect customer targets, or depend on a trading bot.

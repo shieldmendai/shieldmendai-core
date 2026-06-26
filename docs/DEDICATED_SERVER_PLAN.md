@@ -23,3 +23,19 @@ user explicitly authorizes deployment.
 
 Never transfer private trading directories, wallets, secrets, logs, reports,
 backups, databases, or state to the dedicated ShieldMendAi server.
+
+## Phase 8 Manual Canary Handoff
+
+The Phase 8 repository output is a deployment package and runbook only. No
+server was contacted and no deployment was performed during package creation.
+
+Manual execution starts with [Phase 8 canary runbook](PHASE8_CANARY_RUNBOOK.md).
+The operator must separately review swap creation and Ubuntu Python packaging
+prerequisites. The ShieldMendAi installer does not hide `apt`, `pip`, firewall,
+user/group, `chmod`, `chown`, or systemd operations.
+
+The canary uses only ShieldMendAi-owned demo files and the service identity
+`shieldmendai:shieldmendai`. ShieldMendAi remains read-only: it observes the
+demo health artifact, records sanitized local incidents, and never repairs,
+restarts, rewrites, sends notifications, discovers targets, or uses network
+access.

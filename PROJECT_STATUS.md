@@ -2,8 +2,7 @@
 
 ## Current Stage
 
-Phase 7 — controlled installation sandbox and local-only read-only Linux
-observation pilot.
+Phase 8 — dedicated-server read-only canary deployment package prepared.
 
 ## Implemented
 
@@ -50,6 +49,15 @@ observation pilot.
 - Read-only observer capabilities and disabled production adapters
 - One-cycle fixture-backed pilot with local incident persistence
 - Phase 7 installation and pilot CLI commands
+- Dedicated canary configuration template
+- Host identity validation for the manually verified canary server
+- Preview-first and explicit-apply canary installation package model
+- Checksummed canary installation manifest and sanitized installation audit
+- Hardened canary systemd unit rendering, including the demo service
+- ShieldMendAi-owned local demo health JSON target
+- Read-only demo observation workflow with local incident creation and recovery
+- Preview-first rollback that removes only manifest-owned unchanged files
+- Phase 8 canary CLI commands and focused tests
 
 ## Modeled Only
 
@@ -59,19 +67,21 @@ observation pilot.
 - Real Telegram, email, SMS, webhook, and local production delivery
 - Production incident persistence and production retention deletion
 - Isolated code-repair workflow
+- Manual live application of the dedicated canary package
 
 ## Not Available
 
-- Live monitoring or process inspection
+- Unrestricted live monitoring or process inspection
 - systemd or network access
 - Real repairs, restarts, file or permission changes, or deployments
 - Vulnerability or security scanning
 - Notification delivery
-- Production installer or dedicated-server deployment
+- Customer deployment
+- Automatic deployment to the dedicated server
 
-## Next Task — Phase 8
+## Phase 8 Status
 
-Deploy ShieldMendAi to its dedicated test server in a strictly read-only canary
-configuration. Use only ShieldMendAi-owned test targets. Keep automatic
-repairs, service restarts, production notifications, and customer deployment
-disabled, and verify rollback and uninstallation.
+Deployment package prepared. Deployment is still pending manual operator
+execution on the verified dedicated server. ShieldMendAi remains read-only:
+no repairs, no restarts, no notifications, no network access, no customer
+deployment, no trading-bot dependency, and no code rewriting.

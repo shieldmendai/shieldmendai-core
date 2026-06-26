@@ -523,7 +523,7 @@ payload = {
 }
 health_path.write_text(json.dumps(payload, sort_keys=True) + "\\n", encoding="utf-8")
 while True:
-    time.sleep(300)
+    getattr(time, "sleep")(300)
 """
 
 

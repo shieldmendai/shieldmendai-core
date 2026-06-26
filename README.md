@@ -123,6 +123,8 @@ shieldmendai inspect-installation-plan examples/installation/plan.yaml
 shieldmendai render-systemd-units examples/installation/plan.yaml
 shieldmendai inspect-pilot-policy examples/pilot/policy.yaml
 shieldmendai list-linux-observers
+shieldmendai inspect-canary-config examples/canary/dedicated-canary.yaml
+shieldmendai render-canary-systemd-units
 ```
 
 `plan` remains planning-only. Simulation output is explicitly labeled and
@@ -149,6 +151,7 @@ PYTHONPATH=src python3 -m unittest discover -s tests -v
 - [Phase 5 deterministic recovery](docs/RECOVERY.md)
 - [Phase 6 incidents, retention, and notification simulation](docs/INCIDENTS_AND_NOTIFICATIONS.md)
 - [Phase 7 installation sandbox and Linux pilot](docs/INSTALLATION_AND_LINUX_PILOT.md)
+- [Phase 8 dedicated canary runbook](docs/PHASE8_CANARY_RUNBOOK.md)
 - [Architecture](docs/ARCHITECTURE.md)
 - [Security boundaries](docs/SECURITY_BOUNDARIES.md)
 - [Extraction plan](docs/EXTRACTION_PLAN.md)
@@ -168,11 +171,13 @@ PYTHONPATH=src python3 -m unittest discover -s tests -v
    simulations — complete.
 7. Phase 7: controlled installation sandbox and local-only read-only Linux
    pilot — complete.
-8. Phase 8: dedicated test-server deployment in a strictly read-only canary
-   configuration.
+8. Phase 8: dedicated test-server read-only canary deployment package —
+   prepared for manual execution.
 
-Phase 8 must not enable automatic repairs, service restarts, production
-notifications, or customer deployment.
+Phase 8 has not been deployed. The package is read-only observation only:
+no repairs, no restarts by ShieldMendAi, no notifications, no customer
+deployment, no trading-bot dependency, no code rewriting, and no access to the
+prohibited unrelated private source tree.
 
 ## License
 

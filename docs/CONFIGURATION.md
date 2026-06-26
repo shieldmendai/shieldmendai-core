@@ -163,3 +163,18 @@ enumeration, and systemd access disabled. Scenario input supplies a timestamp,
 exact host reference, and one fictional observation per target. Secret values,
 wildcards, automatic discovery, and environment-secret resolution are
 unavailable.
+
+## Phase 8 Dedicated Canary Configuration
+
+`examples/canary/dedicated-canary.yaml` is the reviewed canary template. It
+requires schema `1.0`, application ID `shieldmendai-dedicated-canary`,
+environment `dedicated_canary`, local-only mode, read-only mode, observation
+enabled, repairs disabled, notification delivery disabled, network access
+disabled, process enumeration disabled, no automatic discovery, exact incident
+and state paths, and one exact target allowlist entry.
+
+The only accepted Phase 8 target is the ShieldMendAi-owned local JSON health
+artifact `shieldmendai-demo-health-json`. Unknown fields, wildcard targets,
+unknown targets, non-local targets, mutation-enabled targets, and network
+targets are rejected. The configuration contains no secrets, no authenticated
+URL, no environment-secret lookup, no customer target, and no wildcard action.

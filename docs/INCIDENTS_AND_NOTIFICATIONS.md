@@ -121,3 +121,12 @@ temporary sandbox. Unhealthy fixture-backed findings create sanitized
 checksummed incidents, and later healthy fixture rechecks can resolve open
 pilot incidents. Notification delivery remains disabled and no production
 incident directory is created.
+
+## Phase 8 canary incidents
+
+The dedicated canary observer records only sanitized local incidents for the
+ShieldMendAi-owned demo health JSON target. A deliberately stopped or unhealthy
+demo creates an open incident. ShieldMendAi does not repair or restart the demo.
+After the operator manually restores the demo health artifact, a later read-only
+observation resolves the incident through verification. Notification delivery
+remains disabled.

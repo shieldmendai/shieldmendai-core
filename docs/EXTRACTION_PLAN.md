@@ -113,6 +113,8 @@ performed only when explicitly authorized and only to the official repository.
 
 ## Phase 8 — Dedicated test-server read-only canary
 
+- Status: package prepared on `codex/extraction-phase-8`; manual deployment is
+  still pending.
 - Goal: deploy ShieldMendAi to its dedicated test server in a strictly
   read-only canary configuration.
 - Outputs: verified server identity, dedicated service user, controlled
@@ -125,6 +127,10 @@ performed only when explicitly authorized and only to the official repository.
 - Stop conditions: server identity is uncertain, installation scope expands,
   a target is not ShieldMendAi-owned, read-only enforcement fails, or rollback
   cannot be verified.
+- Result: created the canary configuration, preview/apply package model,
+  hardened unit rendering, demo health target, incident workflow, rollback
+  workflow, tests, and manual runbook. No live server contact or deployment was
+  performed.
 
 ## Phase 10 — Side-by-side validation
 

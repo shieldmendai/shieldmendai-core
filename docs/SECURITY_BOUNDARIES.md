@@ -151,3 +151,25 @@ were excluded from content review. No private source file was copied.
   HTTP, TCP, sleep, repair, or notification delivery.
 - Incident and observation records remain sanitized, checksummed, and confined
   to the validated temporary sandbox.
+
+## Phase 8 Enforcement
+
+- The dedicated canary configuration rejects unknown fields, wildcards,
+  non-local targets, mutation-enabled targets, network targets, process
+  enumeration, automatic discovery, repairs, and notification delivery.
+- Host validation requires the expected hostname or an explicit reviewed
+  canary identity; public IP addresses are rejected from tracked configuration.
+- Preview is the default. Installation and rollback apply commands require
+  `--apply`; reviewed live-root use additionally requires `--live-reviewed`.
+- Installation refuses repository paths, prohibited private paths, traversal,
+  symlink escapes, and conflicting existing files.
+- The manifest is checksummed. Rollback removes only manifest-owned unchanged
+  files and preserves unknown files.
+- Hardened units use a non-root service user, empty capabilities, strict
+  filesystem protection, exact read/write paths, private networking, and no
+  repair or notification command.
+- The observer reads one ShieldMendAi-owned JSON health artifact per invocation
+  and records sanitized local incidents only. It does not restart, kill, start,
+  rewrite, invoke `os.system`, call HTTP, open sockets, send Telegram, resolve
+  environment secrets, enumerate unrestricted `/proc`, or inspect unrelated
+  services.

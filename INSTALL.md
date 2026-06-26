@@ -1,8 +1,8 @@
 # ShieldMendAi Development Installation
 
-ShieldMendAi is currently a Phase 7 sandbox and simulation framework. There is
-no production installer, installed systemd service, live monitoring engine, or
-repair engine yet.
+ShieldMendAi is currently a Phase 8 read-only dedicated canary deployment
+package. The package has been prepared for manual operator execution; deployment
+has not been applied.
 
 ## Requirements
 
@@ -47,6 +47,8 @@ shieldmendai plan-install examples/installation/plan.yaml
 shieldmendai render-systemd-units examples/installation/plan.yaml
 shieldmendai inspect-pilot-policy examples/pilot/policy.yaml
 shieldmendai list-linux-observers
+shieldmendai inspect-canary-config examples/canary/dedicated-canary.yaml
+shieldmendai render-canary-systemd-units
 ```
 
 These commands only parse, validate, normalize, redact, authorize, plan,
@@ -67,6 +69,13 @@ Pilot simulation requires caller-created fictional fixtures beneath the same
 temporary root. See
 [Phase 7 installation and pilot](docs/INSTALLATION_AND_LINUX_PILOT.md).
 
-Production installation, real service users, protected credential files,
-installed `shieldmendai-*.service` units, and live observation remain Phase 8
-work.
+## Dedicated Canary Package
+
+See [Phase 8 canary runbook](docs/PHASE8_CANARY_RUNBOOK.md). The runbook keeps
+swap creation and Ubuntu package installation as separate operator-reviewed
+commands. The ShieldMendAi package never installs OS packages, opens firewall
+ports, copies secrets, enables repairs, or enables notifications.
+
+All mutating canary CLI commands require `--apply`; preview is the default.
+The future live service identity is `shieldmendai:shieldmendai` with
+`/usr/sbin/nologin`, no interactive home, no sudo access, and no root runtime.
