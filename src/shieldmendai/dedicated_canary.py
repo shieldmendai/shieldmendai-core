@@ -374,7 +374,7 @@ def validate_host_identity(
     return CanaryHostValidation(config.expected_hostname, actual, canary_identity, accepted, reason)
 
 
-def validate_canary_root(root: str | Path) -> Path:
+def validate_canary_root(root: str | Path, *, live_reviewed: bool = False) -> Path:
     candidate = Path(root)
     if not candidate.is_absolute() or ".." in candidate.parts:
         raise InstallationValidationError("canary install root must be an absolute normalized path")
@@ -389,6 +389,8 @@ def validate_canary_root(root: str | Path) -> Path:
         raise InstallationValidationError("canary install root cannot be a symlink or traverse symlinks")
     if resolved == REPOSITORY_ROOT or resolved.is_relative_to(REPOSITORY_ROOT):
         raise InstallationValidationError("repository/source server paths are rejected")
+    if live_reviewed and resolved == Path("/"):
+        return resolved
     if not resolved.is_relative_to(Path(tempfile.gettempdir()).resolve(strict=True)):
         raise InstallationValidationError("this package model may only be applied to temporary test roots")
     return resolved
@@ -429,7 +431,7 @@ ExecStart={exec_start}
     return {
         "shieldmendai-observer.service": common_service.format(
             description="ShieldMendAi read-only dedicated canary observer",
-            exec_start="/opt/shieldmendai/bin/shieldmendai canary-observe /etc/shieldmendai/dedicated-canary.yaml",
+            exec_start="/opt/shieldmendai/bin/shieldmendai canary-observe / --config-path /etc/shieldmendai/dedicated-canary.yaml --live-reviewed",
         ),
         "shieldmendai-observer.timer": """[Unit]
 Description=Schedule ShieldMendAi read-only dedicated canary observation
@@ -612,8 +614,9 @@ def install_canary_package(
     apply: bool = False,
     actual_hostname: str | None = None,
     canary_identity: str | None = None,
+    live_reviewed: bool = False,
 ) -> CanaryOperationResult:
-    install_root = validate_canary_root(root)
+    install_root = validate_canary_root(root, live_reviewed=live_reviewed)
     host = validate_host_identity(config, actual_hostname=actual_hostname, canary_identity=canary_identity)
     if not host.accepted:
         raise InstallationValidationError("unverified host rejected")
@@ -691,8 +694,8 @@ def install_canary_package(
     )
 
 
-def load_canary_manifest(root: str | Path) -> CanaryManifest:
-    install_root = validate_canary_root(root)
+def load_canary_manifest(root: str | Path, *, live_reviewed: bool = False) -> CanaryManifest:
+    install_root = validate_canary_root(root, live_reviewed=live_reviewed)
     path = install_root / "var/lib/shieldmendai/installation" / MANIFEST_NAME
     try:
         data = json.loads(path.read_text(encoding="utf-8"))
@@ -722,9 +725,11 @@ def load_canary_manifest(root: str | Path) -> CanaryManifest:
     )
 
 
-def rollback_canary_package(root: str | Path, *, apply: bool = False) -> CanaryOperationResult:
-    install_root = validate_canary_root(root)
-    manifest = load_canary_manifest(install_root)
+def rollback_canary_package(
+    root: str | Path, *, apply: bool = False, live_reviewed: bool = False
+) -> CanaryOperationResult:
+    install_root = validate_canary_root(root, live_reviewed=live_reviewed)
+    manifest = load_canary_manifest(install_root, live_reviewed=live_reviewed)
     conflicts: list[str] = []
     removed: list[str] = []
     preserved: list[str] = []
@@ -776,8 +781,9 @@ def observe_demo_health(
     root: str | Path,
     *,
     observed_at: str,
+    live_reviewed: bool = False,
 ) -> CanaryObservationResult:
-    install_root = validate_canary_root(root)
+    install_root = validate_canary_root(root, live_reviewed=live_reviewed)
     target = config.targets[0]
     health_path = install_root / "var/lib/shieldmendai/demo/health.json"
     healthy = False

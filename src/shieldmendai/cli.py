@@ -278,6 +278,7 @@ def build_parser() -> argparse.ArgumentParser:
     canary_preview.add_argument("--config-path")
     canary_preview.add_argument("--actual-hostname")
     canary_preview.add_argument("--canary-identity")
+    canary_preview.add_argument("--live-reviewed", action="store_true")
     canary_apply = commands.add_parser(
         "canary-install-apply", help="apply dedicated canary package to an explicit reviewed root"
     )
@@ -286,21 +287,25 @@ def build_parser() -> argparse.ArgumentParser:
     canary_apply.add_argument("--actual-hostname")
     canary_apply.add_argument("--canary-identity")
     canary_apply.add_argument("--apply", action="store_true")
+    canary_apply.add_argument("--live-reviewed", action="store_true")
     canary_observe = commands.add_parser(
         "canary-observe", help="run one read-only dedicated canary observation cycle"
     )
     canary_observe.add_argument("root")
     canary_observe.add_argument("--config-path")
     canary_observe.add_argument("--observed-at", default="2026-06-26T00:00:00Z")
+    canary_observe.add_argument("--live-reviewed", action="store_true")
     canary_rollback_preview = commands.add_parser(
         "canary-rollback-preview", help="preview dedicated canary rollback without removing files"
     )
     canary_rollback_preview.add_argument("root")
+    canary_rollback_preview.add_argument("--live-reviewed", action="store_true")
     canary_rollback_apply = commands.add_parser(
         "canary-rollback-apply", help="apply dedicated canary rollback for manifest-owned files only"
     )
     canary_rollback_apply.add_argument("root")
     canary_rollback_apply.add_argument("--apply", action="store_true")
+    canary_rollback_apply.add_argument("--live-reviewed", action="store_true")
     return parser
 
 
@@ -393,6 +398,7 @@ def run(argv: Sequence[str] | None = None) -> int:
                 apply=args.command == "canary-install-apply",
                 actual_hostname=args.actual_hostname,
                 canary_identity=args.canary_identity,
+                live_reviewed=args.live_reviewed,
             )
             print(
                 "INSTALLATION APPLY — DEDICATED CANARY PACKAGE WRITTEN"
@@ -403,7 +409,12 @@ def run(argv: Sequence[str] | None = None) -> int:
             return 0
         if args.command == "canary-observe":
             config = load_canary_config(args.config_path) if args.config_path else default_canary_config()
-            result = observe_demo_health(config, args.root, observed_at=args.observed_at)
+            result = observe_demo_health(
+                config,
+                args.root,
+                observed_at=args.observed_at,
+                live_reviewed=args.live_reviewed,
+            )
             print("READ-ONLY CANARY OBSERVATION — NO REPAIR OR NOTIFICATION")
             _print_json(safe_canary_dict(result))
             return 0 if result.status is ObservationStatus.HEALTHY else 3
@@ -413,6 +424,7 @@ def run(argv: Sequence[str] | None = None) -> int:
             result = rollback_canary_package(
                 args.root,
                 apply=args.command == "canary-rollback-apply",
+                live_reviewed=args.live_reviewed,
             )
             print(
                 "ROLLBACK APPLY — MANIFEST-OWNED CANARY FILES REMOVED"

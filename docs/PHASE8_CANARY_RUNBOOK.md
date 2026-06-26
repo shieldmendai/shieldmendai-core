@@ -61,6 +61,17 @@ shieldmendai canary-rollback-preview /tmp/shieldmendai-canary-root
 shieldmendai canary-rollback-apply /tmp/shieldmendai-canary-root --apply
 ```
 
+For the verified dedicated server only, the equivalent reviewed live-root
+commands use `/` and must include `--live-reviewed`:
+
+```bash
+shieldmendai canary-install-preview / --config-path /etc/shieldmendai/dedicated-canary.yaml --actual-hostname shieldmendai --live-reviewed
+shieldmendai canary-install-apply / --config-path /etc/shieldmendai/dedicated-canary.yaml --actual-hostname shieldmendai --apply --live-reviewed
+shieldmendai canary-observe / --config-path /etc/shieldmendai/dedicated-canary.yaml --live-reviewed
+shieldmendai canary-rollback-preview / --live-reviewed
+shieldmendai canary-rollback-apply / --apply --live-reviewed
+```
+
 The future live layout is:
 
 - `/opt/shieldmendai`
