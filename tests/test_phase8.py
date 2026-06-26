@@ -1,11 +1,16 @@
 from __future__ import annotations
 
 import contextlib
+import hashlib
 import io
 import json
+import os
+import stat
+import subprocess
 import socket
 import tempfile
 import unittest
+import zipfile
 from pathlib import Path
 from unittest import mock
 
@@ -23,15 +28,20 @@ from shieldmendai.dedicated_canary import (
     CANARY_IDENTITY,
     DEMO_TARGET_ID,
     FORBIDDEN_PRIVATE_PATH,
+    RUNTIME_CLI,
     default_canary_config,
     install_canary_package,
+    install_offline_runtime,
     load_canary_manifest,
     observe_demo_health,
     parse_canary_config,
     render_canary_systemd_units,
     rollback_canary_package,
+    service_user_ownership_plan,
     validate_canary_root,
     validate_host_identity,
+    verify_canary_systemd_fixture,
+    verify_runtime_wheel,
 )
 from shieldmendai.errors import InstallationConflictError, InstallationValidationError, PilotPolicyDeniedError
 from shieldmendai.incidents import IncidentStatus, LocalIncidentStore
@@ -173,6 +183,40 @@ class CanaryInstallationTests(unittest.TestCase):
                 self.config, self.root, apply=True, actual_hostname="shieldmendai"
             )
 
+    def test_actual_file_modes_are_enforced_and_recorded(self) -> None:
+        install_canary_package(self.config, self.root, apply=True, actual_hostname="shieldmendai")
+        launcher = self.root / "opt/shieldmendai/bin/shieldmendai"
+        config = self.root / "etc/shieldmendai/dedicated-canary.yaml"
+        unit = self.root / "etc/systemd/system/shieldmendai-observer.service"
+        audit = self.root / "var/lib/shieldmendai/installation/shieldmendai-canary-installation-audit.json"
+        manifest_file = self.root / "var/lib/shieldmendai/installation/shieldmendai-canary-installation-manifest.json"
+        self.assertEqual(stat.S_IMODE(launcher.stat().st_mode), 0o750)
+        self.assertEqual(stat.S_IMODE(config.stat().st_mode), 0o640)
+        self.assertEqual(stat.S_IMODE(unit.stat().st_mode), 0o644)
+        self.assertEqual(stat.S_IMODE(audit.stat().st_mode), 0o640)
+        self.assertEqual(stat.S_IMODE(manifest_file.stat().st_mode), 0o640)
+        manifest = load_canary_manifest(self.root)
+        recorded = {item.path: item.mode for item in manifest.files}
+        for path, mode in recorded.items():
+            actual = self.root.joinpath(*Path(path).parts[1:])
+            self.assertEqual(mode, f"{stat.S_IMODE(actual.stat().st_mode):04o}")
+        self.assertEqual(recorded["/opt/shieldmendai/bin/shieldmendai"], "0750")
+        self.assertEqual(recorded["/etc/shieldmendai/dedicated-canary.yaml"], "0640")
+        self.assertEqual(recorded["/etc/systemd/system/shieldmendai-observer.service"], "0644")
+
+    def test_chmod_remains_confined_to_temporary_root(self) -> None:
+        touched: list[Path] = []
+        original = Path.chmod
+
+        def audited_chmod(path: Path, mode: int) -> None:
+            touched.append(path)
+            self.assertTrue(path.resolve(strict=True).is_relative_to(self.root))
+            original(path, mode)
+
+        with mock.patch.object(Path, "chmod", audited_chmod):
+            install_canary_package(self.config, self.root, apply=True, actual_hostname="shieldmendai")
+        self.assertTrue(touched)
+
     def test_unrelated_files_and_root_demo_file_are_preserved(self) -> None:
         unrelated = self.root / "unknown.txt"
         unrelated.write_text("keep\n", encoding="utf-8")
@@ -210,6 +254,9 @@ class CanaryInstallationTests(unittest.TestCase):
             "ReadWritePaths=",
         ):
             self.assertIn(required, serialized)
+        self.assertIn(f"ExecStart={RUNTIME_CLI} canary-observe", serialized)
+        self.assertIn(f"ExecStart={RUNTIME_CLI} preview-retention", serialized)
+        self.assertNotIn("/opt/shieldmendai/bin/shieldmendai canary-observe", serialized)
         self.assertNotIn("User=root", serialized)
         self.assertNotIn("sudo", serialized.lower())
         self.assertNotIn("telegram", serialized.lower())
@@ -223,6 +270,150 @@ class CanaryInstallationTests(unittest.TestCase):
         code, stdout, _ = run_cli("inspect-canary-config", str(CONFIG_PATH))
         self.assertEqual(code, 0)
         self.assertIn("VERIFICATION ONLY", stdout)
+
+    def test_service_user_and_ownership_plan_is_reviewed_least_privilege(self) -> None:
+        plan = service_user_ownership_plan()
+        self.assertEqual(plan.user, "shieldmendai")
+        self.assertEqual(plan.group, "shieldmendai")
+        self.assertEqual(plan.shell, "/usr/sbin/nologin")
+        self.assertIsNone(plan.home_directory)
+        self.assertTrue(plan.system_account)
+        self.assertFalse(plan.sudo_allowed)
+        self.assertFalse(plan.run_as_root)
+        ownership = {item["path"]: item for item in plan.ownership}
+        self.assertEqual(ownership["/etc/shieldmendai"]["owner"], "root")
+        self.assertEqual(ownership["/etc/shieldmendai"]["group"], "shieldmendai")
+        self.assertEqual(ownership["/var/lib/shieldmendai"]["owner"], "shieldmendai")
+        self.assertEqual(ownership["/var/log/shieldmendai"]["group"], "shieldmendai")
+        self.assertTrue(all(not item["mode"].endswith(("2", "3", "6", "7")) for item in plan.ownership))
+
+    def test_static_systemd_fixture_verification(self) -> None:
+        install_canary_package(self.config, self.root, apply=True, actual_hostname="shieldmendai")
+        runtime_cli = self.root / "opt/shieldmendai/venv/bin/shieldmendai"
+        runtime_cli.parent.mkdir(parents=True)
+        runtime_cli.write_text("#!/usr/bin/env python3\nprint('ok')\n", encoding="utf-8")
+        runtime_cli.chmod(0o750)
+        result = verify_canary_systemd_fixture(self.root)
+        self.assertTrue(result.valid)
+        self.assertIn("temporary-root fixture", result.limitation)
+
+
+class CanaryRuntimeInstallationTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.temporary = tempfile.TemporaryDirectory()
+        self.root = Path(self.temporary.name)
+        self.wheel = self.root / "shieldmendai-0.4.0-py3-none-any.whl"
+        self._write_wheel(self.wheel, name="shieldmendai", version="0.4.0")
+
+    def tearDown(self) -> None:
+        self.temporary.cleanup()
+
+    def _write_wheel(self, path: Path, *, name: str, version: str) -> None:
+        dist = f"{name.replace('-', '_')}-{version}.dist-info"
+        with zipfile.ZipFile(path, "w") as archive:
+            archive.writestr(f"{dist}/METADATA", f"Name: {name}\nVersion: {version}\n")
+            archive.writestr(f"{dist}/WHEEL", "Wheel-Version: 1.0\n")
+
+    def test_runtime_wheel_validation_rejects_invalid_inputs(self) -> None:
+        verification = verify_runtime_wheel(self.wheel)
+        self.assertEqual(verification.package_name, "shieldmendai")
+        self.assertRegex(verification.sha256, r"^[0-9a-f]{64}$")
+        bad_name = self.root / "other-0.4.0-py3-none-any.whl"
+        self._write_wheel(bad_name, name="other", version="0.4.0")
+        with self.assertRaises(InstallationValidationError):
+            verify_runtime_wheel(bad_name)
+        bad_version = self.root / "shieldmendai-9.9.9-py3-none-any.whl"
+        self._write_wheel(bad_version, name="shieldmendai", version="9.9.9")
+        with self.assertRaises(InstallationValidationError):
+            verify_runtime_wheel(bad_version)
+        with self.assertRaises(InstallationValidationError):
+            verify_runtime_wheel(self.wheel, expected_sha256="0" * 64)
+        with self.assertRaises(InstallationValidationError):
+            verify_runtime_wheel(str(self.root / "../escape.whl"))
+        link = self.root / "linked.whl"
+        link.symlink_to(self.wheel)
+        with self.assertRaises(InstallationValidationError):
+            verify_runtime_wheel(link)
+
+    def test_runtime_install_preview_and_apply_use_offline_no_deps_commands(self) -> None:
+        runtime = self.root / "runtime"
+        preview = install_offline_runtime(self.wheel, runtime)
+        self.assertTrue(preview.preview_only)
+        self.assertFalse(runtime.exists())
+        def create_runtime(command: tuple[str, ...], **_: object) -> None:
+            runtime.mkdir(exist_ok=True)
+            bin_dir = runtime / "bin"
+            bin_dir.mkdir(exist_ok=True)
+            python = bin_dir / "python"
+            python.write_text("#!/usr/bin/env python3\n", encoding="utf-8")
+            python.chmod(0o750)
+            cli = bin_dir / "shieldmendai"
+            cli.write_text("#!/usr/bin/env python3\n", encoding="utf-8")
+            cli.chmod(0o750)
+
+        with mock.patch("shieldmendai.dedicated_canary._run_process", side_effect=create_runtime) as run_mock:
+            result = install_offline_runtime(self.wheel, runtime, apply=True)
+        self.assertFalse(result.preview_only)
+        calls = [tuple(call.args[0]) for call in run_mock.call_args_list]
+        self.assertIn(("python3", "-m", "venv", "--system-site-packages", str(runtime)), calls)
+        pip_calls = [call for call in calls if "-m" in call and "pip" in call]
+        self.assertEqual(len(pip_calls), 1)
+        self.assertIn("--no-deps", pip_calls[0])
+        self.assertIn("--no-index", pip_calls[0])
+        self.assertNotIn("http", " ".join(pip_calls[0]).lower())
+        self.assertTrue((runtime / "shieldmendai-runtime-installation.json").exists())
+
+    def test_runtime_install_rejects_traversal_symlink_and_conflicting_runtime(self) -> None:
+        with self.assertRaises(InstallationValidationError):
+            install_offline_runtime(self.wheel, str(self.root / "../runtime"))
+        target = self.root / "target"
+        target.mkdir()
+        link = self.root / "runtime-link"
+        link.symlink_to(target, target_is_directory=True)
+        with self.assertRaises(InstallationValidationError):
+            install_offline_runtime(self.wheel, link)
+        runtime = self.root / "runtime"
+        runtime.mkdir()
+        (runtime / "foreign.txt").write_text("not owned\n", encoding="utf-8")
+        with self.assertRaises(InstallationConflictError):
+            install_offline_runtime(self.wheel, runtime, apply=True)
+
+    def test_runtime_install_idempotent_existing_marker(self) -> None:
+        runtime = self.root / "runtime"
+        runtime.mkdir()
+        digest = hashlib.sha256(self.wheel.read_bytes()).hexdigest()
+        marker = runtime / "shieldmendai-runtime-installation.json"
+        marker.write_text(
+            json.dumps(
+                {
+                    "package_name": "shieldmendai",
+                    "package_version": "0.4.0",
+                    "wheel_sha256": digest,
+                }
+            ),
+            encoding="utf-8",
+        )
+        bin_dir = runtime / "bin"
+        bin_dir.mkdir()
+        cli = bin_dir / "shieldmendai"
+        cli.write_text("#!/usr/bin/env python3\n", encoding="utf-8")
+        cli.chmod(0o750)
+        with mock.patch("shieldmendai.dedicated_canary._run_process"):
+            result = install_offline_runtime(self.wheel, runtime, apply=True)
+        self.assertTrue(result.changed)
+
+    def test_python_module_entrypoint_works(self) -> None:
+        env = {**os.environ, "PYTHONPATH": str(SRC)}
+        completed = subprocess.run(
+            [sys.executable, "-m", "shieldmendai", "--help"],
+            cwd=self.root,
+            env=env,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        self.assertIn("ShieldMendAi", completed.stdout)
 
 
 class CanaryObservationAndRollbackTests(unittest.TestCase):
@@ -318,7 +509,10 @@ class CanaryRepositorySafetyTests(unittest.TestCase):
         module_text = (SRC / "shieldmendai" / "dedicated_canary.py").read_text(encoding="utf-8")
         self.assertNotIn('Path("/root/newbasebot")', module_text)
         self.assertNotIn("os.listdir", module_text)
-        self.assertNotIn("subprocess", module_text)
+        self.assertNotIn("shell=True", module_text)
+        self.assertNotIn("useradd", module_text)
+        self.assertNotIn("groupadd", module_text)
+        self.assertNotIn("systemctl", module_text)
         self.assertNotIn("requests", module_text)
         self.assertNotIn("urllib", module_text)
 

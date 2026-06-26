@@ -7,9 +7,11 @@ import json
 import re
 import socket
 import tempfile
+import zipfile
 from dataclasses import asdict, dataclass
 from enum import Enum
 from pathlib import Path, PurePosixPath
+from subprocess import run as _run_process
 from typing import Any, TypeVar
 
 import yaml
@@ -36,6 +38,10 @@ MANIFEST_NAME = "shieldmendai-canary-installation-manifest.json"
 AUDIT_NAME = "shieldmendai-canary-installation-audit.json"
 FORBIDDEN_PRIVATE_PATH = "/root/" + "newbasebot"
 REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
+RUNTIME_CLI = "/opt/shieldmendai/venv/bin/shieldmendai"
+RUNTIME_MARKER = "shieldmendai-runtime-installation.json"
+SERVICE_USER = "shieldmendai"
+SERVICE_GROUP = "shieldmendai"
 _T = TypeVar("_T")
 _ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]*$")
 _IP_ADDRESS = re.compile(r"\b(?:\d{1,3}\.){3}\d{1,3}\b")
@@ -135,6 +141,47 @@ class CanaryOperationResult:
     conflicts: tuple[str, ...]
     manifest: CanaryManifest | None = None
     audit_record: dict[str, Any] | None = None
+
+
+@dataclass(frozen=True)
+class RuntimeWheelVerification:
+    wheel_path: str
+    package_name: str
+    package_version: str
+    sha256: str
+    accepted: bool
+
+
+@dataclass(frozen=True)
+class RuntimeInstallationResult:
+    action: str
+    preview_only: bool
+    apply_requested: bool
+    changed: bool
+    runtime_path: str
+    cli_path: str
+    wheel: RuntimeWheelVerification
+    commands: tuple[tuple[str, ...], ...]
+    conflicts: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
+class ServiceUserOwnershipPlan:
+    user: str
+    group: str
+    shell: str
+    home_directory: str | None
+    system_account: bool
+    sudo_allowed: bool
+    run_as_root: bool
+    ownership: tuple[dict[str, str], ...]
+
+
+@dataclass(frozen=True)
+class SystemdVerificationResult:
+    valid: bool
+    checks: tuple[dict[str, Any], ...]
+    limitation: str | None = None
 
 
 @dataclass(frozen=True)
@@ -431,7 +478,7 @@ ExecStart={exec_start}
     return {
         "shieldmendai-observer.service": common_service.format(
             description="ShieldMendAi read-only dedicated canary observer",
-            exec_start="/opt/shieldmendai/bin/shieldmendai canary-observe / --config-path /etc/shieldmendai/dedicated-canary.yaml --live-reviewed",
+            exec_start=f"{RUNTIME_CLI} canary-observe / --config-path /etc/shieldmendai/dedicated-canary.yaml --live-reviewed",
         ),
         "shieldmendai-observer.timer": """[Unit]
 Description=Schedule ShieldMendAi read-only dedicated canary observation
@@ -449,7 +496,7 @@ WantedBy=timers.target
 """,
         "shieldmendai-incident-maintenance.service": common_service.format(
             description="ShieldMendAi local incident maintenance preview",
-            exec_start="/opt/shieldmendai/bin/shieldmendai preview-retention /var/lib/shieldmendai/incidents /etc/shieldmendai/retention.yaml",
+            exec_start=f"{RUNTIME_CLI} preview-retention /var/lib/shieldmendai/incidents /etc/shieldmendai/retention.yaml",
         ),
         "shieldmendai-incident-maintenance.timer": """[Unit]
 Description=Schedule ShieldMendAi local incident maintenance preview
@@ -567,13 +614,47 @@ def _relative_install_files(config: DedicatedCanaryConfig) -> dict[str, bytes]:
     return files
 
 
+def _mode_for_relative(relative: str) -> int:
+    if relative.startswith("opt/shieldmendai/bin/"):
+        return 0o750
+    if relative.startswith("etc/systemd/system/"):
+        return 0o644
+    if relative.startswith("etc/shieldmendai/"):
+        return 0o640
+    if relative.startswith("var/lib/shieldmendai/installation/"):
+        return 0o640
+    return 0o640
+
+
+def _mode_string(path: Path) -> str:
+    return f"{path.stat().st_mode & 0o777:04o}"
+
+
+def _chmod_inside_root(path: Path, root: Path, mode: int) -> None:
+    resolved = path.resolve(strict=True)
+    if not resolved.is_relative_to(root):
+        raise InstallationValidationError("chmod target escaped canary root")
+    path.chmod(mode)
+
+
+def _mkdir_inside_root(path: Path, root: Path, mode: int = 0o750) -> None:
+    path.mkdir(parents=True, exist_ok=True)
+    current = path
+    while current != root:
+        if current.exists():
+            if current.is_symlink():
+                raise InstallationValidationError("directory symlink escape rejected")
+            _chmod_inside_root(current, root, mode)
+        current = current.parent
+
+
 def _record(path: Path, root: Path) -> CanaryFileRecord:
     data = path.read_bytes()
     return CanaryFileRecord(
         "/" + str(path.relative_to(root)),
         hashlib.sha256(data).hexdigest(),
         len(data),
-        "0750" if "/bin/" in str(path) else "0640",
+        _mode_string(path),
     )
 
 
@@ -668,16 +749,20 @@ def install_canary_package(
     created: list[str] = []
     for relative, content in files.items():
         path = install_root / relative
-        path.parent.mkdir(parents=True, exist_ok=True)
+        _mkdir_inside_root(path.parent, install_root)
         if not path.exists():
             created.append("/" + relative)
         path.write_bytes(content)
+        _chmod_inside_root(path, install_root, _mode_for_relative(relative))
     audit_path = install_root / "var/lib/shieldmendai/installation" / AUDIT_NAME
+    _mkdir_inside_root(audit_path.parent, install_root)
     _write_json(audit_path, redact(audit))
+    _chmod_inside_root(audit_path, install_root, _mode_for_relative(str(audit_path.relative_to(install_root))))
     audit_sha = hashlib.sha256(audit_bytes).hexdigest()
     manifest = _manifest_from_files(config, install_root, audit_sha)
     manifest_path = install_root / "var/lib/shieldmendai/installation" / MANIFEST_NAME
     _write_json(manifest_path, safe_canary_dict(manifest))
+    _chmod_inside_root(manifest_path, install_root, _mode_for_relative(str(manifest_path.relative_to(install_root))))
     return CanaryOperationResult(
         CanaryAction.INSTALL_APPLY,
         False,
@@ -691,6 +776,230 @@ def install_canary_package(
         (),
         manifest,
         redact(audit),
+    )
+
+
+def service_user_ownership_plan() -> ServiceUserOwnershipPlan:
+    ownership = (
+        {"path": "/opt/shieldmendai", "owner": "root", "group": SERVICE_GROUP, "mode": "0750", "writable_by_service": "false"},
+        {"path": "/etc/shieldmendai", "owner": "root", "group": SERVICE_GROUP, "mode": "0750", "writable_by_service": "false"},
+        {"path": "/etc/shieldmendai/*.yaml", "owner": "root", "group": SERVICE_GROUP, "mode": "0640", "writable_by_service": "false"},
+        {"path": "/var/lib/shieldmendai", "owner": SERVICE_USER, "group": SERVICE_GROUP, "mode": "0750", "writable_by_service": "true"},
+        {"path": "/var/lib/shieldmendai/incidents", "owner": SERVICE_USER, "group": SERVICE_GROUP, "mode": "0750", "writable_by_service": "true"},
+        {"path": "/var/lib/shieldmendai/demo", "owner": SERVICE_USER, "group": SERVICE_GROUP, "mode": "0750", "writable_by_service": "true"},
+        {"path": "/var/log/shieldmendai", "owner": SERVICE_USER, "group": SERVICE_GROUP, "mode": "0750", "writable_by_service": "true"},
+        {"path": "/run/shieldmendai", "owner": SERVICE_USER, "group": SERVICE_GROUP, "mode": "0750", "writable_by_service": "true"},
+        {"path": "/etc/systemd/system/shieldmendai-*.service", "owner": "root", "group": "root", "mode": "0644", "writable_by_service": "false"},
+        {"path": "/etc/systemd/system/shieldmendai-*.timer", "owner": "root", "group": "root", "mode": "0644", "writable_by_service": "false"},
+    )
+    return ServiceUserOwnershipPlan(
+        SERVICE_USER,
+        SERVICE_GROUP,
+        "/usr/sbin/nologin",
+        None,
+        True,
+        False,
+        False,
+        ownership,
+    )
+
+
+def _validate_runtime_path(path: str | Path, *, live_reviewed: bool = False) -> Path:
+    candidate = Path(path)
+    if not candidate.is_absolute() or ".." in candidate.parts:
+        raise InstallationValidationError("runtime path must be an absolute normalized path")
+    try:
+        parent = candidate.parent.resolve(strict=True)
+    except OSError:
+        raise InstallationValidationError("runtime parent must already exist") from None
+    if candidate.exists() and candidate.is_symlink():
+        raise InstallationValidationError("runtime path cannot be a symlink")
+    if parent.is_symlink():
+        raise InstallationValidationError("runtime parent cannot be a symlink")
+    if candidate.exists() and candidate.resolve(strict=True) != candidate.absolute():
+        raise InstallationValidationError("runtime path cannot traverse symlinks")
+    if live_reviewed:
+        if candidate != Path("/opt/shieldmendai/venv"):
+            raise InstallationValidationError("live runtime path must be /opt/shieldmendai/venv")
+        return candidate
+    temporary_root = Path(tempfile.gettempdir()).resolve(strict=True)
+    resolved_candidate = candidate.resolve(strict=False)
+    if not resolved_candidate.is_relative_to(temporary_root):
+        raise InstallationValidationError("runtime path must be beneath a temporary root unless live-reviewed")
+    if resolved_candidate == REPOSITORY_ROOT or resolved_candidate.is_relative_to(REPOSITORY_ROOT):
+        raise InstallationValidationError("repository runtime path rejected")
+    return candidate
+
+
+def _read_wheel_metadata(path: Path) -> tuple[str, str]:
+    try:
+        with zipfile.ZipFile(path) as archive:
+            metadata_names = [
+                name for name in archive.namelist()
+                if name.endswith(".dist-info/METADATA") and "/" in name
+            ]
+            if len(metadata_names) != 1:
+                raise InstallationValidationError("wheel metadata is ambiguous")
+            raw = archive.read(metadata_names[0]).decode("utf-8", errors="replace")
+    except (OSError, zipfile.BadZipFile, KeyError):
+        raise InstallationValidationError("wheel could not be read") from None
+    values: dict[str, str] = {}
+    for line in raw.splitlines():
+        if line.startswith(("Name:", "Version:")):
+            key, value = line.split(":", 1)
+            values[key.lower()] = value.strip()
+    return values.get("name", ""), values.get("version", "")
+
+
+def verify_runtime_wheel(
+    wheel_path: str | Path,
+    *,
+    expected_name: str = "shieldmendai",
+    expected_version: str = __version__,
+    expected_sha256: str | None = None,
+) -> RuntimeWheelVerification:
+    path = Path(wheel_path)
+    if not path.is_absolute() or ".." in path.parts:
+        raise InstallationValidationError("wheel path must be absolute and normalized")
+    if path.is_symlink():
+        raise InstallationValidationError("wheel path cannot be a symlink")
+    try:
+        resolved = path.resolve(strict=True)
+    except OSError:
+        raise InstallationValidationError("wheel path must exist") from None
+    if path.absolute() != resolved:
+        raise InstallationValidationError("wheel path cannot traverse symlinks")
+    if resolved.suffix != ".whl":
+        raise InstallationValidationError("runtime installation accepts only wheel files")
+    name, version = _read_wheel_metadata(resolved)
+    normalized = name.replace("_", "-").lower()
+    if normalized != expected_name:
+        raise InstallationValidationError("wheel package name does not match ShieldMendAi")
+    if version != expected_version:
+        raise InstallationValidationError("wheel package version does not match ShieldMendAi")
+    digest = hashlib.sha256(resolved.read_bytes()).hexdigest()
+    if expected_sha256 is not None and digest != expected_sha256:
+        raise InstallationValidationError("wheel checksum mismatch")
+    return RuntimeWheelVerification(str(resolved), normalized, version, digest, True)
+
+
+def install_offline_runtime(
+    wheel_path: str | Path,
+    runtime_path: str | Path = "/opt/shieldmendai/venv",
+    *,
+    apply: bool = False,
+    expected_version: str = __version__,
+    expected_sha256: str | None = None,
+    live_reviewed: bool = False,
+) -> RuntimeInstallationResult:
+    runtime = _validate_runtime_path(runtime_path, live_reviewed=live_reviewed)
+    wheel = verify_runtime_wheel(
+        wheel_path, expected_name="shieldmendai", expected_version=expected_version, expected_sha256=expected_sha256
+    )
+    marker = runtime / RUNTIME_MARKER
+    if marker.exists() and not marker.is_symlink():
+        try:
+            existing = json.loads(marker.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            raise InstallationConflictError("existing runtime marker is unreadable") from None
+        if (
+            existing.get("package_name") != wheel.package_name
+            or existing.get("package_version") != wheel.package_version
+            or existing.get("wheel_sha256") != wheel.sha256
+        ):
+            raise InstallationConflictError("existing runtime conflicts with requested wheel")
+    elif runtime.exists() and any(runtime.iterdir()):
+        raise InstallationConflictError("existing non-empty runtime is not manifest-owned")
+    create_cmd = ("python3", "-m", "venv", "--system-site-packages", str(runtime))
+    install_cmd = (
+        str(runtime / "bin/python"),
+        "-m",
+        "pip",
+        "install",
+        "--no-index",
+        "--no-deps",
+        "--disable-pip-version-check",
+        wheel.wheel_path,
+    )
+    if not apply:
+        return RuntimeInstallationResult(
+            "runtime_install_preview",
+            True,
+            False,
+            False,
+            str(runtime),
+            str(runtime / "bin/shieldmendai"),
+            wheel,
+            (create_cmd, install_cmd),
+        )
+    runtime.parent.mkdir(parents=True, exist_ok=True)
+    _run_process(create_cmd, check=True, shell=False)
+    _run_process(
+        install_cmd,
+        check=True,
+        shell=False,
+        env={"PIP_NO_INDEX": "1", "PIP_DISABLE_PIP_VERSION_CHECK": "1", "PYTHONPATH": ""},
+    )
+    payload = {
+        "schema_version": SCHEMA_VERSION,
+        "package_name": wheel.package_name,
+        "package_version": wheel.package_version,
+        "wheel_path": wheel.wheel_path,
+        "wheel_sha256": wheel.sha256,
+        "network": "disabled",
+        "dependency_resolution": "disabled",
+    }
+    _write_json(marker, payload)
+    marker.chmod(0o640)
+    cli = runtime / "bin/shieldmendai"
+    if not cli.exists() or cli.is_symlink() or not (cli.stat().st_mode & 0o111):
+        raise InstallationValidationError("runtime CLI is missing or not executable")
+    cli.chmod(0o750)
+    return RuntimeInstallationResult(
+        "runtime_install_apply",
+        False,
+        True,
+        True,
+        str(runtime),
+        str(cli),
+        wheel,
+        (create_cmd, install_cmd),
+    )
+
+
+def verify_canary_systemd_fixture(root: str | Path) -> SystemdVerificationResult:
+    install_root = validate_canary_root(root)
+    checks: list[dict[str, Any]] = []
+    units = render_canary_systemd_units()
+    serialized = "\n".join(units.values())
+    checks.append({"name": "execstart_runtime_cli", "passed": f"ExecStart={RUNTIME_CLI}" in serialized})
+    checks.append({"name": "no_repair_command", "passed": "repair" not in serialized.lower().replace("repair=disabled", "")})
+    checks.append({"name": "no_notification_command", "passed": "notification" not in serialized.lower()})
+    checks.append({"name": "no_network_dependency", "passed": "network-online.target" not in serialized and "Wants=network" not in serialized})
+    for name, text in units.items():
+        if ".service" not in name:
+            continue
+        exec_line = next((line for line in text.splitlines() if line.startswith("ExecStart=")), "")
+        command = exec_line.removeprefix("ExecStart=").split()[0]
+        fixture_path = install_root.joinpath(*PurePosixPath(command).parts[1:])
+        checks.append(
+            {
+                "name": f"{name}_exec_exists",
+                "path": command,
+                "passed": fixture_path.exists() and not fixture_path.is_symlink() and bool(fixture_path.stat().st_mode & 0o111),
+            }
+        )
+    for relative, expected in (
+        ("etc/shieldmendai/dedicated-canary.yaml", "0640"),
+        ("etc/systemd/system/shieldmendai-observer.service", "0644"),
+        ("opt/shieldmendai/venv/bin/shieldmendai", "0750"),
+    ):
+        path = install_root / relative
+        checks.append({"name": f"{relative}_mode", "passed": path.exists() and _mode_string(path) == expected})
+    return SystemdVerificationResult(
+        all(item["passed"] for item in checks),
+        tuple(checks),
+        "Static temporary-root fixture verification is used because live systemd-analyze requires host unit state.",
     )
 
 
