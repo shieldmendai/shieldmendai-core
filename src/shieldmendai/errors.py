@@ -63,3 +63,15 @@ class NotificationValidationError(ShieldMendAiError):
 
 class UnsafeNotificationError(ShieldMendAiError):
     """Raised when notification handling would cross the simulation-only boundary."""
+
+
+class InstallationValidationError(ShieldMendAiError):
+    """Raised when an installation plan or manifest is invalid."""
+
+
+class UnsafeSandboxError(ShieldMendAiError):
+    """Raised when an installation sandbox is not safely confined."""
+
+
+class InstallationConflictError(ShieldMendAiError):
+    """Raised when installed fixture content conflicts with a safe operation."""

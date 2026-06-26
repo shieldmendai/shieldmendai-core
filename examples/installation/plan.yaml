@@ -1,0 +1,15 @@
+schema_version: "1.0"
+installation_id: shieldmendai-sandbox-example
+package_version: "0.5.0"
+target_platform: linux
+target_architecture: generic
+created_at: "2030-01-01T00:00:00Z"
+executable_reference: /opt/shieldmendai/bin/shieldmendai
+paths:
+  install_prefix: /opt/shieldmendai
+  configuration_directory: /etc/shieldmendai
+  state_directory: /var/lib/shieldmendai
+  incident_directory: /var/lib/shieldmendai/incidents
+  log_directory: /var/log/shieldmendai
+  runtime_directory: /run/shieldmendai
+  unit_directory: /etc/systemd/system
