@@ -1,0 +1,81 @@
+schema_version: "1.0"
+application_id: shieldmendai-pilot
+targets:
+  - target_id: fixture-service
+    application_id: shieldmendai-pilot
+    adapter_type: systemd_service
+    observation_type: service_status
+    expected_identity: shieldmendai-example.service
+    fixture_root_reference: sandbox-root
+    allowed_read_paths: []
+    denied_paths: []
+    local_only: true
+    read_only: true
+    mutation_enabled: false
+    enabled: true
+    severity: high
+    observation_interval_seconds: 300
+    incident_category: service_failed
+  - target_id: fixture-process
+    application_id: shieldmendai-pilot
+    adapter_type: process
+    observation_type: expected_process_presence
+    expected_identity: shieldmendai-example-worker
+    fixture_root_reference: sandbox-root
+    allowed_read_paths: []
+    denied_paths: []
+    local_only: true
+    read_only: true
+    mutation_enabled: false
+    enabled: true
+    severity: medium
+    observation_interval_seconds: 300
+    incident_category: process_missing
+  - target_id: fixture-json
+    application_id: shieldmendai-pilot
+    adapter_type: json_file
+    observation_type: structured_file_validity
+    expected_identity: fixture-status-json
+    fixture_root_reference: sandbox-root
+    allowed_read_paths:
+      - fixtures/status.json
+    denied_paths: []
+    local_only: true
+    read_only: true
+    mutation_enabled: false
+    enabled: true
+    severity: medium
+    observation_interval_seconds: 300
+    incident_category: invalid_json
+  - target_id: fixture-executable
+    application_id: shieldmendai-pilot
+    adapter_type: executable_check
+    observation_type: executable_presence
+    expected_identity: fixture-tool
+    fixture_root_reference: sandbox-root
+    allowed_read_paths:
+      - fixtures/tool
+    denied_paths: []
+    local_only: true
+    read_only: true
+    mutation_enabled: false
+    enabled: true
+    severity: low
+    observation_interval_seconds: 300
+    incident_category: application_test_failure
+  - target_id: fixture-disabled
+    application_id: shieldmendai-pilot
+    adapter_type: file
+    observation_type: file_existence
+    expected_identity: disabled-fixture
+    fixture_root_reference: sandbox-root
+    allowed_read_paths:
+      - fixtures/disabled.txt
+    denied_paths: []
+    local_only: true
+    read_only: true
+    mutation_enabled: false
+    enabled: false
+    severity: low
+    observation_interval_seconds: 300
+    incident_category: file_missing

@@ -75,3 +75,15 @@ class UnsafeSandboxError(ShieldMendAiError):
 
 class InstallationConflictError(ShieldMendAiError):
     """Raised when installed fixture content conflicts with a safe operation."""
+
+
+class PilotValidationError(ShieldMendAiError):
+    """Raised when a Linux pilot configuration or scenario is invalid."""
+
+
+class PilotPolicyDeniedError(ShieldMendAiError):
+    """Raised when an exact target or adapter is denied by pilot policy."""
+
+
+class UnsafePilotError(ShieldMendAiError):
+    """Raised when a pilot request crosses the sandbox-only boundary."""

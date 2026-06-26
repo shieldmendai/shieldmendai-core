@@ -1,0 +1,22 @@
+schema_version: "1.0"
+scenario_id: unhealthy-cycle
+observed_at: "2030-01-01T00:05:00Z"
+host_reference: local-sandbox
+requested_production_observation: false
+requested_repair: false
+requested_notification: false
+observations:
+  - target_id: fixture-service
+    state: failed
+    duration_ms: 1
+  - target_id: fixture-process
+    state: missing
+    duration_ms: 1
+  - target_id: fixture-json
+    state: invalid
+    fixture_path: fixtures/status.json
+    duration_ms: 1
+  - target_id: fixture-executable
+    state: missing
+    fixture_path: fixtures/tool
+    duration_ms: 1

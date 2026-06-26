@@ -6,6 +6,7 @@ import socket
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
 from pathlib import Path
 from unittest import mock
@@ -20,8 +21,12 @@ if str(SRC) not in sys.path:
 from shieldmendai.errors import (
     InstallationConflictError,
     InstallationValidationError,
+    PilotPolicyDeniedError,
+    PilotValidationError,
     UnsafeSandboxError,
+    UnsafePilotError,
 )
+from shieldmendai.incidents import IncidentStatus, LocalIncidentStore
 from shieldmendai.installation import (
     MANIFEST_NAME,
     inspect_installation,
@@ -34,13 +39,39 @@ from shieldmendai.installation import (
     simulate_uninstall,
     validate_sandbox_root,
 )
+from shieldmendai.linux_pilot import (
+    DisabledProductionLinuxObserver,
+    LinuxPilotController,
+    observer_capability_catalog,
+    parse_pilot_configuration,
+    parse_pilot_policy,
+    parse_pilot_scenario,
+)
+from shieldmendai.models import AdapterType, ObservationStatus
 
 
 PLAN_PATH = ROOT / "examples" / "installation" / "plan.yaml"
+PILOT_CONFIG_PATH = ROOT / "examples" / "pilot" / "config.yaml"
+PILOT_POLICY_PATH = ROOT / "examples" / "pilot" / "policy.yaml"
+PILOT_HEALTHY_PATH = ROOT / "examples" / "pilot" / "scenario-healthy.yaml"
+PILOT_UNHEALTHY_PATH = ROOT / "examples" / "pilot" / "scenario-unhealthy.yaml"
 
 
 def plan_data() -> dict:
     return yaml.safe_load(PLAN_PATH.read_text(encoding="utf-8"))
+
+
+def pilot_config_data() -> dict:
+    return yaml.safe_load(PILOT_CONFIG_PATH.read_text(encoding="utf-8"))
+
+
+def pilot_policy_data() -> dict:
+    return yaml.safe_load(PILOT_POLICY_PATH.read_text(encoding="utf-8"))
+
+
+def pilot_scenario_data(*, healthy: bool = True) -> dict:
+    path = PILOT_HEALTHY_PATH if healthy else PILOT_UNHEALTHY_PATH
+    return yaml.safe_load(path.read_text(encoding="utf-8"))
 
 
 class InstallationModelTests(unittest.TestCase):
@@ -277,6 +308,288 @@ class SandboxUninstallationTests(unittest.TestCase):
                 remove_generated_fixtures=True,
             )
         self.assertTrue(path.exists())
+
+
+class PilotPolicyAndAllowlistTests(unittest.TestCase):
+    def test_safe_policy_defaults_and_unknown_fields(self) -> None:
+        policy = parse_pilot_policy(pilot_policy_data())
+        self.assertTrue(policy.local_only)
+        self.assertTrue(policy.read_only)
+        self.assertTrue(policy.sandbox_only)
+        self.assertFalse(policy.repairs_enabled)
+        self.assertFalse(policy.notifications_enabled)
+        self.assertFalse(policy.network_enabled)
+        self.assertFalse(policy.process_enumeration_enabled)
+        self.assertFalse(policy.systemd_enabled)
+        self.assertTrue(policy.review_required)
+        unknown = pilot_policy_data()
+        unknown["unexpected"] = True
+        with self.assertRaises(PilotValidationError):
+            parse_pilot_policy(unknown)
+
+    def test_wildcard_duplicate_and_unknown_adapter_are_rejected(self) -> None:
+        wildcard = pilot_config_data()
+        wildcard["targets"][0]["target_id"] = "*"
+        with self.assertRaises(PilotValidationError):
+            parse_pilot_configuration(wildcard)
+        duplicate = pilot_config_data()
+        duplicate["targets"].append(dict(duplicate["targets"][0]))
+        with self.assertRaises(PilotValidationError):
+            parse_pilot_configuration(duplicate)
+        unknown = pilot_config_data()
+        unknown["targets"][0]["adapter_type"] = "unknown_adapter"
+        with self.assertRaises(PilotValidationError):
+            parse_pilot_configuration(unknown)
+
+    def test_nonlocal_and_mutation_enabled_targets_are_denied(self) -> None:
+        nonlocal_target = pilot_config_data()
+        nonlocal_target["targets"][0]["local_only"] = False
+        with self.assertRaises(PilotPolicyDeniedError):
+            parse_pilot_configuration(nonlocal_target)
+        mutable = pilot_config_data()
+        mutable["targets"][0]["mutation_enabled"] = True
+        with self.assertRaises(PilotPolicyDeniedError):
+            parse_pilot_configuration(mutable)
+
+    def test_production_live_and_capability_enabling_policies_are_denied(self) -> None:
+        for key in (
+            "repairs_enabled",
+            "notifications_enabled",
+            "network_enabled",
+            "process_enumeration_enabled",
+            "systemd_enabled",
+        ):
+            data = pilot_policy_data()
+            data[key] = True
+            with self.subTest(key=key), self.assertRaises(UnsafePilotError):
+                parse_pilot_policy(data)
+        data = pilot_policy_data()
+        data["sandbox_only"] = False
+        with self.assertRaises(UnsafePilotError):
+            parse_pilot_policy(data)
+
+    def test_linux_observer_capabilities_are_read_only_and_production_disabled(self) -> None:
+        capabilities = observer_capability_catalog()
+        self.assertGreaterEqual(len(capabilities), 10)
+        for item in capabilities:
+            self.assertTrue(item.read_only)
+            self.assertTrue(item.fixture_simulation_available)
+            self.assertFalse(item.production_adapter_available)
+            self.assertFalse(item.mutation_available)
+
+    def test_production_adapter_always_denies(self) -> None:
+        adapter = DisabledProductionLinuxObserver(AdapterType.SYSTEMD_SERVICE)
+        with self.assertRaises(UnsafePilotError):
+            adapter.observe()
+
+
+class PilotControllerTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.temporary = tempfile.TemporaryDirectory()
+        self.root = Path(self.temporary.name)
+        (self.root / "fixtures").mkdir()
+        (self.root / "fixtures" / "status.json").write_text('{"status":"ok"}\n', encoding="utf-8")
+        (self.root / "fixtures" / "tool").write_text("fixture", encoding="utf-8")
+        self.config = parse_pilot_configuration(pilot_config_data())
+        self.policy = parse_pilot_policy(pilot_policy_data())
+
+    def tearDown(self) -> None:
+        self.temporary.cleanup()
+
+    def test_healthy_service_process_file_and_executable_normalize(self) -> None:
+        result = LinuxPilotController().run_cycle(
+            self.config,
+            self.policy,
+            parse_pilot_scenario(pilot_scenario_data()),
+            self.root,
+        )
+        self.assertEqual(result.exit_code, 0)
+        self.assertEqual(result.cycle_count, 1)
+        self.assertEqual(len(result.findings), 4)
+        self.assertTrue(all(item.status is ObservationStatus.HEALTHY for item in result.findings))
+        self.assertIn("fixture-disabled", result.skipped_target_ids)
+        self.assertFalse(result.production_system_observed)
+
+    def test_unhealthy_findings_create_sanitized_integrity_checked_incidents(self) -> None:
+        (self.root / "fixtures" / "status.json").write_text("{invalid", encoding="utf-8")
+        (self.root / "fixtures" / "tool").unlink()
+        result = LinuxPilotController().run_cycle(
+            self.config,
+            self.policy,
+            parse_pilot_scenario(pilot_scenario_data(healthy=False)),
+            self.root,
+        )
+        self.assertEqual(result.exit_code, 3)
+        self.assertEqual(len(result.incident_references), 4)
+        store = LocalIncidentStore(self.root / "var" / "lib" / "shieldmendai" / "incidents")
+        records = store.list_records()
+        self.assertEqual(len(records), 8)
+        latest = {
+            incident_id: max(
+                (item for item in records if item.incident_id == incident_id),
+                key=lambda item: item.metadata.record_version,
+            )
+            for incident_id in result.incident_references
+        }
+        self.assertTrue(all(item.status is IncidentStatus.OPEN for item in latest.values()))
+        self.assertTrue(all(item.metadata.checksum for item in records))
+        serialized = json.dumps([item.to_safe_dict() for item in records])
+        self.assertNotIn("password", serialized.lower())
+        self.assertNotIn("token", serialized.lower())
+
+    def test_healthy_recheck_resolves_existing_incident(self) -> None:
+        unhealthy = pilot_scenario_data(healthy=False)
+        unhealthy["observations"] = [unhealthy["observations"][0]]
+        policy = pilot_policy_data()
+        policy["allowed_target_ids"] = ["fixture-service"]
+        policy["maximum_targets"] = 1
+        LinuxPilotController().run_cycle(
+            self.config,
+            parse_pilot_policy(policy),
+            parse_pilot_scenario(unhealthy),
+            self.root,
+        )
+        healthy = pilot_scenario_data()
+        healthy["scenario_id"] = "healthy-recheck"
+        healthy["observed_at"] = "2030-01-01T00:10:00Z"
+        healthy["observations"] = [healthy["observations"][0]]
+        result = LinuxPilotController().run_cycle(
+            self.config,
+            parse_pilot_policy(policy),
+            parse_pilot_scenario(healthy),
+            self.root,
+        )
+        self.assertEqual(result.exit_code, 0)
+        records = LocalIncidentStore(
+            self.root / "var" / "lib" / "shieldmendai" / "incidents"
+        ).list_records()
+        latest = max(records, key=lambda item: item.metadata.record_version)
+        self.assertEqual(latest.status, IncidentStatus.RESOLVED)
+
+    def test_unknown_target_and_disallowed_adapter_are_denied(self) -> None:
+        unknown = pilot_scenario_data()
+        unknown["observations"][0]["target_id"] = "unknown-target"
+        with self.assertRaises(PilotPolicyDeniedError):
+            LinuxPilotController().run_cycle(
+                self.config, self.policy, parse_pilot_scenario(unknown), self.root
+            )
+        policy = pilot_policy_data()
+        policy["allowed_adapter_types"].remove("systemd_service")
+        with self.assertRaises(PilotPolicyDeniedError):
+            LinuxPilotController().run_cycle(
+                self.config,
+                parse_pilot_policy(policy),
+                parse_pilot_scenario(pilot_scenario_data()),
+                self.root,
+            )
+
+    def test_exact_fixture_path_allowlist_and_symlink_escape_are_enforced(self) -> None:
+        scenario = pilot_scenario_data()
+        scenario["observations"] = [scenario["observations"][2]]
+        policy = pilot_policy_data()
+        policy["allowed_target_ids"] = ["fixture-json"]
+        policy["maximum_targets"] = 1
+        scenario["observations"][0]["fixture_path"] = "fixtures/other.json"
+        with self.assertRaises(PilotPolicyDeniedError):
+            LinuxPilotController().run_cycle(
+                self.config,
+                parse_pilot_policy(policy),
+                parse_pilot_scenario(scenario),
+                self.root,
+            )
+        outside = self.root.parent / f"{self.root.name}-pilot-escape.json"
+        outside.write_text("{}", encoding="utf-8")
+        (self.root / "fixtures" / "status.json").unlink()
+        (self.root / "fixtures" / "status.json").symlink_to(outside)
+        scenario["observations"][0]["fixture_path"] = "fixtures/status.json"
+        with self.assertRaises(Exception):
+            LinuxPilotController().run_cycle(
+                self.config,
+                parse_pilot_policy(policy),
+                parse_pilot_scenario(scenario),
+                self.root,
+            )
+
+    def test_production_repair_notification_and_network_requests_are_denied(self) -> None:
+        for key in (
+            "requested_production_observation",
+            "requested_repair",
+            "requested_notification",
+        ):
+            data = pilot_scenario_data()
+            data[key] = True
+            with self.subTest(key=key), self.assertRaises(UnsafePilotError):
+                LinuxPilotController().run_cycle(
+                    self.config, self.policy, parse_pilot_scenario(data), self.root
+                )
+        network_config = pilot_config_data()
+        network_config["targets"][0]["adapter_type"] = "http"
+        network_config["targets"][0]["observation_type"] = "http_health"
+        network_config["targets"][0]["incident_category"] = "http_unhealthy"
+        network_policy = pilot_policy_data()
+        network_policy["allowed_target_ids"] = ["fixture-service"]
+        network_policy["allowed_adapter_types"] = ["http"]
+        network_policy["prohibited_adapter_types"] = []
+        network_policy["maximum_targets"] = 1
+        scenario = pilot_scenario_data()
+        scenario["observations"] = [scenario["observations"][0]]
+        with self.assertRaises(PilotPolicyDeniedError):
+            LinuxPilotController().run_cycle(
+                parse_pilot_configuration(network_config),
+                parse_pilot_policy(network_policy),
+                parse_pilot_scenario(scenario),
+                self.root,
+            )
+
+    def test_cycle_uses_no_live_system_network_process_subprocess_or_sleep(self) -> None:
+        with (
+            mock.patch.object(subprocess, "run", side_effect=AssertionError("subprocess")),
+            mock.patch.object(subprocess, "Popen", side_effect=AssertionError("subprocess")),
+            mock.patch.object(os, "system", side_effect=AssertionError("system")),
+            mock.patch.object(socket, "create_connection", side_effect=AssertionError("socket")),
+            mock.patch.object(socket.socket, "connect", side_effect=AssertionError("socket")),
+            mock.patch.object(time, "sleep", side_effect=AssertionError("sleep")),
+            mock.patch.dict(os.environ, {}, clear=True),
+        ):
+            result = LinuxPilotController().run_cycle(
+                self.config,
+                self.policy,
+                parse_pilot_scenario(pilot_scenario_data()),
+                self.root,
+            )
+        self.assertEqual(result.cycle_count, 1)
+        self.assertFalse(result.network_used)
+        self.assertFalse(result.repair_executed)
+        self.assertFalse(result.notification_sent)
+        self.assertTrue(all(not item.systemd_contacted for item in result.audit_events))
+        self.assertTrue(all(not item.process_enumerated for item in result.audit_events))
+
+    def test_cycle_is_deterministic(self) -> None:
+        first_root = self.root
+        first = LinuxPilotController().run_cycle(
+            self.config,
+            self.policy,
+            parse_pilot_scenario(pilot_scenario_data()),
+            first_root,
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            second_root = Path(directory)
+            (second_root / "fixtures").mkdir()
+            (second_root / "fixtures" / "status.json").write_text(
+                '{"status":"ok"}\n', encoding="utf-8"
+            )
+            (second_root / "fixtures" / "tool").write_text("fixture", encoding="utf-8")
+            second = LinuxPilotController().run_cycle(
+                self.config,
+                self.policy,
+                parse_pilot_scenario(pilot_scenario_data()),
+                second_root,
+            )
+        self.assertEqual(
+            [item.to_safe_dict() for item in first.findings],
+            [item.to_safe_dict() for item in second.findings],
+        )
+        self.assertEqual(first.audit_events, second.audit_events)
 
 
 if __name__ == "__main__":
