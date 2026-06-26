@@ -1,130 +1,195 @@
 # Phase 8 Dedicated Canary Runbook
 
-Status: deployment package prepared only. Deployment has not been applied.
+Status: readiness fix prepared only. No live deployment has occurred, the
+dedicated server was not contacted, and no installation was performed during
+this Codex run.
 
-This runbook is for the manually verified dedicated server:
+The original Phase 8 package was not live-ready: the readiness audit found that
+generated launchers and configuration files did not receive their declared
+actual modes, the package was not importable outside the repository, the
+launcher was not executable, and systemd referenced unavailable commands. The
+audit safely caught these blockers before live installation.
 
-- Hostname: `shieldmendai`
-- Ubuntu 24.04.3 LTS
-- Python 3.12.3
-- Git 2.43.0
+Repairs and notifications remain disabled.
 
-No public IP address is recorded here. Do not use `/root/shieldmend_demo.sh`;
-it is unrelated and must remain untouched. Do not access `/root/newbasebot`.
+## Required Order
 
-## Prerequisites
+1. Verify server identity.
+2. Verify branch and commit.
+3. Build the wheel locally.
+4. Record wheel checksum.
+5. Preview service-user creation and filesystem ownership plan.
+6. Operator creates service user/group.
+7. Preview runtime installation.
+8. Apply isolated offline runtime installation.
+9. Verify CLI outside the repository with `PYTHONPATH` unset.
+10. Preview canary file installation.
+11. Apply canary file installation.
+12. Apply validated ownership and modes.
+13. Run systemd-analyze verification.
+14. Reload systemd only after all verification succeeds.
+15. Start the harmless demo service.
+16. Run one manual read-only observation.
+17. Enable timers only after manual observation succeeds.
 
-Review and run these commands manually on the dedicated server only if the
-operator approves them. They are intentionally separate from the installer.
+## Build The Wheel
 
-```bash
-sudo fallocate -l 2G /swapfile
-sudo chmod 600 /swapfile
-sudo mkswap /swapfile
-sudo swapon /swapfile
-swapon --show
-free -h
-```
-
-```bash
-sudo apt update
-sudo apt install --no-install-recommends python3 python3-venv python3-pip git
-python3 --version
-python3 -m pip --version
-git --version
-```
-
-## Build And Transfer
-
-Build the wheel on a trusted workstation or checked-out repository:
+Run in the reviewed repository checkout:
 
 ```bash
+git status --short --branch
+git rev-parse HEAD
 python3 -m pip wheel . --no-deps --no-build-isolation -w dist
-python3 -m json.tool extraction_manifest.json >/dev/null
+python3 - <<'PY'
+from pathlib import Path
+import hashlib
+wheel = next(Path("dist").glob("shieldmendai-*.whl"))
+print(wheel)
+print(hashlib.sha256(wheel.read_bytes()).hexdigest())
+PY
 ```
 
-Transfer the repository checkout or the locally built wheel to the dedicated
-server by an operator-reviewed method. Do not fetch Python dependencies from
-the public internet during installation; use `--no-deps`.
+Transfer only the reviewed wheel by an operator-approved method.
 
-## Manual Commands
+## Service User And Ownership
 
-Preview is the default behavior. Apply operations require `--apply`.
+Preview from the reviewed repository checkout before the runtime exists:
 
 ```bash
-shieldmendai inspect-canary-config examples/canary/dedicated-canary.yaml
-shieldmendai render-canary-systemd-units
-shieldmendai canary-install-preview /tmp/shieldmendai-canary-root --config-path examples/canary/dedicated-canary.yaml --actual-hostname shieldmendai
-shieldmendai canary-install-apply /tmp/shieldmendai-canary-root --config-path examples/canary/dedicated-canary.yaml --actual-hostname shieldmendai --apply
-shieldmendai canary-observe /tmp/shieldmendai-canary-root --config-path examples/canary/dedicated-canary.yaml
-shieldmendai canary-rollback-preview /tmp/shieldmendai-canary-root
-shieldmendai canary-rollback-apply /tmp/shieldmendai-canary-root --apply
+PYTHONPATH=src python3 -m shieldmendai show-canary-service-user-plan
 ```
 
-For the verified dedicated server only, the equivalent reviewed live-root
-commands use `/` and must include `--live-reviewed`:
+Reviewed service identity commands:
 
 ```bash
-shieldmendai canary-install-preview / --config-path /etc/shieldmendai/dedicated-canary.yaml --actual-hostname shieldmendai --live-reviewed
-shieldmendai canary-install-apply / --config-path /etc/shieldmendai/dedicated-canary.yaml --actual-hostname shieldmendai --apply --live-reviewed
-shieldmendai canary-observe / --config-path /etc/shieldmendai/dedicated-canary.yaml --live-reviewed
-shieldmendai canary-rollback-preview / --live-reviewed
-shieldmendai canary-rollback-apply / --apply --live-reviewed
+sudo groupadd --system shieldmendai
+sudo useradd --system --gid shieldmendai --shell /usr/sbin/nologin --no-create-home shieldmendai
+getent passwd shieldmendai
+getent group shieldmendai
+sudo -l -U shieldmendai
 ```
 
-The future live layout is:
+Reviewed ownership and modes:
 
-- `/opt/shieldmendai`
-- `/etc/shieldmendai`
-- `/var/lib/shieldmendai`
-- `/var/lib/shieldmendai/incidents`
-- `/var/log/shieldmendai`
-- `/run/shieldmendai`
-- `/etc/systemd/system/shieldmendai-observer.service`
-- `/etc/systemd/system/shieldmendai-observer.timer`
-- `/etc/systemd/system/shieldmendai-incident-maintenance.service`
-- `/etc/systemd/system/shieldmendai-incident-maintenance.timer`
-- `/etc/systemd/system/shieldmendai-demo.service`
+```bash
+sudo install -d -o root -g shieldmendai -m 0750 /opt/shieldmendai
+sudo install -d -o root -g shieldmendai -m 0750 /etc/shieldmendai
+sudo install -d -o shieldmendai -g shieldmendai -m 0750 /var/lib/shieldmendai
+sudo install -d -o shieldmendai -g shieldmendai -m 0750 /var/lib/shieldmendai/incidents
+sudo install -d -o shieldmendai -g shieldmendai -m 0750 /var/lib/shieldmendai/demo
+sudo install -d -o shieldmendai -g shieldmendai -m 0750 /var/log/shieldmendai
+sudo install -d -o shieldmendai -g shieldmendai -m 0750 /run/shieldmendai
+sudo chown root:shieldmendai /etc/shieldmendai/*.yaml
+sudo chmod 0640 /etc/shieldmendai/*.yaml
+sudo chown root:root /etc/systemd/system/shieldmendai-*.service /etc/systemd/system/shieldmendai-*.timer
+sudo chmod 0644 /etc/systemd/system/shieldmendai-*.service /etc/systemd/system/shieldmendai-*.timer
+```
 
-The modeled service identity is `shieldmendai:shieldmendai`, shell
-`/usr/sbin/nologin`, no interactive home directory, no sudo access, and no root
-runtime.
+`/opt/shieldmendai` and `/etc/shieldmendai` are not writable by the service.
+State, incident, demo, log, and runtime directories are owned by
+`shieldmendai:shieldmendai`.
 
-## Canary Proof
+## Offline Runtime
 
-The demo target is a local JSON health artifact at
-`/var/lib/shieldmendai/demo/health.json`. It contains no trading logic, wallet
-logic, credentials, tokens, customer data, privileged action, or network port.
+The runtime installer validates an exact local ShieldMendAi wheel path, package
+name, package version, checksum, path traversal, symlink escapes, and existing
+runtime markers. It uses fixed argument lists, `shell=False`, `--no-index`, and
+`--no-deps`; it performs no dependency resolution and has no public package
+download path.
 
-Proof sequence:
+Preview:
 
-1. Observe healthy JSON and confirm no incident is open.
-2. Operator deliberately stops the demo service or removes the health artifact.
-3. Run one observer cycle.
-4. Confirm a sanitized local incident exists.
-5. Confirm ShieldMendAi did not repair, restart, rewrite, or mutate the target.
-6. Operator manually restores the demo service or health artifact.
-7. Run one observer cycle.
-8. Confirm the incident is resolved by verification.
+```bash
+/path/to/current/shieldmendai canary-runtime-install-preview /absolute/path/to/shieldmendai-0.4.0-py3-none-any.whl --runtime-path /opt/shieldmendai/venv --expected-version 0.4.0 --expected-sha256 WHEEL_SHA256 --live-reviewed
+```
 
-ShieldMendAi does not send notifications, open network connections, inspect
-unrelated services, enumerate unrestricted `/proc`, discover targets
-automatically, resolve environment secrets, or access `/root/newbasebot`.
+Apply:
 
-## Systemd Notes
+```bash
+/path/to/current/shieldmendai canary-runtime-install-apply /absolute/path/to/shieldmendai-0.4.0-py3-none-any.whl --runtime-path /opt/shieldmendai/venv --expected-version 0.4.0 --expected-sha256 WHEEL_SHA256 --apply --live-reviewed
+PYTHONPATH= /opt/shieldmendai/venv/bin/python -c 'import shieldmendai; print(shieldmendai.__version__)'
+PYTHONPATH= /opt/shieldmendai/venv/bin/shieldmendai --help
+```
 
-The rendered units use `User=shieldmendai`, `Group=shieldmendai`,
-`NoNewPrivileges=true`, `PrivateTmp=true`, `PrivateDevices=true`,
-`ProtectSystem=strict`, `ProtectHome=true`, kernel and control-group
-protections, empty capabilities, `UMask=0077`, `PrivateNetwork=true`,
-`IPAddressDeny=any`, exact `ReadOnlyPaths`, and exact `ReadWritePaths`.
+## Canary Files
 
-`RestrictAddressFamilies=AF_UNIX` is retained so local process service-manager
-status observation can be separately reviewed in a future live adapter. Phase 8
-does not perform systemd D-Bus calls during this Codex run.
+Preview:
+
+```bash
+/opt/shieldmendai/venv/bin/shieldmendai inspect-canary-config /absolute/path/to/dedicated-canary.yaml
+/opt/shieldmendai/venv/bin/shieldmendai render-canary-systemd-units
+/opt/shieldmendai/venv/bin/shieldmendai canary-install-preview / --config-path /absolute/path/to/dedicated-canary.yaml --actual-hostname shieldmendai --live-reviewed
+```
+
+Apply:
+
+```bash
+/opt/shieldmendai/venv/bin/shieldmendai canary-install-apply / --config-path /absolute/path/to/dedicated-canary.yaml --actual-hostname shieldmendai --apply --live-reviewed
+```
+
+Expected actual modes:
+
+- launchers/programs: `0750`
+- configuration files: `0640`
+- installation manifest and audit: `0640`
+- systemd units: `0644`
+- directories created by the installer model: restrictive, normally `0750`
+
+The manifest records the actual resulting file mode.
+
+## Systemd Verification
+
+The generated service units execute:
+
+```text
+/opt/shieldmendai/venv/bin/shieldmendai
+```
+
+Use a temporary-root fixture before live activation:
+
+```bash
+/opt/shieldmendai/venv/bin/shieldmendai verify-canary-systemd-fixture /tmp/shieldmendai-complete-fixture
+```
+
+Then verify the live unit files after file installation and ownership/mode
+application:
+
+```bash
+systemd-analyze verify /etc/systemd/system/shieldmendai-demo.service
+systemd-analyze verify /etc/systemd/system/shieldmendai-observer.service
+systemd-analyze verify /etc/systemd/system/shieldmendai-observer.timer
+systemd-analyze verify /etc/systemd/system/shieldmendai-incident-maintenance.service
+systemd-analyze verify /etc/systemd/system/shieldmendai-incident-maintenance.timer
+```
+
+Only after every verification succeeds:
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl start shieldmendai-demo.service
+/opt/shieldmendai/venv/bin/shieldmendai canary-observe / --config-path /etc/shieldmendai/dedicated-canary.yaml --live-reviewed
+sudo systemctl enable --now shieldmendai-observer.timer
+sudo systemctl enable --now shieldmendai-incident-maintenance.timer
+```
+
+Do not enable repair or notification capabilities.
 
 ## Rollback
 
-Rollback preview changes nothing. Rollback apply removes only manifest-owned
-files whose checksums still match. Modified files block removal. Unknown files
-are preserved.
+Stop and disable canary units before removing files:
+
+```bash
+sudo systemctl disable --now shieldmendai-observer.timer shieldmendai-incident-maintenance.timer
+sudo systemctl stop shieldmendai-observer.service shieldmendai-incident-maintenance.service shieldmendai-demo.service
+/opt/shieldmendai/venv/bin/shieldmendai canary-rollback-preview / --live-reviewed
+/opt/shieldmendai/venv/bin/shieldmendai canary-rollback-apply / --apply --live-reviewed
+systemctl list-unit-files 'shieldmendai-*'
+```
+
+Rollback removes only manifest-owned runtime and installation files whose
+checksums still match. Modified or unknown files are preserved, unrelated
+`/root/shieldmend_demo.sh` is preserved, and incident history is preserved
+unless an explicit operator flag is added in a future reviewed tool.
+
+Removing the service user is a separate explicit operator action. Never delete
+an unknown user or group.
