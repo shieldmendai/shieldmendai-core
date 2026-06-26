@@ -113,3 +113,11 @@ No real Telegram message, email, SMS, or webhook request is sent. No provider
 credential is resolved. No external network connection is made. No production
 incident directory is created. No production retention deletion or live
 repair/recovery occurs.
+
+## Phase 7 reuse
+
+The Phase 7 Linux pilot reuses `LocalIncidentStore` only inside a validated
+temporary sandbox. Unhealthy fixture-backed findings create sanitized
+checksummed incidents, and later healthy fixture rechecks can resolve open
+pilot incidents. Notification delivery remains disabled and no production
+incident directory is created.

@@ -1,8 +1,8 @@
 # ShieldMendAi Development Installation
 
-ShieldMendAi is currently a Phase 6 simulation framework. There is no
-production installer, systemd service, live monitoring engine, or repair
-engine yet.
+ShieldMendAi is currently a Phase 7 sandbox and simulation framework. There is
+no production installer, installed systemd service, live monitoring engine, or
+repair engine yet.
 
 ## Requirements
 
@@ -42,6 +42,11 @@ shieldmendai inspect-notification-policy examples/notifications/policy.yaml
 shieldmendai inspect-incident examples/incidents/incident-low.json
 shieldmendai render-notification examples/incidents/incident-low.json examples/notifications/policy.yaml examples/notifications/template.yaml
 shieldmendai simulate-notification examples/incidents/incident-low.json examples/notifications/policy.yaml examples/notifications/scenario.yaml --template-path examples/notifications/template.yaml
+shieldmendai inspect-installation-plan examples/installation/plan.yaml
+shieldmendai plan-install examples/installation/plan.yaml
+shieldmendai render-systemd-units examples/installation/plan.yaml
+shieldmendai inspect-pilot-policy examples/pilot/policy.yaml
+shieldmendai list-linux-observers
 ```
 
 These commands only parse, validate, normalize, redact, authorize, plan,
@@ -56,5 +61,12 @@ validated but never resolved.
 PYTHONPATH=src python3 -m unittest discover -s tests -v
 ```
 
-Production installation, dedicated service users, protected credential files,
-and `shieldmendai-*.service` units are planned for later phases.
+`simulate-install` and `simulate-uninstall` require an explicit existing
+temporary subdirectory. They never write to the modeled production paths.
+Pilot simulation requires caller-created fictional fixtures beneath the same
+temporary root. See
+[Phase 7 installation and pilot](docs/INSTALLATION_AND_LINUX_PILOT.md).
+
+Production installation, real service users, protected credential files,
+installed `shieldmendai-*.service` units, and live observation remain Phase 8
+work.

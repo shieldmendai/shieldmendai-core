@@ -2,8 +2,8 @@
 
 ## Current Stage
 
-Phase 6 — safe incident records, retention controls, and deterministic
-notification simulation.
+Phase 7 — controlled installation sandbox and local-only read-only Linux
+observation pilot.
 
 ## Implemented
 
@@ -42,6 +42,14 @@ notification simulation.
 - Duplicate suppression, cooldown, per-channel/per-incident attempt budgets,
   simulated delivery results, and audit events
 - Phase 6 inspection, preview, rendering, and simulation CLI commands
+- Typed installation, manifest, service-user, permission, ownership,
+  bootstrap, unit-template, audit, and uninstall models
+- Temporary-root-confined deterministic installation and uninstallation
+- Checksummed installation manifest and conflict detection
+- Exact Linux target allowlist and strict local pilot policy
+- Read-only observer capabilities and disabled production adapters
+- One-cycle fixture-backed pilot with local incident persistence
+- Phase 7 installation and pilot CLI commands
 
 ## Modeled Only
 
@@ -61,8 +69,9 @@ notification simulation.
 - Notification delivery
 - Production installer or dedicated-server deployment
 
-## Next Task
+## Next Task — Phase 8
 
-Create a controlled dedicated-server sandbox installation and a local-only,
-read-only Linux observation pilot for ShieldMendAi. Do not add repairs, service
-restarts, notification delivery, customer deployment, or private-source access.
+Deploy ShieldMendAi to its dedicated test server in a strictly read-only canary
+configuration. Use only ShieldMendAi-owned test targets. Keep automatic
+repairs, service restarts, production notifications, and customer deployment
+disabled, and verify rollback and uninstallation.

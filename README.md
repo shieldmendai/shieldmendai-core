@@ -8,18 +8,19 @@ roll back failed actions, and report sanitized incidents.
 ShieldMendAi does not guarantee detection or prevention of every vulnerability,
 attack, application failure, or unsafe repair condition.
 
-## Phase 6 Status
+## Phase 7 Status
 
-Phase 6 adds sanitized versioned incident records, explicit incident
-lifecycles, fixture-confined local storage, integrity checks, retention preview
-and simulation, fixed notifier interfaces, routing, safe templates, duplicate
-suppression, cooldown and attempt budgets, and deterministic Telegram, email,
-SMS, webhook, and local-alert simulations. It preserves all Phase 2–5
+Phase 7 adds typed installation and uninstall planning, temporary-root sandbox
+installation, checksummed manifests, least-privilege service-user and
+filesystem plans, safe bootstrap configuration, template-only systemd units,
+exact Linux target allowlists, a local-only read-only pilot policy,
+fixture-backed Linux observers, one-cycle pilot control, observation audits,
+and local checksummed incident persistence. It preserves all Phase 2–6
 behavior.
 
-It sends no real notification, resolves no credential, opens no network
-connection, creates no production incident directory, deletes no production
-record, and performs no live monitoring, repair, recovery, or deployment.
+It performs no real installation, user creation, permission or ownership
+change, systemd operation, live observation, repair, notification, network
+connection, customer deployment, or production-path modification.
 
 Implemented:
 
@@ -56,6 +57,11 @@ Implemented:
   visible truncation;
 - duplicate-alert suppression, cooldowns, attempt budgets, delivery results,
   and notification audit records.
+- controlled sandbox installation and preview-first fixture uninstallation;
+- least-privilege service-user, ownership, permission, filesystem, and systemd
+  template plans;
+- exact local target allowlists and fixture-backed one-cycle Linux pilot;
+- disabled production Linux adapters and local observation incident linkage.
 
 Unavailable or modeled only:
 
@@ -65,6 +71,8 @@ Unavailable or modeled only:
   incident storage, production retention deletion, and real notifications;
 - code-repair workflow;
 - Telegram, email, SMS, webhook, and local incident delivery.
+- real installation, Linux user creation, systemd installation or service
+  control, and live Linux observation.
 
 ## Language-Independent Design
 
@@ -111,6 +119,10 @@ shieldmendai inspect-notification-policy examples/notifications/policy.yaml
 shieldmendai inspect-incident examples/incidents/incident-low.json
 shieldmendai render-notification examples/incidents/incident-low.json examples/notifications/policy.yaml examples/notifications/template.yaml
 shieldmendai simulate-notification examples/incidents/incident-low.json examples/notifications/policy.yaml examples/notifications/scenario.yaml --template-path examples/notifications/template.yaml
+shieldmendai inspect-installation-plan examples/installation/plan.yaml
+shieldmendai render-systemd-units examples/installation/plan.yaml
+shieldmendai inspect-pilot-policy examples/pilot/policy.yaml
+shieldmendai list-linux-observers
 ```
 
 `plan` remains planning-only. Simulation output is explicitly labeled and
@@ -136,6 +148,7 @@ PYTHONPATH=src python3 -m unittest discover -s tests -v
 - [Phase 4 repair authorization and simulation](docs/REPAIRS.md)
 - [Phase 5 deterministic recovery](docs/RECOVERY.md)
 - [Phase 6 incidents, retention, and notification simulation](docs/INCIDENTS_AND_NOTIFICATIONS.md)
+- [Phase 7 installation sandbox and Linux pilot](docs/INSTALLATION_AND_LINUX_PILOT.md)
 - [Architecture](docs/ARCHITECTURE.md)
 - [Security boundaries](docs/SECURITY_BOUNDARIES.md)
 - [Extraction plan](docs/EXTRACTION_PLAN.md)
@@ -153,13 +166,13 @@ PYTHONPATH=src python3 -m unittest discover -s tests -v
 5. Phase 5: deterministic recovery verification and loop protection — complete.
 6. Phase 6: redacted incident records, retention, and notification
    simulations — complete.
-7. Phase 7: controlled dedicated-server sandbox installation and a local-only,
-   read-only Linux observation pilot.
+7. Phase 7: controlled installation sandbox and local-only read-only Linux
+   pilot — complete.
+8. Phase 8: dedicated test-server deployment in a strictly read-only canary
+   configuration.
 
-The exact Phase 7 task is to create a controlled dedicated-server sandbox
-installation and a local-only, read-only Linux observation pilot for
-ShieldMendAi. Phase 7 must include no repairs, service restarts, notification
-delivery, customer deployment, or private-source access.
+Phase 8 must not enable automatic repairs, service restarts, production
+notifications, or customer deployment.
 
 ## License
 

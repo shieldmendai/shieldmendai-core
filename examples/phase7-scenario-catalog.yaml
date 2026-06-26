@@ -1,0 +1,74 @@
+schema_version: "1.0"
+catalog_id: phase7-fictional-scenarios
+description: Fictional Phase 7 sandbox installation and read-only pilot scenarios.
+scenarios:
+  - id: successful-sandbox-installation
+    demonstrates: successful sandbox installation
+  - id: repeated-installation-idempotent
+    demonstrates: repeated sandbox installation is idempotent
+  - id: unsafe-sandbox-root-rejected
+    demonstrates: unsafe sandbox root is rejected
+  - id: path-traversal-rejected
+    demonstrates: path traversal is rejected
+  - id: symlink-escape-rejected
+    demonstrates: symlink escape is rejected
+  - id: production-path-rejected
+    demonstrates: production path is rejected
+  - id: manifest-validates
+    demonstrates: installation manifest validates
+  - id: modified-installed-file-conflict
+    demonstrates: modified installed file creates uninstall conflict
+  - id: uninstall-preview-no-change
+    demonstrates: uninstall preview changes nothing
+  - id: fixture-uninstall-known-files-only
+    demonstrates: fixture-only uninstall removes only known files
+  - id: unrelated-file-preserved
+    demonstrates: unrelated file is preserved
+  - id: service-user-no-root
+    demonstrates: service-user plan contains no root privileges
+  - id: systemd-least-privilege
+    demonstrates: systemd unit templates use least privilege
+  - id: systemd-no-secret
+    demonstrates: systemd templates contain no secret
+  - id: disabled-target-skipped
+    demonstrates: disabled target is skipped
+  - id: unknown-target-denied
+    demonstrates: unknown target is denied
+  - id: wildcard-target-rejected
+    demonstrates: wildcard target is rejected
+  - id: non-local-target-denied
+    demonstrates: non-local target is denied
+  - id: mutation-target-denied
+    demonstrates: mutation-enabled target is denied
+  - id: fixture-service-healthy
+    demonstrates: fixture service healthy
+  - id: fixture-service-unhealthy
+    demonstrates: fixture service unhealthy
+  - id: fixture-process-present
+    demonstrates: fixture process present
+  - id: fixture-process-missing
+    demonstrates: fixture process missing
+  - id: structured-file-valid
+    demonstrates: fixture structured file valid
+  - id: structured-file-invalid
+    demonstrates: fixture structured file invalid
+  - id: executable-present
+    demonstrates: fixture executable present
+  - id: executable-missing
+    demonstrates: fixture executable missing
+  - id: unhealthy-finding-creates-incident
+    demonstrates: unhealthy finding creates sanitized incident
+  - id: healthy-recheck-updates-incident
+    demonstrates: healthy recheck updates the incident safely
+  - id: deterministic-single-cycle
+    demonstrates: pilot controller performs one deterministic cycle
+  - id: production-observation-denied
+    demonstrates: production observation request is denied
+  - id: repair-disabled
+    demonstrates: repair request remains disabled
+  - id: notification-disabled
+    demonstrates: notification delivery remains disabled
+  - id: network-adapter-disabled
+    demonstrates: network adapter remains disabled
+  - id: systemd-production-adapter-disabled
+    demonstrates: systemd production adapter remains disabled

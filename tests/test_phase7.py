@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import contextlib
+import io
 import os
 import socket
 import subprocess
@@ -26,6 +28,7 @@ from shieldmendai.errors import (
     UnsafeSandboxError,
     UnsafePilotError,
 )
+from shieldmendai.cli import run
 from shieldmendai.incidents import IncidentStatus, LocalIncidentStore
 from shieldmendai.installation import (
     MANIFEST_NAME,
@@ -72,6 +75,13 @@ def pilot_policy_data() -> dict:
 def pilot_scenario_data(*, healthy: bool = True) -> dict:
     path = PILOT_HEALTHY_PATH if healthy else PILOT_UNHEALTHY_PATH
     return yaml.safe_load(path.read_text(encoding="utf-8"))
+
+
+def run_cli(*args: str) -> tuple[int, str, str]:
+    stdout, stderr = io.StringIO(), io.StringIO()
+    with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
+        code = run(list(args))
+    return code, stdout.getvalue(), stderr.getvalue()
 
 
 class InstallationModelTests(unittest.TestCase):
@@ -590,6 +600,107 @@ class PilotControllerTests(unittest.TestCase):
             [item.to_safe_dict() for item in second.findings],
         )
         self.assertEqual(first.audit_events, second.audit_events)
+
+
+class Phase7CliTests(unittest.TestCase):
+    def test_installation_cli_labels_and_exit_codes(self) -> None:
+        code, output, error = run_cli("inspect-installation-plan", str(PLAN_PATH))
+        self.assertEqual(code, 0)
+        self.assertIn("INSTALLATION PLAN ONLY", output)
+        self.assertEqual(error, "")
+        self.assertIn(
+            "SYSTEMD TEMPLATE PREVIEW ONLY",
+            run_cli("render-systemd-units", str(PLAN_PATH))[1],
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            code, output, _ = run_cli("simulate-install", str(PLAN_PATH), str(root))
+            self.assertEqual(code, 0)
+            self.assertIn("SANDBOX INSTALLATION ONLY", output)
+            self.assertIn(
+                "SANDBOX INSTALLATION INSPECTION ONLY",
+                run_cli("inspect-installation", str(root))[1],
+            )
+            before = sorted(str(item) for item in root.rglob("*"))
+            code, output, _ = run_cli("preview-uninstall", str(root))
+            self.assertEqual(code, 0)
+            self.assertIn("UNINSTALL PREVIEW ONLY", output)
+            self.assertEqual(before, sorted(str(item) for item in root.rglob("*")))
+            self.assertEqual(run_cli("simulate-uninstall", str(root))[0], 1)
+            code, output, _ = run_cli(
+                "simulate-uninstall", str(root), "--remove-generated-fixtures"
+            )
+            self.assertEqual(code, 0)
+            self.assertIn("NO PRODUCTION FILES AFFECTED", output)
+        self.assertEqual(run_cli("simulate-install", str(PLAN_PATH), "/etc")[0], 6)
+
+    def test_pilot_cli_labels_and_exit_codes(self) -> None:
+        self.assertIn(
+            "NO LIVE SYSTEM OBSERVED",
+            run_cli("inspect-pilot-policy", str(PILOT_POLICY_PATH))[1],
+        )
+        self.assertIn(
+            "PRODUCTION ADAPTERS DISABLED",
+            run_cli("list-linux-observers")[1],
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "fixtures").mkdir()
+            (root / "fixtures" / "status.json").write_text('{"ok":true}', encoding="utf-8")
+            (root / "fixtures" / "tool").write_text("fixture", encoding="utf-8")
+            code, output, _ = run_cli(
+                "simulate-linux-pilot",
+                str(PILOT_CONFIG_PATH),
+                str(PILOT_POLICY_PATH),
+                str(PILOT_HEALTHY_PATH),
+                str(root),
+            )
+            self.assertEqual(code, 0)
+            self.assertIn("READ-ONLY PILOT SIMULATION", output)
+            (root / "fixtures" / "status.json").write_text("{invalid", encoding="utf-8")
+            (root / "fixtures" / "tool").unlink()
+            self.assertEqual(
+                run_cli(
+                    "simulate-linux-pilot",
+                    str(PILOT_CONFIG_PATH),
+                    str(PILOT_POLICY_PATH),
+                    str(PILOT_UNHEALTHY_PATH),
+                    str(root),
+                )[0],
+                3,
+            )
+
+    def test_denied_target_and_production_request_exit_codes(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "fixtures").mkdir()
+            scenario = pilot_scenario_data()
+            scenario["observations"][0]["target_id"] = "unknown-target"
+            scenario_path = root / "unknown.yaml"
+            scenario_path.write_text(yaml.safe_dump(scenario), encoding="utf-8")
+            self.assertEqual(
+                run_cli(
+                    "simulate-linux-pilot",
+                    str(PILOT_CONFIG_PATH),
+                    str(PILOT_POLICY_PATH),
+                    str(scenario_path),
+                    str(root),
+                )[0],
+                2,
+            )
+            scenario = pilot_scenario_data()
+            scenario["requested_production_observation"] = True
+            scenario_path.write_text(yaml.safe_dump(scenario), encoding="utf-8")
+            self.assertEqual(
+                run_cli(
+                    "simulate-linux-pilot",
+                    str(PILOT_CONFIG_PATH),
+                    str(PILOT_POLICY_PATH),
+                    str(scenario_path),
+                    str(root),
+                )[0],
+                8,
+            )
 
 
 if __name__ == "__main__":

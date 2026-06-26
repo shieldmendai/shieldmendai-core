@@ -132,3 +132,22 @@ were excluded from content review. No private source file was copied.
 - No real message, provider contact, external upload, production incident
   directory, production deletion, monitoring, repair, recovery, or deployment
   is implemented.
+
+## Phase 7 Enforcement
+
+- Installation roots must be existing explicit temporary subdirectories and
+  cannot be production roots, repository directories, traversal paths, or
+  symlink escapes.
+- Production filesystem paths are models mapped under the sandbox.
+- User/group creation, ownership and permission changes, package installation,
+  systemd installation/control, shell commands, and network access are absent.
+- Uninstallation defaults to preview, requires explicit fixture-removal
+  authorization, and removes only unmodified manifest-recorded files.
+- Linux targets use exact IDs, identities, adapters, and read paths. Wildcards,
+  implicit discovery, non-local targets, and mutation-enabled targets are
+  denied.
+- Production observers are disabled. Fixture observers are read-only and run
+  once per invocation without process enumeration, systemd contact, sockets,
+  HTTP, TCP, sleep, repair, or notification delivery.
+- Incident and observation records remain sanitized, checksummed, and confined
+  to the validated temporary sandbox.

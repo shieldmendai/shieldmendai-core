@@ -14,7 +14,11 @@ from .errors import (
     ConfigurationError,
     IncidentTransitionError,
     IncidentValidationError,
+    InstallationConflictError,
+    InstallationValidationError,
     NotificationValidationError,
+    PilotPolicyDeniedError,
+    PilotValidationError,
     RepairAuthorizationError,
     RepairValidationError,
     RecoveryTransitionError,
@@ -24,8 +28,20 @@ from .errors import (
     UnsafeIncidentStoreError,
     UnsafeNotificationError,
     UnsafeObservationError,
+    UnsafePilotError,
     UnsafeRecoveryError,
     UnsafeRepairError,
+    UnsafeSandboxError,
+)
+from .installation import (
+    inspect_installation,
+    load_installation_manifest,
+    load_installation_plan,
+    plan_uninstall,
+    render_systemd_units,
+    safe_installation_dict,
+    simulate_install,
+    simulate_uninstall,
 )
 from .incidents import (
     LocalIncidentStore,
@@ -50,6 +66,14 @@ from .notifications import (
     safe_notification_policy_dict,
 )
 from .planner import create_plan
+from .linux_pilot import (
+    LinuxPilotController,
+    load_pilot_configuration,
+    load_pilot_policy,
+    load_pilot_scenario,
+    observer_capability_catalog,
+    safe_pilot_dict,
+)
 from .repair import (
     SimulationRepairExecutor,
     action_catalog,
@@ -181,6 +205,55 @@ def build_parser() -> argparse.ArgumentParser:
     retention_simulation.add_argument("store_root")
     retention_simulation.add_argument("policy_path")
     retention_simulation.add_argument("scenario_path")
+    installation_plan = commands.add_parser(
+        "inspect-installation-plan",
+        help="validate a sandbox installation plan without host changes",
+    )
+    installation_plan.add_argument("plan_path")
+    plan_install = commands.add_parser(
+        "plan-install", help="show a sandbox installation plan without writing files"
+    )
+    plan_install.add_argument("config_path")
+    install = commands.add_parser(
+        "simulate-install", help="write a deterministic temporary-root sandbox installation"
+    )
+    install.add_argument("config_path")
+    install.add_argument("sandbox_root")
+    inspect_install = commands.add_parser(
+        "inspect-installation", help="validate a sandbox installation manifest and files"
+    )
+    inspect_install.add_argument("sandbox_root")
+    uninstall_preview = commands.add_parser(
+        "preview-uninstall", help="preview fixture removal without deleting anything"
+    )
+    uninstall_preview.add_argument("sandbox_root")
+    uninstall = commands.add_parser(
+        "simulate-uninstall", help="remove only manifest-recorded temporary fixtures"
+    )
+    uninstall.add_argument("sandbox_root")
+    uninstall.add_argument(
+        "--remove-generated-fixtures",
+        action="store_true",
+        help="explicitly authorize removal of recorded temporary fixture files",
+    )
+    units = commands.add_parser(
+        "render-systemd-units", help="render least-privilege unit templates without installing them"
+    )
+    units.add_argument("config_path")
+    pilot_policy = commands.add_parser(
+        "inspect-pilot-policy", help="validate a local-only read-only pilot policy"
+    )
+    pilot_policy.add_argument("policy_path")
+    commands.add_parser(
+        "list-linux-observers", help="list fixture and disabled production observer capabilities"
+    )
+    pilot = commands.add_parser(
+        "simulate-linux-pilot", help="run one fixture-backed read-only observation cycle"
+    )
+    pilot.add_argument("config_path")
+    pilot.add_argument("policy_path")
+    pilot.add_argument("scenario_path")
+    pilot.add_argument("sandbox_root")
     return parser
 
 
@@ -191,6 +264,70 @@ def _print_json(value: object) -> None:
 def run(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     try:
+        if args.command in {"inspect-installation-plan", "plan-install"}:
+            path = args.plan_path if args.command == "inspect-installation-plan" else args.config_path
+            plan = load_installation_plan(path)
+            print("INSTALLATION PLAN ONLY — NO HOST CHANGES")
+            _print_json(safe_installation_dict(plan))
+            return 0
+        if args.command == "simulate-install":
+            plan = load_installation_plan(args.config_path)
+            result = simulate_install(plan, args.sandbox_root)
+            print("SANDBOX INSTALLATION ONLY — NO PRODUCTION INSTALLATION")
+            _print_json(safe_installation_dict(result))
+            return 0
+        if args.command == "inspect-installation":
+            manifest = load_installation_manifest(args.sandbox_root)
+            validation = inspect_installation(args.sandbox_root)
+            print("SANDBOX INSTALLATION INSPECTION ONLY — NO HOST CHANGES")
+            _print_json(
+                {
+                    "manifest": safe_installation_dict(manifest),
+                    "validation": safe_installation_dict(validation),
+                }
+            )
+            return 0 if validation.valid else 5
+        if args.command == "preview-uninstall":
+            print("UNINSTALL PREVIEW ONLY — NOTHING REMOVED")
+            _print_json(safe_installation_dict(plan_uninstall(args.sandbox_root)))
+            return 0
+        if args.command == "simulate-uninstall":
+            result = simulate_uninstall(
+                args.sandbox_root,
+                preview_only=False,
+                remove_generated_fixtures=args.remove_generated_fixtures,
+            )
+            print("SANDBOX UNINSTALLATION ONLY — NO PRODUCTION FILES AFFECTED")
+            _print_json(safe_installation_dict(result))
+            return 0
+        if args.command == "render-systemd-units":
+            load_installation_plan(args.config_path)
+            print("SYSTEMD TEMPLATE PREVIEW ONLY — UNITS NOT INSTALLED")
+            _print_json(render_systemd_units())
+            return 0
+        if args.command == "inspect-pilot-policy":
+            print("READ-ONLY PILOT POLICY INSPECTION — NO LIVE SYSTEM OBSERVED")
+            _print_json(safe_pilot_dict(load_pilot_policy(args.policy_path)))
+            return 0
+        if args.command == "list-linux-observers":
+            print("READ-ONLY OBSERVER CAPABILITIES — PRODUCTION ADAPTERS DISABLED")
+            _print_json(safe_pilot_dict(observer_capability_catalog()))
+            return 0
+        if args.command == "simulate-linux-pilot":
+            result = LinuxPilotController().run_cycle(
+                load_pilot_configuration(args.config_path),
+                load_pilot_policy(args.policy_path),
+                load_pilot_scenario(args.scenario_path),
+                args.sandbox_root,
+            )
+            print("READ-ONLY PILOT SIMULATION — NO LIVE SYSTEM OBSERVED")
+            _print_json(
+                {
+                    **safe_pilot_dict(result),
+                    "findings": [item.to_safe_dict() for item in result.findings],
+                }
+            )
+            return result.exit_code
         if args.command == "list-notifiers":
             print("SIMULATION ONLY — PRODUCTION NOTIFICATION DELIVERY IS UNAVAILABLE")
             _print_json(
@@ -463,6 +600,24 @@ def run(argv: Sequence[str] | None = None) -> int:
     except UnsafeNotificationError as error:
         print(f"Unsafe notification operation: {sanitize_message(str(error))}", file=sys.stderr)
         return 4
+    except UnsafeSandboxError as error:
+        print(f"Unsafe sandbox root: {sanitize_message(str(error))}", file=sys.stderr)
+        return 6
+    except InstallationConflictError as error:
+        print(f"Installation conflict: {sanitize_message(str(error))}", file=sys.stderr)
+        return 7
+    except InstallationValidationError as error:
+        print(f"Installation input error: {sanitize_message(str(error))}", file=sys.stderr)
+        return 5 if "checksum" in str(error).lower() else 1
+    except PilotPolicyDeniedError as error:
+        print(f"Pilot target or adapter denied: {sanitize_message(str(error))}", file=sys.stderr)
+        return 2
+    except UnsafePilotError as error:
+        print(f"Production or live pilot request denied: {sanitize_message(str(error))}", file=sys.stderr)
+        return 8
+    except PilotValidationError as error:
+        print(f"Pilot input error: {sanitize_message(str(error))}", file=sys.stderr)
+        return 1
     except NotificationValidationError as error:
         print(f"Notification input error: {sanitize_message(str(error))}", file=sys.stderr)
         return 1

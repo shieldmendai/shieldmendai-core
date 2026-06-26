@@ -13,7 +13,7 @@ The product cannot guarantee protection of every server, detection of every
 vulnerability, prevention of every attack, repair of every code failure, or
 safe automatic repair in every situation.
 
-## Phase 6 Boundary
+## Phase 7 Boundary
 
 Implemented now:
 
@@ -43,17 +43,25 @@ Implemented now:
   local alerts;
 - deterministic routing, templates, rendering, duplicate suppression,
   cooldowns, attempt budgets, provider isolation, and notification audit data.
+- installation and uninstall planning with temporary-root-confined simulation;
+- checksummed installation manifests and installation audit events;
+- least-privilege service-user, filesystem, permission, ownership, bootstrap,
+  and systemd template plans;
+- exact Linux target allowlists and a strict local-only pilot policy;
+- read-only fixture observers, disabled production adapters, one-cycle pilot
+  control, observation audits, and local incident linkage.
 
 Modeled but not operational:
 
 - production observation and repair, live verification and rollback,
   production incident persistence, production retention deletion, real
-  notification delivery, plugins, installers, deployment, and code repair.
+  notification delivery, real installers, systemd installation, deployment,
+  plugins, and code repair.
 
-Phase 6 performs no live systemd, process, socket, HTTP, DNS, SMTP,
-subprocess, notification, vulnerability scan, package update, repair,
-recovery, or deployment operation. File writes are limited to explicit
-temporary fixture roots.
+Phase 7 performs no live systemd, process, socket, HTTP, DNS, SMTP,
+subprocess, notification, vulnerability scan, package update, user creation,
+permission or ownership change, repair, recovery, installation, or deployment
+operation. File writes are limited to explicit temporary fixture roots.
 
 ## Platform and Language Independence
 
@@ -191,11 +199,11 @@ application metadata remain isolated per installation. The design introduces
 no mandatory cloud service, shared customer database, shared credential,
 automatic telemetry, or automatic upload.
 
-## Exact Phase 7 Task
+## Exact Phase 8 Task
 
-Create a controlled dedicated-server sandbox installation and a local-only,
-read-only Linux observation pilot for ShieldMendAi. Include installer and
-uninstaller simulation, least-privilege planning, systemd templates, safe
-configuration bootstrap, read-only adapters, a controlled test-server
-allowlist, and local incident persistence. Do not add repairs, service
-restarts, notification delivery, private-source access, or customer deployment.
+Deploy ShieldMendAi to its dedicated test server in a strictly read-only canary
+configuration with verified server identity, a dedicated service user,
+controlled checksummed installation, installed observer service and timer,
+ShieldMendAi-owned test targets only, local incidents, and verified
+rollback/uninstallation. Keep repairs, restarts, production notifications, and
+customer deployment disabled.

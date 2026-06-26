@@ -96,6 +96,8 @@ performed only when explicitly authorized and only to the official repository.
 
 ## Phase 7 — Dedicated-server sandbox and read-only Linux pilot
 
+- Status: complete on `codex/extraction-phase-7`.
+
 - Goal: create a controlled dedicated-server sandbox installation and a
   local-only, read-only Linux observation pilot.
 - Outputs: installer/uninstaller simulation, least-privilege service-user
@@ -109,26 +111,20 @@ performed only when explicitly authorized and only to the official repository.
 - Security review: least privilege, local-only boundaries, no provider access,
   and no mutation of customer or private systems.
 
-## Phase 8 — Automated tests and isolated simulations
+## Phase 8 — Dedicated test-server read-only canary
 
-- Goal: prove safety and behavior without touching production targets.
-- Outputs: expanded unit, integration, fault-injection, and simulation suites.
-- Tests: all supported failure and recovery paths, concurrency, malformed
-  input, and regression cases.
-- Stop conditions: tests require private infrastructure or live credentials.
-- Security review: fixtures are synthetic and logs are redacted.
-- Git checkpoint: commit the reproducible test suite and results.
-
-## Phase 9 — Installation on the dedicated ShieldMendAi server
-
-- Goal: install the public package in an isolated directory on the dedicated
-  host.
-- Outputs: reviewed deployment configuration and dry-run service installation.
-- Tests: package verification, permissions, dry-run startup, and no-op probes.
-- Stop conditions: private material appears on the host or isolation is absent.
-- Security review: verify repository origin, commit, config permissions, and
-  absence of private source artifacts.
-- Git checkpoint: commit only sanitized deployment documentation or fixes.
+- Goal: deploy ShieldMendAi to its dedicated test server in a strictly
+  read-only canary configuration.
+- Outputs: verified server identity, dedicated service user, controlled
+  checksummed installation, real local layout, installed observer service and
+  timer, explicit ShieldMendAi-owned test-target allowlist, local incidents,
+  and rollback/uninstall verification.
+- Restrictions: no automatic repairs, service restarts, production
+  notifications, customer deployment, unrelated targets, or private-source
+  access.
+- Stop conditions: server identity is uncertain, installation scope expands,
+  a target is not ShieldMendAi-owned, read-only enforcement fails, or rollback
+  cannot be verified.
 
 ## Phase 10 — Side-by-side validation
 
@@ -142,7 +138,7 @@ performed only when explicitly authorized and only to the official repository.
 - Security review: comparison data must be synthetic or redacted.
 - Git checkpoint: commit approved generic tuning and test updates.
 
-## Phase 11 — Retire old Guardian components
+## Phase 11 — Retire legacy private components
 
 - Goal: remove or disable old components only after explicit user approval.
 - Outputs: approved migration checklist, rollback plan, and final ownership map.

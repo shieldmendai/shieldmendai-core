@@ -148,3 +148,18 @@ only environment-variable names and sanitized destination references.
 Environment variables are never resolved. `simulation_only: true` is required,
 and all Telegram, email, SMS, webhook, and local behavior is deterministic
 simulation.
+
+## Phase 7 Installation and Linux Pilot
+
+Installation plans use schema `1.0`, an exact installation ID, the reviewed
+future Linux layout, a supplied timestamp, and a public executable reference.
+The sandbox root is supplied separately and must be an existing temporary
+subdirectory.
+
+Pilot configuration contains an exact application ID and target allowlist.
+Pilot policy rejects unknown fields and requires local-only, read-only,
+sandbox-only operation with repairs, notifications, network, process
+enumeration, and systemd access disabled. Scenario input supplies a timestamp,
+exact host reference, and one fictional observation per target. Secret values,
+wildcards, automatic discovery, and environment-secret resolution are
+unavailable.

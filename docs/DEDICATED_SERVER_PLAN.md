@@ -18,7 +18,7 @@ user explicitly authorizes deployment.
 8. Introduce configured read-only health checks, then controlled repairs only
    after review of allowlists, retry limits, cooldowns, and verification.
 9. Validate side by side without assigning overlapping live repair ownership.
-10. Disable or remove old Guardian components only after explicit user approval
+10. Disable or remove legacy private components only after explicit user approval
     and a tested rollback plan.
 
 Never transfer private trading directories, wallets, secrets, logs, reports,
