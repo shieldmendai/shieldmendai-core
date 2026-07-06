@@ -3,7 +3,7 @@ const siteNav = document.querySelector(".site-nav");
 
 if (menuButton && siteNav) {
   const mobileQuery = window.matchMedia("(max-width: 1040px)");
-  const backdrop = document.createElement("div");
+  const overlay = document.createElement("div");
   const closeButton = document.createElement("button");
   let isOpen = false;
 
@@ -14,9 +14,10 @@ if (menuButton && siteNav) {
   menuButton.setAttribute("aria-controls", siteNav.id);
   menuButton.setAttribute("aria-expanded", "false");
 
-  backdrop.className = "site-nav-backdrop";
-  backdrop.hidden = true;
-  document.body.append(backdrop);
+  overlay.className = "mobile-menu-overlay";
+  overlay.hidden = true;
+  document.body.append(overlay);
+  siteNav.classList.add("mobile-menu-panel");
 
   closeButton.type = "button";
   closeButton.className = "menu-close";
@@ -28,8 +29,8 @@ if (menuButton && siteNav) {
     isOpen = open;
     menuButton.setAttribute("aria-expanded", String(open));
     siteNav.classList.toggle("open", open);
-    backdrop.classList.toggle("open", open);
-    backdrop.hidden = !open;
+    overlay.classList.toggle("is-open", open);
+    overlay.hidden = !open;
     document.body.classList.toggle("menu-open", open);
     siteNav.setAttribute("aria-hidden", String(mobileQuery.matches && !open));
   };
@@ -57,7 +58,7 @@ if (menuButton && siteNav) {
   });
 
   closeButton.addEventListener("click", () => closeMenu());
-  backdrop.addEventListener("click", () => closeMenu());
+  overlay.addEventListener("click", () => closeMenu());
 
   siteNav.addEventListener("click", (event) => {
     if (event.target.closest("a")) {
@@ -86,6 +87,7 @@ if (menuButton && siteNav) {
     }
 
     setState(false);
+    overlay.hidden = true;
     siteNav.setAttribute("aria-hidden", "false");
   };
 
