@@ -21,6 +21,7 @@ Supported placeholders are documented in `.env.example`:
 - `COVALENT_API_KEY`
 - `MORALIS_API_KEY`
 - `SIMPLEHASH_API_KEY`
+- `PORT`
 
 The current server does not expose these values and does not require them to start.
 
@@ -35,7 +36,7 @@ python3 backend/server.py
 Optional host and port:
 
 ```bash
-SHIELDMEND_HOST=127.0.0.1 SHIELDMEND_PORT=8787 python3 backend/server.py
+SHIELDMEND_HOST=127.0.0.1 PORT=8787 python3 backend/server.py
 ```
 
 ## Endpoints
@@ -61,27 +62,44 @@ curl -s http://127.0.0.1:8787/api/simulate-sale \
   -d '{"wallet":"0x7a000000000000000000000000000000000091F","token":"ETH","amount":1.25,"salePriceUsd":2500}'
 ```
 
-## Systemd Later
+## Current Status
 
-When deploying, create a dedicated unprivileged service user and point systemd at the repo path. Keep secrets in a root-readable environment file that is not committed.
+- Backend: live when the local service is running
+- Wallet scan: mock
+- Tax engine: mock
+- Custody: false
+- Seed phrase required: false
+- Private key required: false
+- Wallet approval required: false
 
-Example outline:
+Do not claim live wallet scanning until real read-only RPC/API providers are configured and tested.
 
-```ini
-[Unit]
-Description=ShieldMendAI read-only backend
-After=network.target
+## Systemd Service
 
-[Service]
-Type=simple
-WorkingDirectory=/root/ShieldMendAi
-EnvironmentFile=/etc/shieldmendai/backend.env
-ExecStart=/usr/bin/python3 /root/ShieldMendAi/backend/server.py
-Restart=on-failure
-User=shieldmend
+The repository includes `backend/shieldmendai-backend.service`. It binds to `127.0.0.1:8787` by default and does not include secrets.
 
-[Install]
-WantedBy=multi-user.target
+Install or refresh the service:
+
+```bash
+cp backend/shieldmendai-backend.service /etc/systemd/system/shieldmendai-backend.service
+systemctl daemon-reload
+systemctl enable shieldmendai-backend
+systemctl restart shieldmendai-backend
 ```
 
-Do not store private keys, seed phrases, trading wallet credentials, or token approval credentials in the backend environment.
+Check status:
+
+```bash
+systemctl status shieldmendai-backend --no-pager
+curl -s http://127.0.0.1:8787/health
+curl -s http://127.0.0.1:8787/api/status
+```
+
+Stop or restart:
+
+```bash
+systemctl stop shieldmendai-backend
+systemctl restart shieldmendai-backend
+```
+
+If real provider variables are needed later, keep them in a local environment file that is not committed and update the service carefully. Do not store private keys, seed phrases, trading wallet credentials, or token approval credentials in the backend environment.

@@ -16,7 +16,7 @@ from typing import Any
 
 
 HOST = os.environ.get("SHIELDMEND_HOST", "127.0.0.1")
-PORT = int(os.environ.get("SHIELDMEND_PORT", "8787"))
+PORT = int(os.environ.get("PORT") or os.environ.get("SHIELDMEND_PORT", "8787"))
 WALLET_RE = re.compile(r"^0x[a-fA-F0-9]{40}$")
 
 
