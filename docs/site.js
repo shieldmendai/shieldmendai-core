@@ -58,24 +58,21 @@ if (menuButton && siteNav) {
   });
 
   closeButton.addEventListener("click", () => closeMenu());
-  overlay.addEventListener("click", () => closeMenu());
+
+  overlay.addEventListener("click", (event) => {
+    if (event.target === overlay) closeMenu();
+  });
 
   siteNav.addEventListener("click", (event) => {
-    if (event.target.closest("a")) {
-      closeMenu({ restoreFocus: false });
-    }
+    event.stopPropagation();
+  });
+
+  siteNav.querySelectorAll("a").forEach((link) => {
+    link.addEventListener("click", () => closeMenu({ restoreFocus: false }));
   });
 
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape" && isOpen) {
-      closeMenu();
-    }
-  });
-
-  document.addEventListener("pointerdown", (event) => {
-    if (!isOpen) return;
-    const path = typeof event.composedPath === "function" ? event.composedPath() : [];
-    if (!path.includes(siteNav) && !path.includes(menuButton)) {
       closeMenu();
     }
   });
@@ -99,3 +96,40 @@ if (menuButton && siteNav) {
 
   handleViewportChange();
 }
+
+const revealTargets = document.querySelectorAll(
+  ".hero-inner > *, .section, .card, .app-preview, .accordion-item, .notice"
+);
+
+revealTargets.forEach((target) => target.classList.add("reveal"));
+
+const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+if (reduceMotion.matches || !("IntersectionObserver" in window)) {
+  revealTargets.forEach((target) => target.classList.add("is-visible"));
+} else {
+  const revealObserver = new IntersectionObserver(
+    (entries, observer) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        entry.target.classList.add("is-visible");
+        observer.unobserve(entry.target);
+      });
+    },
+    { threshold: 0.14, rootMargin: "0px 0px -40px 0px" }
+  );
+
+  revealTargets.forEach((target) => revealObserver.observe(target));
+}
+
+document.querySelectorAll(".accordion-trigger").forEach((trigger) => {
+  const panel = document.getElementById(trigger.getAttribute("aria-controls"));
+  if (!panel) return;
+
+  trigger.addEventListener("click", () => {
+    const open = trigger.getAttribute("aria-expanded") === "true";
+    trigger.setAttribute("aria-expanded", String(!open));
+    panel.classList.toggle("is-open", !open);
+    panel.hidden = open;
+  });
+});
