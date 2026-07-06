@@ -11,18 +11,25 @@ from __future__ import annotations
 import json
 import os
 import re
+from decimal import Decimal
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any
+from urllib import error, request
 
 
 HOST = os.environ.get("SHIELDMEND_HOST", "127.0.0.1")
 PORT = int(os.environ.get("PORT") or os.environ.get("SHIELDMEND_PORT", "8787"))
+RPC_TIMEOUT_SECONDS = 5
 WALLET_RE = re.compile(r"^0x[a-fA-F0-9]{40}$")
+
+
+def env_present(name: str) -> bool:
+    return bool(os.environ.get(name))
 
 
 def provider_configured() -> bool:
     return any(
-        os.environ.get(name)
+        env_present(name)
         for name in (
             "BASE_RPC_URL",
             "BASESCAN_API_KEY",
@@ -34,16 +41,109 @@ def provider_configured() -> bool:
     )
 
 
+def rpc_call(method: str, params: list[Any]) -> Any:
+    rpc_url = os.environ.get("BASE_RPC_URL")
+    if not rpc_url:
+        raise RuntimeError("BASE_RPC_URL is not configured")
+
+    body = json.dumps(
+        {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": method,
+            "params": params,
+        }
+    ).encode("utf-8")
+    rpc_request = request.Request(
+        rpc_url,
+        data=body,
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+
+    try:
+        with request.urlopen(rpc_request, timeout=RPC_TIMEOUT_SECONDS) as response:
+            raw = response.read(1_000_000)
+    except (TimeoutError, OSError, error.URLError, error.HTTPError) as exc:
+        raise RuntimeError("RPC request failed") from exc
+
+    try:
+        payload = json.loads(raw.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise RuntimeError("RPC response was not valid JSON") from exc
+
+    if not isinstance(payload, dict):
+        raise RuntimeError("RPC response was not an object")
+    if payload.get("error"):
+        raise RuntimeError("RPC returned an error")
+    if "result" not in payload:
+        raise RuntimeError("RPC response did not include a result")
+    return payload["result"]
+
+
+def get_chain_id() -> int:
+    result = rpc_call("eth_chainId", [])
+    if not isinstance(result, str) or not result.startswith("0x"):
+        raise RuntimeError("RPC chain ID was not a hex string")
+    return int(result, 16)
+
+
+def get_native_balance(wallet: str) -> int:
+    result = rpc_call("eth_getBalance", [wallet, "latest"])
+    if not isinstance(result, str) or not result.startswith("0x"):
+        raise RuntimeError("RPC native balance was not a hex string")
+    return int(result, 16)
+
+
+def wei_to_eth(wei: int) -> str:
+    value = Decimal(wei) / Decimal(10**18)
+    return format(value, "f")
+
+
+def rpc_status() -> dict[str, Any]:
+    if not env_present("BASE_RPC_URL"):
+        return {"rpcConfigured": False, "rpcLive": False}
+    try:
+        chain_id = get_chain_id()
+    except RuntimeError:
+        return {"rpcConfigured": True, "rpcLive": False}
+    return {"rpcConfigured": True, "rpcLive": True, "chainId": chain_id}
+
+
 def status_payload() -> dict[str, Any]:
+    rpc = rpc_status()
     return {
         "backend": "live",
-        "walletScan": "mock",
+        "walletScan": "live-basic" if rpc["rpcLive"] else "mock",
         "taxEngine": "mock",
         "readOnlyProviderConfigured": provider_configured(),
+        "basescanConfigured": env_present("BASESCAN_API_KEY"),
+        "goplusConfigured": env_present("GOPLUS_API_KEY"),
+        **rpc,
         "custody": False,
         "requiresSeedPhrase": False,
         "requiresPrivateKey": False,
         "requiresWalletApproval": False,
+    }
+
+
+def live_basic_scan(wallet: str) -> dict[str, Any]:
+    chain_id = get_chain_id()
+    balance_wei = get_native_balance(wallet)
+    return {
+        "mode": "live-basic",
+        "wallet": wallet,
+        "chainId": chain_id,
+        "nativeBalanceWei": str(balance_wei),
+        "nativeBalanceEth": wei_to_eth(balance_wei),
+        "readOnly": True,
+        "message": "Live read-only RPC balance check. Token lots and tax lots still require transaction history adapters.",
+        "security": {
+            "requiresSeedPhrase": False,
+            "requiresPrivateKey": False,
+            "requiresWalletApproval": False,
+            "custody": False,
+        },
     }
 
 
@@ -142,6 +242,12 @@ class Handler(BaseHTTPRequestHandler):
             if not WALLET_RE.match(wallet):
                 self.write_json({"error": "invalid_wallet", "message": "Use a public EVM wallet address."}, status=400)
                 return
+            if env_present("BASE_RPC_URL"):
+                try:
+                    self.write_json(live_basic_scan(wallet))
+                    return
+                except RuntimeError:
+                    pass
             self.write_json(mock_scan(wallet))
             return
 

@@ -2,7 +2,7 @@
 
 Read-only backend foundation for ShieldMendAI wallet scanning and tax-lot planning.
 
-This backend must never request seed phrases, private keys, custody, token approvals, or trading permissions. The initial implementation returns safe mock wallet and tax-planning responses until a read-only RPC/data provider adapter and tax calculation engine are implemented.
+This backend must never request seed phrases, private keys, custody, token approvals, or trading permissions. It supports a basic read-only RPC balance check when `BASE_RPC_URL` is configured, and falls back to safe mock responses when live RPC is unavailable.
 
 ## Requirements
 
@@ -23,7 +23,7 @@ Supported placeholders are documented in `.env.example`:
 - `SIMPLEHASH_API_KEY`
 - `PORT`
 
-The current server does not expose these values and does not require them to start.
+The server does not expose these values and does not require them to start. `BASE_RPC_URL`, when present, is used only for read-only JSON-RPC calls. `BASESCAN_API_KEY` and `GOPLUS_API_KEY` are reported as configured or not configured in `/api/status`, but they are not used yet.
 
 ## Run Locally
 
@@ -65,14 +65,25 @@ curl -s http://127.0.0.1:8787/api/simulate-sale \
 ## Current Status
 
 - Backend: live when the local service is running
-- Wallet scan: mock
+- Wallet scan: `live-basic` only when `BASE_RPC_URL` answers `eth_chainId`; otherwise mock
 - Tax engine: mock
 - Custody: false
 - Seed phrase required: false
 - Private key required: false
 - Wallet approval required: false
 
-Do not claim live wallet scanning until real read-only RPC/API providers are configured and tested.
+## Live-Basic Mode
+
+`live-basic` proves that the backend can reach a read-only EVM RPC endpoint and read a public wallet's native balance. It calls:
+
+- `eth_chainId`
+- `eth_getBalance`
+
+The scan response includes the wallet address, chain ID, native balance in wei and ETH, and security flags confirming read-only operation.
+
+This is not a full wallet scanner yet. Token balances, token lots, transaction history, realized gains, cost basis, and tax lots still require transaction history adapters and a real cost-basis/tax engine. Until those are built, the tax engine remains mock.
+
+Never add private keys, seed phrases, custody credentials, wallet approvals, trading keys, or swap/trading actions to this backend. The backend must remain read-only.
 
 ## Systemd Service
 
