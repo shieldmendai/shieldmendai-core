@@ -89,6 +89,8 @@ After=network.target
 Type=simple
 WorkingDirectory=/root/ShieldMendAi
 EnvironmentFile=-/root/ShieldMendAi/backend/.env
+Environment=SHIELDMEND_HOST=127.0.0.1
+Environment=PORT=8787
 ExecStart=/usr/bin/python3 /root/ShieldMendAi/backend/server.py
 Restart=on-failure
 RestartSec=5
