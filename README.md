@@ -1,38 +1,21 @@
-# shieldmendai-core
-The self-healing shield for your server.
-## Roadmap
+# ShieldMendAI
 
-### Phase 1 — Core Guardian
-- Monitor server services
-- Detect failed processes
-- Restart broken services
-- Send Telegram alerts
-- Keep repair logs
+ShieldMendAI is a read-only crypto wallet and tax-lot planning app.
 
-### Phase 2 — Self-Healing
-- Diagnose common failures
-- Apply safe repair steps
-- Create backups before changes
-- Verify services after repair
-- Learn from past incidents
+The public site is built as static GitHub Pages content under `docs/` and keeps
+the existing `shieldmendai.com` CNAME.
 
-### Phase 3 — Installer
-- One-command install
-- Telegram setup prompts
-- User config file
-- Systemd service setup
-- Safe update process
+Core promise:
 
-### Phase 4 — Public Release
-- Documentation
-- Example configs
-- Security checklist
-- First stable release
+Paste a wallet, choose a token, enter the amount you want to sell, and see
+estimated tax impact, take-home amount, and smarter selling options before
+making a move.
 
-## Vision
+ShieldMendAI does not ask for seed phrases, private keys, custody, or trading
+permissions.
 
-ShieldMendAI is a reusable AI-powered server guardian that monitors systems, detects failures, attempts safe repairs, alerts owners through Telegram, and learns from previous incidents.
+Disclaimer:
 
-Users install ShieldMendAI on their own servers, provide their own configuration and credentials, and maintain full control of their infrastructure.
-
-Goal: Reduce downtime through safe automation and self-healing workflows.
+ShieldMendAI provides estimated tax-planning information only. It is not tax,
+legal, accounting, or financial advice. Confirm with a qualified tax
+professional before filing or making major financial decisions.
