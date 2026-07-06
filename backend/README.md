@@ -76,12 +76,32 @@ Do not claim live wallet scanning until real read-only RPC/API providers are con
 
 ## Systemd Service
 
-The repository includes `backend/shieldmendai-backend.service`. It binds to `127.0.0.1:8787` by default and does not include secrets.
+The deployed service name is `shieldmendai-backend.service`. It binds to `127.0.0.1:8787` by default and does not include secrets in the unit file.
 
-Install or refresh the service:
+The active VPS unit should use this shape:
+
+```ini
+[Unit]
+Description=ShieldMendAI read-only backend
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/root/ShieldMendAi
+EnvironmentFile=-/root/ShieldMendAi/backend/.env
+ExecStart=/usr/bin/python3 /root/ShieldMendAi/backend/server.py
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+```
+
+The dash before `EnvironmentFile` lets the service start even when `backend/.env` does not exist. Do not commit `backend/.env`.
+
+Install or refresh the service on the VPS:
 
 ```bash
-cp backend/shieldmendai-backend.service /etc/systemd/system/shieldmendai-backend.service
 systemctl daemon-reload
 systemctl enable shieldmendai-backend
 systemctl restart shieldmendai-backend
