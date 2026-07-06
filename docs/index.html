@@ -3,111 +3,100 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="ShieldMendAI is a read-only crypto wallet and tax-lot planning app for estimating tax impact before selling.">
   <title>ShieldMendAI | Know what you'll owe before you sell</title>
-  <meta name="description" content="Read-only crypto wallet and tax-lot planning app for estimating tax impact before selling.">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+  <a class="skip-link" href="#main">Skip to content</a>
   <header class="site-header">
     <nav class="nav" aria-label="Primary">
       <a class="brand" href="index.html"><span class="brand-mark">S</span><span>ShieldMendAI</span></a>
-      <div class="nav-links">
-        <a href="pricing.html">Pricing</a>
+      <button class="menu-button" type="button" aria-label="Open navigation"><span></span></button>
+      <div class="site-nav">
         <a href="how-it-works.html">How It Works</a>
+        <a href="pricing.html">Pricing</a>
         <a href="security.html">Security</a>
         <a href="tax-pack.html">Tax Pack</a>
-        <a href="archive-mode.html">Archive</a>
+        <a href="archive-mode.html">Archive Mode</a>
         <a href="faq.html">FAQ</a>
-        <a class="button primary" href="dashboard.html">Dashboard</a>
+        <a class="button primary" href="dashboard.html">Start Free Scan</a>
       </div>
     </nav>
   </header>
 
-  <main>
+  <main id="main">
     <section class="hero">
       <div class="hero-inner">
         <div>
-          <p class="eyebrow">Read-only crypto tax planning</p>
+          <p class="eyebrow">ShieldMendAI</p>
           <h1>Know what you'll owe before you sell.</h1>
-          <p class="lead">Paste a wallet, choose a token, enter the amount you want to sell, and see estimated tax impact, take-home amount, and smarter selling options before making a move.</p>
+          <p class="lead">Paste your wallet, choose a token, enter the amount you want to sell, and see your estimated tax impact before making a move.</p>
           <div class="hero-actions">
-            <a class="button primary" href="dashboard.html">Open Dashboard</a>
-            <a class="button" href="pricing.html">View Pricing</a>
+            <a class="button primary" href="dashboard.html">Start Free Scan</a>
+            <a class="button secondary" href="pricing.html">View Pricing</a>
+            <a class="button" href="beta-access.html">Join Beta</a>
+          </div>
+          <div class="trust-row" aria-label="Trust principles">
+            <span>Read-only wallet analysis</span>
+            <span>No seed phrase</span>
+            <span>No custody</span>
+            <span>No trading permissions</span>
+            <span>Estimated planning tool</span>
+            <span>Tax-prep friendly exports</span>
           </div>
         </div>
-        <figure class="hero-visual">
-          <img src="assets/shieldmendai-tax-planner-hero.png" alt="ShieldMendAI read-only crypto tax planning dashboard preview">
-        </figure>
-      </div>
-      <div class="trust-row" aria-label="Security principles">
-        <span>No seed phrase</span>
-        <span>No private keys</span>
-        <span>No custody</span>
-        <span>No trading permissions</span>
-        <span>Export your data</span>
-      </div>
-    </section>
-
-    <section class="section" id="pricing">
-      <div class="wrap">
-        <div class="section-head">
-          <h2>Plans for every wallet size.</h2>
-          <p>Start with a basic wallet scan, then upgrade when you need simulations, summaries, CSV export, or full tax-pack output.</p>
-        </div>
-        <div class="grid four">
-          <article class="card">
-            <h3>Free Scan</h3>
-            <p class="price">$0</p>
-            <ul class="list">
-              <li>1 wallet</li>
-              <li>Basic scan</li>
-              <li>Limited gain/loss preview</li>
-            </ul>
-          </article>
-          <article class="card">
-            <h3>Starter</h3>
-            <p class="price">$4.99 <small>/ month</small></p>
-            <ul class="list">
-              <li>2 wallets</li>
-              <li>Sale simulator</li>
-              <li>Estimated tax hit</li>
-              <li>Tax report add-on</li>
-            </ul>
-          </article>
-          <article class="card">
-            <h3>Investor</h3>
-            <p class="price">$9.99 <small>/ month</small></p>
-            <ul class="list">
-              <li>5 wallets</li>
-              <li>Unlimited simulations</li>
-              <li>Year-end tax summary included</li>
-              <li>CSV export included</li>
-            </ul>
-          </article>
-          <article class="card">
-            <h3>Pro</h3>
-            <p class="price">$19.99 <small>/ month</small></p>
-            <ul class="list">
-              <li>15 wallets</li>
-              <li>Advanced optimizer</li>
-              <li>Timestamped proof records</li>
-              <li>Full year-end tax export</li>
-            </ul>
-          </article>
+        <div class="app-preview" aria-label="ShieldMendAI App Preview">
+          <div class="app-topbar">
+            <div>
+              <p class="eyebrow">ShieldMendAI App Preview</p>
+              <h2>Planning dashboard</h2>
+            </div>
+            <span class="app-status">Coming app area</span>
+          </div>
+          <div class="app-layout">
+            <aside class="app-sidebar">
+              <div class="app-nav-item active">Add wallet <span>+</span></div>
+              <div class="app-nav-item">Wallet list <span>2</span></div>
+              <div class="app-nav-item">Token lots <span>18</span></div>
+              <div class="app-nav-item">Sale simulator <span>Run</span></div>
+              <div class="app-nav-item">Export CSV <span>CSV</span></div>
+            </aside>
+            <div class="app-main">
+              <section class="app-panel">
+                <p class="eyebrow">Estimated tax impact</p>
+                <div class="metric">$1,284</div>
+                <p class="small">Preview based on selected lots and sale amount.</p>
+              </section>
+              <section class="app-panel">
+                <p class="eyebrow">Upgrade plan</p>
+                <div class="metric">Investor</div>
+                <p class="small">Unlock unlimited simulations and included CSV export.</p>
+              </section>
+              <section class="app-panel wide">
+                <p class="eyebrow">Archive Mode state</p>
+                <div class="rows">
+                  <div class="row"><strong>Saved wallets</strong><span>Available</span></div>
+                  <div class="row"><strong>Raw CSV files</strong><span>Available</span></div>
+                  <div class="row"><strong>Live scan tools</strong><span>Paused if unpaid</span></div>
+                </div>
+              </section>
+            </div>
+          </div>
         </div>
       </div>
     </section>
 
     <section class="section alt">
-      <div class="wrap split">
-        <div>
-          <h2>Plan the sale before the transaction.</h2>
-          <p class="lead">ShieldMendAI is built for previewing outcomes, not placing trades. It gives wallet owners a clearer view of estimated tax impact and take-home amount before acting elsewhere.</p>
+      <div class="wrap">
+        <div class="section-head">
+          <p class="eyebrow">How it works</p>
+          <h2>Three steps before you decide.</h2>
         </div>
-        <div class="grid">
-          <article class="card"><h3>1. Paste a wallet</h3><p>Use public wallet data for read-only analysis.</p></article>
-          <article class="card"><h3>2. Choose a token</h3><p>Review lots, estimated basis, and sale scenarios.</p></article>
-          <article class="card"><h3>3. Enter a sale amount</h3><p>Compare estimated tax impact, take-home amount, and smarter selling options.</p></article>
+        <div class="grid three">
+          <article class="card"><h3>1. Paste a wallet</h3><p>Use a public wallet address for read-only analysis. No seed phrase, keys, custody, or trading permissions.</p></article>
+          <article class="card"><h3>2. Choose a token</h3><p>Review token lots, estimated basis, and possible gain or loss ranges in one planning view.</p></article>
+          <article class="card"><h3>3. Simulate a sale</h3><p>Enter a sale amount and compare estimated tax impact before making the transaction elsewhere.</p></article>
         </div>
       </div>
     </section>
@@ -115,28 +104,28 @@
     <section class="section">
       <div class="wrap">
         <div class="section-head">
-          <h2>Tax Pack and Archive Mode.</h2>
-          <p>Keep access to raw records even when a plan is canceled, and buy a standalone year-end package when you need reporting output.</p>
+          <p class="eyebrow">Pricing preview</p>
+          <h2>Start free, upgrade when planning gets more serious.</h2>
         </div>
-        <div class="grid three">
-          <article class="card"><h3>Basic Tax Pack</h3><p class="price">$79 <small>/ year</small></p><p>Year-end files for lighter wallet activity.</p></article>
-          <article class="card"><h3>Investor Tax Pack</h3><p class="price">$129 <small>/ year</small></p><p>Expanded summaries and export support.</p></article>
-          <article class="card"><h3>Pro Tax Pack</h3><p class="price">$199 <small>/ year</small></p><p>Full year-end tax export and proof record support.</p></article>
+        <div class="grid four">
+          <article class="card"><h3>Free Scan</h3><p class="price">$0</p><p>1 wallet, basic scan, and limited gain/loss preview.</p></article>
+          <article class="card"><h3>Starter</h3><p class="price">$4.99 <small>/month</small></p><p>2 wallets, sale simulator, estimated tax hit, and Tax Pack add-on.</p></article>
+          <article class="card highlight"><h3>Investor</h3><p class="price">$9.99 <small>/month</small></p><p>5 wallets, unlimited simulations, year-end summary, and CSV export.</p></article>
+          <article class="card"><h3>Pro</h3><p class="price">$19.99 <small>/month</small></p><p>15 wallets, optimizer, proof records, full export, and priority support.</p></article>
         </div>
       </div>
     </section>
 
     <section class="section alt">
-      <div class="wrap">
-        <div class="section-head">
-          <h2>Beta access codes.</h2>
-          <p>Use an approved discount code during beta onboarding.</p>
+      <div class="wrap split">
+        <div>
+          <p class="eyebrow">Security</p>
+          <h2>Planning software, not custody software.</h2>
+          <p class="lead">ShieldMendAI is designed around public wallet analysis and exportable records. You stay in control of your assets and transaction decisions.</p>
         </div>
-        <div class="code-grid">
-          <div class="code">BETA100</div>
-          <div class="code">FRIEND50</div>
-          <div class="code">FOUNDING25</div>
-          <div class="code">CPADEMO</div>
+        <div class="grid two">
+          <article class="card"><h3>Never seed phrases</h3><p>ShieldMendAI never asks for seed phrases or private keys.</p></article>
+          <article class="card"><h3>Never custody</h3><p>ShieldMendAI never takes custody and never requests trading permissions.</p></article>
         </div>
       </div>
     </section>
@@ -150,9 +139,12 @@
 
   <footer class="site-footer">
     <div class="footer-inner">
-      <strong>ShieldMendAI</strong>
-      <span><a href="privacy.html">Privacy</a> | <a href="terms.html">Terms</a> | <a href="apk-download.html">APK Download</a></span>
+      <div><a class="brand" href="index.html"><span class="brand-mark">S</span><span>ShieldMendAI</span></a><p class="small">Read-only crypto wallet and tax-lot planning.</p></div>
+      <div><h3>Product</h3><a href="how-it-works.html">How It Works</a><a href="dashboard.html">Dashboard</a><a href="pricing.html">Pricing</a></div>
+      <div><h3>Trust</h3><a href="security.html">Security</a><a href="privacy.html">Privacy</a><a href="terms.html">Terms</a></div>
+      <div><h3>Access</h3><a href="tax-pack.html">Tax Pack</a><a href="archive-mode.html">Archive Mode</a><a href="beta-access.html">Join Beta</a></div>
     </div>
   </footer>
+  <script src="site.js"></script>
 </body>
 </html>
