@@ -1,100 +1,84 @@
 const menuButton = document.querySelector(".menu-button");
-const siteNav = document.querySelector(".site-nav");
 
-if (menuButton && siteNav) {
-  const mobileQuery = window.matchMedia("(max-width: 1040px)");
-  const overlay = document.createElement("div");
-  const closeButton = document.createElement("button");
-  let isOpen = false;
+const drawerLinks = [
+  ["How It Works", "how-it-works.html"],
+  ["Pricing", "pricing.html"],
+  ["Security", "security.html"],
+  ["Tax Pack", "tax-pack.html"],
+  ["Archive Mode", "archive-mode.html"],
+  ["FAQ", "faq.html"],
+  ["Start Free Scan", "dashboard.html", "drawer-cta"],
+];
 
-  if (!siteNav.id) {
-    siteNav.id = "site-nav";
-  }
+if (menuButton) {
+  const drawer = document.createElement("div");
+  drawer.className = "mobile-drawer";
+  drawer.hidden = true;
+  drawer.innerHTML = `
+    <div class="mobile-drawer__backdrop" data-menu-close></div>
+    <aside class="mobile-drawer__panel" role="dialog" aria-modal="true" aria-label="Mobile navigation">
+      <div class="mobile-drawer__top">
+        <a class="brand" href="index.html"><span class="brand-mark">S</span><span>ShieldMendAI</span></a>
+        <button class="mobile-drawer__close" type="button" aria-label="Close navigation">Close</button>
+      </div>
+      <nav class="mobile-drawer__nav" aria-label="Mobile">
+        ${drawerLinks.map(([label, href, className]) => `<a${className ? ` class="${className}"` : ""} href="${href}">${label}</a>`).join("")}
+      </nav>
+    </aside>
+  `;
+  document.body.append(drawer);
 
-  menuButton.setAttribute("aria-controls", siteNav.id);
+  const panel = drawer.querySelector(".mobile-drawer__panel");
+  const backdrop = drawer.querySelector(".mobile-drawer__backdrop");
+  const closeButton = drawer.querySelector(".mobile-drawer__close");
+  const links = drawer.querySelectorAll("a");
+  let closeTimer;
+
+  menuButton.setAttribute("aria-controls", "mobile-drawer");
   menuButton.setAttribute("aria-expanded", "false");
-
-  overlay.className = "mobile-menu-overlay";
-  overlay.hidden = true;
-  document.body.append(overlay);
-  siteNav.classList.add("mobile-menu-panel");
-
-  closeButton.type = "button";
-  closeButton.className = "menu-close";
-  closeButton.textContent = "Close";
-  closeButton.setAttribute("aria-label", "Close navigation");
-  siteNav.prepend(closeButton);
-
-  const setState = (open) => {
-    isOpen = open;
-    menuButton.setAttribute("aria-expanded", String(open));
-    siteNav.classList.toggle("open", open);
-    overlay.classList.toggle("is-open", open);
-    overlay.hidden = !open;
-    document.body.classList.toggle("menu-open", open);
-    siteNav.setAttribute("aria-hidden", String(mobileQuery.matches && !open));
-  };
+  drawer.id = "mobile-drawer";
 
   const openMenu = () => {
-    if (!mobileQuery.matches || isOpen) return;
-    setState(true);
-    closeButton.focus({ preventScroll: true });
+    clearTimeout(closeTimer);
+    drawer.hidden = false;
+    requestAnimationFrame(() => {
+      drawer.classList.add("is-open");
+      document.body.classList.add("menu-open");
+      menuButton.setAttribute("aria-expanded", "true");
+      closeButton.focus({ preventScroll: true });
+    });
   };
 
   const closeMenu = ({ restoreFocus = true } = {}) => {
-    if (!isOpen) {
-      setState(false);
-      return;
-    }
-    setState(false);
-    if (restoreFocus) {
-      menuButton.focus({ preventScroll: true });
-    }
+    drawer.classList.remove("is-open");
+    document.body.classList.remove("menu-open");
+    menuButton.setAttribute("aria-expanded", "false");
+    closeTimer = window.setTimeout(() => {
+      drawer.hidden = true;
+      if (restoreFocus) menuButton.focus({ preventScroll: true });
+    }, 230);
   };
 
   menuButton.addEventListener("click", () => {
-    if (isOpen) closeMenu();
+    if (drawer.classList.contains("is-open")) closeMenu();
     else openMenu();
   });
 
+  drawer.addEventListener("click", (event) => {
+    if (event.target === backdrop) closeMenu();
+  });
+  panel.addEventListener("click", (event) => event.stopPropagation());
   closeButton.addEventListener("click", () => closeMenu());
 
-  overlay.addEventListener("click", (event) => {
-    if (event.target === overlay) closeMenu();
-  });
-
-  siteNav.addEventListener("click", (event) => {
-    event.stopPropagation();
-  });
-
-  siteNav.querySelectorAll("a").forEach((link) => {
+  links.forEach((link) => {
     link.addEventListener("click", () => closeMenu({ restoreFocus: false }));
   });
 
   document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && isOpen) {
+    if (event.key === "Escape" && drawer.classList.contains("is-open")) {
       closeMenu();
     }
   });
-
-  const handleViewportChange = () => {
-    if (mobileQuery.matches) {
-      siteNav.setAttribute("aria-hidden", String(!isOpen));
-      return;
-    }
-
-    setState(false);
-    overlay.hidden = true;
-    siteNav.setAttribute("aria-hidden", "false");
-  };
-
-  if (typeof mobileQuery.addEventListener === "function") {
-    mobileQuery.addEventListener("change", handleViewportChange);
-  } else {
-    mobileQuery.addListener(handleViewportChange);
-  }
-
-  handleViewportChange();
 }
 
 const revealTargets = document.querySelectorAll(
