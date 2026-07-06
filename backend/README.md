@@ -2,7 +2,7 @@
 
 Read-only backend foundation for ShieldMendAI wallet scanning and tax-lot planning.
 
-This backend must never request seed phrases, private keys, custody, token approvals, or trading permissions. It supports a basic read-only RPC balance check when `BASE_RPC_URL` is configured, and falls back to safe mock responses when live RPC is unavailable.
+This backend must never request seed phrases, private keys, custody, token approvals, or trading permissions. It supports a basic read-only RPC balance check when a configured Base RPC candidate works, and falls back to safe mock responses when live RPC is unavailable.
 
 ## Requirements
 
@@ -16,14 +16,18 @@ Create a local `.env` file outside git when real provider credentials are ready.
 Supported placeholders are documented in `.env.example`:
 
 - `BASE_RPC_URL`
+- `BASE_RPC_URLS`
 - `BASESCAN_API_KEY`
+- `GOPLUS_API_KEY`
 - `COINGECKO_API_KEY`
 - `COVALENT_API_KEY`
 - `MORALIS_API_KEY`
 - `SIMPLEHASH_API_KEY`
 - `PORT`
 
-The server does not expose these values and does not require them to start. `BASE_RPC_URL`, when present, is used only for read-only JSON-RPC calls. `BASESCAN_API_KEY` and `GOPLUS_API_KEY` are reported as configured or not configured in `/api/status`, but they are not used yet.
+The server does not expose these values and does not require them to start. `BASE_RPC_URL` and `BASE_RPC_URLS`, when present, are parsed as read-only JSON-RPC candidates. Comma-separated and space-separated candidate lists are supported. Only `http://` and `https://` candidates are used.
+
+`BASESCAN_API_KEY`, `ZEROX_API_KEY`, and `GOPLUS_API_KEY` are reported only as configured or not configured in `/api/status`. They are not used for provider calls, approvals, swaps, or trading.
 
 ## Run Locally
 
@@ -43,6 +47,7 @@ SHIELDMEND_HOST=127.0.0.1 PORT=8787 python3 backend/server.py
 
 - `GET /health`
 - `GET /api/status`
+- `GET /api/rpc-diagnostics`
 - `POST /api/scan-wallet`
 - `POST /api/simulate-sale`
 
@@ -65,7 +70,7 @@ curl -s http://127.0.0.1:8787/api/simulate-sale \
 ## Current Status
 
 - Backend: live when the local service is running
-- Wallet scan: `live-basic` only when `BASE_RPC_URL` answers `eth_chainId`; otherwise mock
+- Wallet scan: `live-basic` only when at least one configured RPC candidate answers `eth_chainId`; otherwise mock
 - Tax engine: mock
 - Custody: false
 - Seed phrase required: false
@@ -82,6 +87,10 @@ curl -s http://127.0.0.1:8787/api/simulate-sale \
 The scan response includes the wallet address, chain ID, native balance in wei and ETH, and security flags confirming read-only operation.
 
 This is not a full wallet scanner yet. Token balances, token lots, transaction history, realized gains, cost basis, and tax lots still require transaction history adapters and a real cost-basis/tax engine. Until those are built, the tax engine remains mock.
+
+## RPC Diagnostics
+
+`GET /api/rpc-diagnostics` tests configured read-only RPC candidates with `eth_chainId`. It returns candidate indexes, success flags, chain ID for a working candidate, and sanitized error types. It must not return full RPC URLs, API keys, `.env` values, request paths, or secret-bearing hostnames.
 
 Never add private keys, seed phrases, custody credentials, wallet approvals, trading keys, or swap/trading actions to this backend. The backend must remain read-only.
 

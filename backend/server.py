@@ -11,16 +11,24 @@ from __future__ import annotations
 import json
 import os
 import re
+import shlex
+import socket
 from decimal import Decimal
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any
-from urllib import error, request
+from urllib import error, parse, request
 
 
 HOST = os.environ.get("SHIELDMEND_HOST", "127.0.0.1")
 PORT = int(os.environ.get("PORT") or os.environ.get("SHIELDMEND_PORT", "8787"))
 RPC_TIMEOUT_SECONDS = 5
 WALLET_RE = re.compile(r"^0x[a-fA-F0-9]{40}$")
+
+
+class RpcError(RuntimeError):
+    def __init__(self, error_type: str) -> None:
+        super().__init__(error_type)
+        self.error_type = error_type
 
 
 def env_present(name: str) -> bool:
@@ -32,7 +40,9 @@ def provider_configured() -> bool:
         env_present(name)
         for name in (
             "BASE_RPC_URL",
+            "BASE_RPC_URLS",
             "BASESCAN_API_KEY",
+            "GOPLUS_API_KEY",
             "COINGECKO_API_KEY",
             "COVALENT_API_KEY",
             "MORALIS_API_KEY",
@@ -41,10 +51,37 @@ def provider_configured() -> bool:
     )
 
 
-def rpc_call(method: str, params: list[Any]) -> Any:
-    rpc_url = os.environ.get("BASE_RPC_URL")
+def split_rpc_env_value(value: str) -> list[str]:
+    try:
+        parts = shlex.split(value)
+    except ValueError:
+        parts = value.split()
+    candidates: list[str] = []
+    for part in parts:
+        candidates.extend(part.split(","))
+    return [candidate.strip().strip("'\"") for candidate in candidates]
+
+
+def rpc_candidates() -> list[str]:
+    candidates: list[str] = []
+    seen: set[str] = set()
+    for name in ("BASE_RPC_URL", "BASE_RPC_URLS"):
+        value = os.environ.get(name, "")
+        for candidate in split_rpc_env_value(value):
+            if not candidate:
+                continue
+            parsed = parse.urlparse(candidate)
+            if parsed.scheme not in ("http", "https") or not parsed.netloc:
+                continue
+            if candidate not in seen:
+                seen.add(candidate)
+                candidates.append(candidate)
+    return candidates
+
+
+def rpc_call(rpc_url: str, method: str, params: list[Any]) -> Any:
     if not rpc_url:
-        raise RuntimeError("BASE_RPC_URL is not configured")
+        raise RpcError("not_configured")
 
     body = json.dumps(
         {
@@ -64,35 +101,52 @@ def rpc_call(method: str, params: list[Any]) -> Any:
     try:
         with request.urlopen(rpc_request, timeout=RPC_TIMEOUT_SECONDS) as response:
             raw = response.read(1_000_000)
-    except (TimeoutError, OSError, error.URLError, error.HTTPError) as exc:
-        raise RuntimeError("RPC request failed") from exc
+    except TimeoutError as exc:
+        raise RpcError("timeout") from exc
+    except socket.timeout as exc:
+        raise RpcError("timeout") from exc
+    except error.HTTPError as exc:
+        raise RpcError("http_error") from exc
+    except error.URLError as exc:
+        reason = getattr(exc, "reason", None)
+        if isinstance(reason, TimeoutError | socket.timeout):
+            raise RpcError("timeout") from exc
+        raise RpcError("url_error") from exc
+    except OSError as exc:
+        raise RpcError("network_error") from exc
 
     try:
         payload = json.loads(raw.decode("utf-8"))
     except (UnicodeDecodeError, json.JSONDecodeError) as exc:
-        raise RuntimeError("RPC response was not valid JSON") from exc
+        raise RpcError("invalid_json") from exc
 
     if not isinstance(payload, dict):
-        raise RuntimeError("RPC response was not an object")
+        raise RpcError("invalid_response")
     if payload.get("error"):
-        raise RuntimeError("RPC returned an error")
+        raise RpcError("rpc_error")
     if "result" not in payload:
-        raise RuntimeError("RPC response did not include a result")
+        raise RpcError("missing_result")
     return payload["result"]
 
 
-def get_chain_id() -> int:
-    result = rpc_call("eth_chainId", [])
+def get_chain_id(rpc_url: str) -> int:
+    result = rpc_call(rpc_url, "eth_chainId", [])
     if not isinstance(result, str) or not result.startswith("0x"):
-        raise RuntimeError("RPC chain ID was not a hex string")
-    return int(result, 16)
+        raise RpcError("invalid_chain_id")
+    try:
+        return int(result, 16)
+    except ValueError as exc:
+        raise RpcError("invalid_chain_id") from exc
 
 
-def get_native_balance(wallet: str) -> int:
-    result = rpc_call("eth_getBalance", [wallet, "latest"])
+def get_native_balance(rpc_url: str, wallet: str) -> int:
+    result = rpc_call(rpc_url, "eth_getBalance", [wallet, "latest"])
     if not isinstance(result, str) or not result.startswith("0x"):
-        raise RuntimeError("RPC native balance was not a hex string")
-    return int(result, 16)
+        raise RpcError("invalid_balance")
+    try:
+        return int(result, 16)
+    except ValueError as exc:
+        raise RpcError("invalid_balance") from exc
 
 
 def wei_to_eth(wei: int) -> str:
@@ -100,14 +154,53 @@ def wei_to_eth(wei: int) -> str:
     return format(value, "f")
 
 
-def rpc_status() -> dict[str, Any]:
-    if not env_present("BASE_RPC_URL"):
-        return {"rpcConfigured": False, "rpcLive": False}
+def test_rpc_candidate(index: int, rpc_url: str) -> dict[str, Any]:
+    result: dict[str, Any] = {"index": index, "success": False}
     try:
-        chain_id = get_chain_id()
-    except RuntimeError:
-        return {"rpcConfigured": True, "rpcLive": False}
-    return {"rpcConfigured": True, "rpcLive": True, "chainId": chain_id}
+        result["chainId"] = get_chain_id(rpc_url)
+        result["success"] = True
+    except RpcError as exc:
+        result["errorType"] = exc.error_type
+    return result
+
+
+def rpc_diagnostics() -> dict[str, Any]:
+    candidates = rpc_candidates()
+    candidate_results = [
+        test_rpc_candidate(index, rpc_url)
+        for index, rpc_url in enumerate(candidates, start=1)
+    ]
+    live_result = next((item for item in candidate_results if item["success"]), None)
+    payload: dict[str, Any] = {
+        "rpcConfigured": bool(candidates),
+        "candidateCount": len(candidates),
+        "candidateResults": candidate_results,
+    }
+    if live_result:
+        payload["chainId"] = live_result["chainId"]
+    return payload
+
+
+def working_rpc() -> tuple[str, int] | None:
+    for rpc_url in rpc_candidates():
+        try:
+            return rpc_url, get_chain_id(rpc_url)
+        except RpcError:
+            continue
+    return None
+
+
+def rpc_status() -> dict[str, Any]:
+    diagnostics = rpc_diagnostics()
+    chain_id = diagnostics.get("chainId")
+    payload: dict[str, Any] = {
+        "rpcConfigured": diagnostics["rpcConfigured"],
+        "rpcCandidateCount": diagnostics["candidateCount"],
+        "rpcLive": chain_id is not None,
+    }
+    if chain_id is not None:
+        payload["chainId"] = chain_id
+    return payload
 
 
 def status_payload() -> dict[str, Any]:
@@ -118,6 +211,7 @@ def status_payload() -> dict[str, Any]:
         "taxEngine": "mock",
         "readOnlyProviderConfigured": provider_configured(),
         "basescanConfigured": env_present("BASESCAN_API_KEY"),
+        "zeroxConfigured": env_present("ZEROX_API_KEY"),
         "goplusConfigured": env_present("GOPLUS_API_KEY"),
         **rpc,
         "custody": False,
@@ -127,9 +221,8 @@ def status_payload() -> dict[str, Any]:
     }
 
 
-def live_basic_scan(wallet: str) -> dict[str, Any]:
-    chain_id = get_chain_id()
-    balance_wei = get_native_balance(wallet)
+def live_basic_scan(wallet: str, rpc_url: str, chain_id: int) -> dict[str, Any]:
+    balance_wei = get_native_balance(rpc_url, wallet)
     return {
         "mode": "live-basic",
         "wallet": wallet,
@@ -229,6 +322,9 @@ class Handler(BaseHTTPRequestHandler):
         if self.path == "/api/status":
             self.write_json(status_payload())
             return
+        if self.path == "/api/rpc-diagnostics":
+            self.write_json(rpc_diagnostics())
+            return
         self.write_json({"error": "not_found"}, status=404)
 
     def do_POST(self) -> None:
@@ -242,11 +338,13 @@ class Handler(BaseHTTPRequestHandler):
             if not WALLET_RE.match(wallet):
                 self.write_json({"error": "invalid_wallet", "message": "Use a public EVM wallet address."}, status=400)
                 return
-            if env_present("BASE_RPC_URL"):
+            rpc = working_rpc()
+            if rpc:
+                rpc_url, chain_id = rpc
                 try:
-                    self.write_json(live_basic_scan(wallet))
+                    self.write_json(live_basic_scan(wallet, rpc_url, chain_id))
                     return
-                except RuntimeError:
+                except RpcError:
                     pass
             self.write_json(mock_scan(wallet))
             return
