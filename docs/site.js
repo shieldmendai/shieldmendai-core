@@ -18,7 +18,7 @@ if (menuButton) {
     <div class="mobile-drawer__backdrop" data-menu-close></div>
     <aside class="mobile-drawer__panel" role="dialog" aria-modal="true" aria-label="Mobile navigation">
       <div class="mobile-drawer__top">
-        <a class="brand" href="index.html"><span class="brand-mark">S</span><span>ShieldMendAI</span></a>
+        <a class="brand brand-wordmark" href="index.html">ShieldMendAI</a>
         <button class="mobile-drawer__close" type="button" aria-label="Close navigation">Close</button>
       </div>
       <nav class="mobile-drawer__nav" aria-label="Mobile">
