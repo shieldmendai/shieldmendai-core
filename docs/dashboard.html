@@ -50,6 +50,15 @@
           <h2>Preview first, live app after backend connection.</h2>
         </div>
         <div class="grid two">
+          <article class="card" id="backend-status-card" data-backend-status>
+            <h3>Backend connection</h3>
+            <p data-backend-status-text>Static preview. Configure a production backend URL before connecting live wallet scan tools.</p>
+            <div class="status-grid">
+              <div class="status-item"><strong>Backend</strong><span class="status-badge" data-backend-backend>Not configured</span></div>
+              <div class="status-item"><strong>Wallet scan</strong><span class="status-badge" data-backend-wallet-scan>Preview</span></div>
+              <div class="status-item"><strong>Tax engine</strong><span class="status-badge" data-backend-tax-engine>Preview</span></div>
+            </div>
+          </article>
           <article class="card">
             <h3>Availability</h3>
             <div class="status-grid">

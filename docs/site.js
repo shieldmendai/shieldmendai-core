@@ -117,3 +117,36 @@ document.querySelectorAll(".accordion-trigger").forEach((trigger) => {
     panel.hidden = open;
   });
 });
+
+const backendStatusCard = document.querySelector("[data-backend-status]");
+
+if (backendStatusCard) {
+  const statusText = backendStatusCard.querySelector("[data-backend-status-text]");
+  const backendBadge = backendStatusCard.querySelector("[data-backend-backend]");
+  const walletScanBadge = backendStatusCard.querySelector("[data-backend-wallet-scan]");
+  const taxEngineBadge = backendStatusCard.querySelector("[data-backend-tax-engine]");
+
+  // GitHub Pages is static. Production should set this from hosting config,
+  // not by committing private API keys, RPC URLs, or provider credentials.
+  const backendUrl = window.SHIELDMEND_BACKEND_URL;
+
+  if (backendUrl) {
+    fetch(`${String(backendUrl).replace(/\/$/, "")}/api/status`, {
+      headers: { "Accept": "application/json" },
+    })
+      .then((response) => {
+        if (!response.ok) throw new Error("status request failed");
+        return response.json();
+      })
+      .then((status) => {
+        if (statusText) statusText.textContent = "Backend status fetched from the configured read-only API.";
+        if (backendBadge) backendBadge.textContent = status.backend || "unknown";
+        if (walletScanBadge) walletScanBadge.textContent = status.walletScan || "unknown";
+        if (taxEngineBadge) taxEngineBadge.textContent = status.taxEngine || "unknown";
+      })
+      .catch(() => {
+        if (statusText) statusText.textContent = "Backend URL is configured, but the status endpoint is not reachable.";
+        if (backendBadge) backendBadge.textContent = "Unavailable";
+      });
+  }
+}
