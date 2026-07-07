@@ -34,6 +34,7 @@ Dark mode can be added later as an alternate mode. Dark sections may be used spa
 - Use clean rounded cards, bento grids, layered shadows, and product/dashboard mockups.
 - Keep labels short and plain-English.
 - Make the mobile app match the same light-first brand direction.
+- Do not publish real invite strings, placeholder invite strings, or public release links.
 
 ## Inspiration Rules
 
@@ -50,3 +51,4 @@ ShieldMendAI must stay read-only and non-custodial. Trust points should remain v
 - Do not prompt for wallet approvals.
 - Do not imply custody, swaps, trading, or transaction signing.
 - Reinforce public wallet analysis, no custody, no approvals, and estimates-only tax planning.
+- Keep beta access private. The public site may show the beta access form, but it must not show invite strings.

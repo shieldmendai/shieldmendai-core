@@ -182,7 +182,7 @@
         <p class="eyebrow">Invite-only beta</p>
         <h1>Stake smarter. Sell cleaner.</h1>
         <p class="lead">ShieldMendAI beta access is reserved for invited friends, testers, and creators while the read-only staking and tax-planning workflow is being prepared.</p>
-        <p>Enter your access code to check eligibility. The code is verified by the backend API; this page does not contain real codes or APK links.</p>
+        <p>Enter your access code to check eligibility. The code is verified by the backend API; invite strings are not published on this site.</p>
         <div class="beta-principles" aria-label="Safety principles">
           <span>No seed phrase</span>
           <span>No private keys</span>
@@ -237,21 +237,7 @@
           return;
         }
 
-        if (!data.apkAvailable || !data.downloadUrl) {
-          setBetaResult("Access approved. APK download is not available yet.", "success");
-          return;
-        }
-
-        betaResult.className = "beta-result is-success";
-        betaResult.innerHTML = "";
-        const message = document.createElement("p");
-        message.textContent = data.message || "Access approved. Your APK download is ready.";
-        const download = document.createElement("a");
-        download.className = "button primary";
-        download.href = data.downloadUrl;
-        download.rel = "noopener";
-        download.textContent = "Download APK";
-        betaResult.append(message, download);
+        setBetaResult("Access approved. APK download is not available yet.", "success");
       } catch {
         setBetaResult("Beta access could not be checked right now.", "error");
       }
