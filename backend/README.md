@@ -84,7 +84,7 @@ curl -s http://127.0.0.1:8787/api/beta-access/verify \
 
 `POST /api/beta-access/verify` checks invite codes server-side. It never requires private keys, seed phrases, wallet approvals, custody, swaps, or trading actions.
 
-Keep real access codes out of git. Do not commit plaintext codes, hashed production codes, or APK URLs unless the URL is intentionally public. The private deployment values belong in `backend/.env`.
+Keep real access codes out of git. Do not commit plaintext codes, hashed production codes, or APK URLs unless the URL is intentionally public. Never put real access codes in frontend JavaScript. The private deployment values belong in `backend/.env`.
 
 Beta access environment variables:
 
@@ -93,13 +93,13 @@ Beta access environment variables:
 - `BETA_CREATOR_CODE_HASHES=` stores comma-separated `sha256Hash:creatorLabel` pairs.
 - `APK_DOWNLOAD_URL=` stores the APK URL only when an APK is ready to release behind verified access.
 
-Generate a SHA-256 hash for a code without printing or committing the real code:
+Generate a SHA-256 hash for a code with the helper. It prompts privately and prints only the hash:
 
 ```bash
-printf '%s' 'replace-with-code' | sha256sum
+python3 backend/tools/hash_beta_code.py
 ```
 
-Use only the 64-character hash output. Example shape only:
+Copy only the resulting 64-character hash into `backend/.env`. Put a friend/family/tester hash in `BETA_FRIEND_CODE_HASH`, and put creator hashes in `BETA_CREATOR_CODE_HASHES` as `hash:creator_label` pairs. Example shape only:
 
 ```ini
 BETA_ACCESS_ENABLED=true
@@ -107,6 +107,8 @@ BETA_FRIEND_CODE_HASH=64_character_sha256_hash_here
 BETA_CREATOR_CODE_HASHES=64_character_sha256_hash_here:Creator Label
 APK_DOWNLOAD_URL=
 ```
+
+Leave `APK_DOWNLOAD_URL` empty until an APK exists and is ready to be released behind verified access.
 
 After changing `backend/.env` on the VPS, restart the service:
 
