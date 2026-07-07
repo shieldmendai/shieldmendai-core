@@ -859,6 +859,46 @@ h3 { font-size: 20px; }
   color: transparent;
 }
 
+.trust-stamp {
+  max-width: 1180px;
+  margin: 0 auto 28px;
+  padding: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 100% 0, rgba(168, 85, 247, 0.18), transparent 30%),
+    rgba(255, 255, 255, 0.06);
+}
+
+.trust-stamp h2 {
+  margin-bottom: 12px;
+  color: #fff;
+  font-size: 18px;
+}
+
+.trust-stamp__items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.trust-stamp__items span,
+.trust-stamp__items a {
+  padding: 7px 9px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.07);
+  color: #ede9fe;
+  font-size: 12px;
+  font-weight: 850;
+  text-decoration: none;
+}
+
+.trust-stamp__items a {
+  color: #fff;
+  background: rgba(124, 58, 237, 0.35);
+}
+
 .footer-inner {
   max-width: 1180px;
   margin: 0 auto;

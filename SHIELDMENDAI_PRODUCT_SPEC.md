@@ -1,14 +1,14 @@
 # ShieldMendAI Product And Beta Access Spec
 
-ShieldMendAI is a read-only, non-custodial staking and tax-planning app for crypto holders.
+ShieldMendAI is a read-only, non-custodial crypto wallet intelligence, profit/loss, tax-lot, and tax-planning app for everyday holders.
 
 Main promise: Know what you might owe before you sell.
 
-Staking promise: Stake smarter. Sell cleaner.
+Consumer promise: Understand your wallet without needing to be a tax expert.
 
 ## Product Direction
 
-ShieldMendAI helps users review public wallet activity, staking rewards, and possible sale outcomes before they sell. The app should explain estimates in plain English and keep users in control of every decision.
+ShieldMendAI helps users review public wallet activity, holdings, profit/loss, cost basis estimates, tax lots, long-term versus short-term status, staking rewards, airdrops, unlocks, newly received coins, and possible sale outcomes before they sell. The app should explain estimates in plain English and keep users in control of every decision.
 
 The backend manages read-only provider keys, RPCs, indexer APIs, caching, fallback behavior, and rate limits. Users must not bring their own API keys.
 
@@ -24,67 +24,54 @@ ShieldMendAI must never request, store, or use:
 
 All wallet analysis must use public wallet addresses and read-only provider calls.
 
-## Protect My Staking Rewards
+## Core Product Pillars
 
-Protect My Staking Rewards is the core staking-focused feature.
+- Wallet holdings overview
+- Profit/loss tracking
+- Cost basis estimates
+- Tax lot tracking
+- Long-term versus short-term tracking
+- What If I Sell?
+- Estimated tax impact before selling
+- Tax-loss harvesting opportunities
+- Profit-taking planning
+- Best sale options
+- Built-in staking/reward tracking
+- Built-in airdrop/new-coin tracking
+- Unlock/release tracking when applicable
+- Export/save proof-style sale plan
+- Plain-English explanations
 
-Users often receive or unlock staking reward coins at different times. When a user wants to sell, the app should help them avoid accidentally selling recently received staking reward coins when older long-held coins are available.
+## Sale Planning
 
-Example:
+When a user wants to sell, the app should help compare possible sale choices using estimated lots, cost basis, profit/loss, reward history, airdrops, unlocks, and long-term versus short-term status.
 
-A user wants to sell 200 coins. ShieldMendAI should recommend selling from older coins first when possible and protecting recently received staking rewards.
+Example: A user wants to sell 200 coins. ShieldMendAI should show what lots may be affected and may recommend selling older lots first when that appears smarter for the estimate.
 
-The recommendation should be presented as an estimate and planning aid, not guaranteed tax advice.
+Recommendations should be presented as estimates and planning aids, not guaranteed tax advice.
 
 ## APK Beta 0.1 Screen Flow
 
 1. Welcome
 2. Tax Profile
 3. Add Wallet
-4. Staking Scan
-5. My Buckets
+4. Wallet Scan
+5. Holdings, Lots, Rewards, And Airdrops
 6. What If I Sell?
 7. Recommended Sale Plan
 8. Export / Save Proof
 
 ## Beta Access Model
 
-The website may later include a Beta Access or Download APK page. Random visitors must not receive the APK directly.
+The website includes a Beta Access page. Public pages must not include public invite strings or public release links.
 
 Access code verification should happen server-side through the backend API. Real access codes must never be committed to git, hardcoded into public frontend JavaScript, or stored in public website files.
 
 Real access codes should live only in server-side storage, such as `backend/.env` during early beta or a small database later.
 
-The APK should not be publicly downloadable without access verification.
-
-### Access Code Types
-
-Friend access code:
-
-- Free access
-- For personal friends, family, and testers
-- Tracks free friend testers
-
-Creator or YouTuber access codes:
-
-- Free access for creators
-- Each creator can have an individual code
-- Tracks creator source for future referrals
-- Their audiences may later use creator promo or referral codes
-
-Paid beta access later:
-
-- Stripe Payment Links or Checkout can be evaluated later
-- Stripe promotion codes or coupons can be evaluated later
-- 100 percent off codes can support free beta or promos later
+No public app release link should exist until a release is intentionally approved.
 
 Do not implement Stripe, payment collection, affiliate payouts, or automatic referral payouts until those systems are intentionally designed and reviewed.
-
-## Future Creator Referral Rule
-
-Creator referral tracking is future work, not live payout code.
-
-A possible future business rule is 20 percent of paid users from a creator code for 6 months, paid manually monthly after refunds and chargebacks clear.
 
 ## Tax And Advice Boundaries
 
@@ -104,5 +91,8 @@ All outputs are planning estimates only. Users should review results with a qual
 - No trading actions
 - No real access codes in git
 - No real access codes in frontend JavaScript
-- No public APK download without server-side access verification
+- No public release link before approval
 - No real Stripe keys in git
+- No third-party measurement code or tracking cookies by default
+- No cookie pop-up
+- No unsupported certification, outside audit, or government approval claims

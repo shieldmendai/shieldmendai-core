@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Safety Pledge | ShieldMendAI</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="site-header"><nav class="nav" aria-label="Primary"><a class="brand brand-wordmark" href="index.html">ShieldMendAI</a><button class="menu-button" type="button" aria-label="Open navigation"><span></span></button><div class="site-nav"><a href="how-it-works.html">How It Works</a><a href="pricing.html">Pricing</a><a href="security.html">Security</a><a href="tax-pack.html">Tax Pack</a><a href="archive-mode.html">Archive Mode</a><a href="faq.html">FAQ</a><a href="beta.html">Beta Access</a><a class="button primary" href="dashboard.html">Start Free Scan</a></div></nav></header>
+  <main id="main">
+    <section class="section">
+      <div class="wrap split">
+        <div>
+          <p class="eyebrow">ShieldMendAI Safety Pledge</p>
+          <h1>Read-only wallet intelligence, without custody.</h1>
+          <p class="lead">ShieldMendAI helps everyday holders understand holdings, profit/loss, tax lots, rewards, airdrops, unlocks, and possible sale outcomes using public wallet data.</p>
+          <p>This is a self-audit checklist, not a third-party certification or outside audit.</p>
+        </div>
+        <article class="card">
+          <h3>Trust basics</h3>
+          <ul class="list">
+            <li>Read-only wallet analysis</li>
+            <li>No seed phrase</li>
+            <li>No private keys</li>
+            <li>No custody</li>
+            <li>No wallet approvals</li>
+            <li>No swaps or trading actions</li>
+            <li>HTTPS secured</li>
+            <li>No tracking cookies by default</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <section class="section alt">
+      <div class="wrap">
+        <div class="section-head">
+          <p class="eyebrow">Backend API safety summary</p>
+          <h2>Public API is intentionally narrow.</h2>
+          <p>The backend remains private behind Nginx. The public proxy only exposes the health check and API routes needed by the site.</p>
+        </div>
+        <div class="grid three">
+          <article class="card"><h3>Allowed public paths</h3><p><code>/health</code> and <code>/api/*</code>.</p></article>
+          <article class="card"><h3>No public invite strings</h3><p>Invite verification happens server-side. Public pages must not list real or placeholder invite strings.</p></article>
+          <article class="card"><h3>No public release link</h3><p>There is no public app release link on the website. Beta access remains gated.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="wrap split">
+        <div>
+          <p class="eyebrow">Self-audit checklist</p>
+          <h2>Open safety checklist.</h2>
+          <p>This checklist is maintained by the project team and should be reviewed before each public release.</p>
+          <p class="small">Last updated: July 7, 2026. Site commit reviewed: <code>f9a2b56</code>. License: MIT.</p>
+        </div>
+        <div class="grid">
+          <article class="card"><h3>Wallet permissions</h3><p>No wallet connection, signing prompt, custody, approvals, swaps, or trading actions should be required for public site flows.</p></article>
+          <article class="card"><h3>Beta access</h3><p>The beta page calls the server-side verification API and does not publish invite strings.</p></article>
+          <article class="card"><h3>Privacy posture</h3><p>The static site should not add third-party measurement code, ad pixels, tracking cookies, or a cookie pop-up.</p></article>
+          <article class="card"><h3>Tax boundary</h3><p>Outputs are estimates only. ShieldMendAI does not file taxes and does not replace a tax professional.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section alt">
+      <div class="wrap">
+        <p class="notice"><strong>Estimates only.</strong> ShieldMendAI provides planning information for review. It is not tax, legal, accounting, financial, or investment advice. Confirm with a qualified tax professional before filing or making tax-sensitive decisions.</p>
+      </div>
+    </section>
+  </main>
+  <footer class="site-footer"><div class="trust-stamp" aria-label="ShieldMendAI Safety Pledge"><h2>ShieldMendAI Safety Pledge</h2><div class="trust-stamp__items"><span>Read-only wallet analysis</span><span>No seed phrase</span><span>No private keys</span><span>No custody</span><span>No approvals</span><span>HTTPS secured</span><span>No tracking cookies by default</span><a href="trust.html">Self-audit checklist</a></div></div><div class="footer-inner"><div><a class="brand brand-wordmark" href="index.html">ShieldMendAI</a><p class="small">Read-only crypto wallet intelligence and tax planning.</p></div><div><h3>Product</h3><a href="how-it-works.html">How It Works</a><a href="dashboard.html">Dashboard</a><a href="pricing.html">Pricing</a></div><div><h3>Trust</h3><a href="trust.html">Safety Pledge</a><a href="security.html">Security</a><a href="privacy.html">Privacy</a><a href="terms.html">Terms</a></div><div><h3>Access</h3><a href="tax-pack.html">Tax Pack</a><a href="archive-mode.html">Archive Mode</a><a href="beta.html">Beta Access</a></div></div></footer>
+  <script src="site.js"></script>
+</body>
+</html>
