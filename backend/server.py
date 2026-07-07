@@ -12,7 +12,6 @@ import json
 import base64
 import hashlib
 import hmac
-import mimetypes
 import os
 import re
 import shlex
@@ -28,8 +27,9 @@ from urllib import error, parse, request
 HOST = os.environ.get("SHIELDMEND_HOST", "127.0.0.1")
 PORT = int(os.environ.get("PORT") or os.environ.get("SHIELDMEND_PORT", "8787"))
 RPC_TIMEOUT_SECONDS = 5
-BETA_DOWNLOAD_TOKEN_SECONDS = 600
+BETA_DOWNLOAD_TOKEN_SECONDS = 30 * 60
 BETA_APK_FILENAME = "ShieldMendAI-beta-0.1-debug.apk"
+APK_CONTENT_TYPE = "application/vnd.android.package-archive"
 WALLET_RE = re.compile(r"^0x[a-fA-F0-9]{40}$")
 SHA256_HEX_RE = re.compile(r"^[a-fA-F0-9]{64}$")
 ALLOWED_CORS_ORIGINS = {
@@ -174,6 +174,33 @@ def beta_download_url() -> str | None:
     if token is None:
         return None
     return f"{public_api_base_url()}/api/beta-access/download?token={parse.quote(token)}"
+
+
+def parse_byte_range(range_header: str, file_size: int) -> tuple[int, int] | None:
+    if not range_header.startswith("bytes=") or file_size <= 0:
+        return None
+
+    requested = range_header.removeprefix("bytes=").split(",", 1)[0].strip()
+    raw_start, separator, raw_end = requested.partition("-")
+    if not separator:
+        return None
+
+    try:
+        if raw_start == "":
+            suffix_length = int(raw_end)
+            if suffix_length <= 0:
+                return None
+            start = max(file_size - suffix_length, 0)
+            end = file_size - 1
+        else:
+            start = int(raw_start)
+            end = int(raw_end) if raw_end else file_size - 1
+    except ValueError:
+        return None
+
+    if start < 0 or end < start or start >= file_size:
+        return None
+    return start, min(end, file_size - 1)
 
 
 def beta_access_response(payload: dict[str, Any]) -> dict[str, Any]:
@@ -494,22 +521,28 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
 
     def do_GET(self) -> None:
+        self.handle_get_or_head(send_body=True)
+
+    def do_HEAD(self) -> None:
+        self.handle_get_or_head(send_body=False)
+
+    def handle_get_or_head(self, *, send_body: bool) -> None:
         parsed_path = parse.urlparse(self.path)
         if parsed_path.path == "/health":
-            self.write_json({"ok": True, "service": "shieldmendai-backend"})
+            self.write_json({"ok": True, "service": "shieldmendai-backend"}, send_body=send_body)
             return
         if parsed_path.path == "/api/status":
-            self.write_json(status_payload())
+            self.write_json(status_payload(), send_body=send_body)
             return
         if parsed_path.path == "/api/rpc-diagnostics":
-            self.write_json(rpc_diagnostics())
+            self.write_json(rpc_diagnostics(), send_body=send_body)
             return
         if parsed_path.path == "/api/beta-access/download":
             params = parse.parse_qs(parsed_path.query)
             token = params.get("token", [""])[0]
-            self.write_beta_apk(token)
+            self.write_beta_apk(token, send_body=send_body)
             return
-        self.write_json({"error": "not_found"}, status=404)
+        self.write_json({"error": "not_found"}, status=404, send_body=send_body)
 
     def do_POST(self) -> None:
         payload = self.read_json()
@@ -556,16 +589,17 @@ class Handler(BaseHTTPRequestHandler):
             return None
         return parsed if isinstance(parsed, dict) else None
 
-    def write_json(self, payload: dict[str, Any], status: int = 200) -> None:
+    def write_json(self, payload: dict[str, Any], status: int = 200, *, send_body: bool = True) -> None:
         body = json.dumps(payload, separators=(",", ":"), sort_keys=True).encode("utf-8")
         self.send_response(status)
         self.send_common_headers()
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
-        self.wfile.write(body)
+        if send_body:
+            self.wfile.write(body)
 
-    def write_beta_apk(self, token: str) -> None:
+    def write_beta_apk(self, token: str, *, send_body: bool) -> None:
         path = beta_apk_path()
         if path is None:
             self.write_json({"error": "apk_unavailable"}, status=404)
@@ -574,25 +608,53 @@ class Handler(BaseHTTPRequestHandler):
             self.write_json({"error": "invalid_or_expired_token"}, status=403)
             return
 
-        content_type = mimetypes.guess_type(BETA_APK_FILENAME)[0] or "application/vnd.android.package-archive"
-        self.send_response(200)
+        file_size = path.stat().st_size
+        range_header = self.headers.get("Range")
+        range_start = 0
+        range_end = file_size - 1
+        status = 200
+
+        if range_header:
+            parsed_range = parse_byte_range(range_header, file_size)
+            if parsed_range is None:
+                self.send_response(416)
+                self.send_common_headers()
+                self.send_header("Content-Range", f"bytes */{file_size}")
+                self.send_header("Content-Length", "0")
+                self.end_headers()
+                return
+            range_start, range_end = parsed_range
+            status = 206
+
+        content_length = range_end - range_start + 1
+        body = b""
+        if send_body:
+            with path.open("rb") as apk_file:
+                apk_file.seek(range_start)
+                body = apk_file.read(content_length)
+            content_length = len(body)
+
+        self.send_response(status)
         self.send_common_headers()
-        self.send_header("Content-Type", content_type)
+        self.send_header("Content-Type", APK_CONTENT_TYPE)
         self.send_header("Content-Disposition", f'attachment; filename="{BETA_APK_FILENAME}"')
-        self.send_header("Content-Length", str(path.stat().st_size))
+        self.send_header("Content-Length", str(content_length))
+        self.send_header("Accept-Ranges", "bytes")
+        self.send_header("X-Content-Type-Options", "nosniff")
+        if status == 206:
+            self.send_header("Content-Range", f"bytes {range_start}-{range_end}/{file_size}")
         self.end_headers()
-        with path.open("rb") as apk_file:
-            while chunk := apk_file.read(1024 * 1024):
-                self.wfile.write(chunk)
+        if send_body:
+            self.wfile.write(body)
 
     def send_common_headers(self) -> None:
         allowed_origin = allowed_cors_origin(self.headers.get("Origin"))
         if allowed_origin:
             self.send_header("Access-Control-Allow-Origin", allowed_origin)
             self.send_header("Vary", "Origin")
-        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type")
-        self.send_header("Cache-Control", "no-store")
+        self.send_header("Access-Control-Allow-Methods", "GET, HEAD, POST, OPTIONS")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type, Range")
+        self.send_header("Cache-Control", "private, no-store")
 
     def log_message(self, format: str, *args: Any) -> None:
         print("%s - %s" % (self.address_string(), format % args))
