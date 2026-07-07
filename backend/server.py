@@ -23,6 +23,11 @@ HOST = os.environ.get("SHIELDMEND_HOST", "127.0.0.1")
 PORT = int(os.environ.get("PORT") or os.environ.get("SHIELDMEND_PORT", "8787"))
 RPC_TIMEOUT_SECONDS = 5
 WALLET_RE = re.compile(r"^0x[a-fA-F0-9]{40}$")
+ALLOWED_CORS_ORIGINS = {
+    "https://shieldmendai.com",
+    "https://www.shieldmendai.com",
+}
+LOCAL_DEV_ORIGIN_RE = re.compile(r"^http://(localhost|127\.0\.0\.1)(:\d{1,5})?$")
 
 
 class RpcError(RuntimeError):
@@ -49,6 +54,16 @@ def provider_configured() -> bool:
             "SIMPLEHASH_API_KEY",
         )
     )
+
+
+def allowed_cors_origin(origin: str | None) -> str | None:
+    if not origin:
+        return None
+    if origin in ALLOWED_CORS_ORIGINS:
+        return origin
+    if LOCAL_DEV_ORIGIN_RE.fullmatch(origin):
+        return origin
+    return None
 
 
 def split_rpc_env_value(value: str) -> list[str]:
@@ -378,7 +393,10 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(body)
 
     def send_common_headers(self) -> None:
-        self.send_header("Access-Control-Allow-Origin", os.environ.get("SHIELDMEND_ALLOWED_ORIGIN", "*"))
+        allowed_origin = allowed_cors_origin(self.headers.get("Origin"))
+        if allowed_origin:
+            self.send_header("Access-Control-Allow-Origin", allowed_origin)
+            self.send_header("Vary", "Origin")
         self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
         self.send_header("Access-Control-Allow-Headers", "Content-Type")
         self.send_header("Cache-Control", "no-store")
