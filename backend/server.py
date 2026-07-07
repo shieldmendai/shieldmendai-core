@@ -113,6 +113,19 @@ def beta_apk_path() -> Path | None:
     return None
 
 
+def beta_apk_accel_path() -> str | None:
+    value = os.environ.get("BETA_APK_ACCEL_PATH", "").strip()
+    parsed = parse.urlparse(value)
+    if (
+        value.startswith("/_shieldmendai_private_apk/")
+        and not parsed.scheme
+        and not parsed.netloc
+        and ".." not in Path(parsed.path).parts
+    ):
+        return value
+    return None
+
+
 def beta_download_secret() -> bytes | None:
     secret = os.environ.get("BETA_DOWNLOAD_SECRET", "").strip()
     return secret.encode("utf-8") if secret else None
@@ -608,6 +621,15 @@ class Handler(BaseHTTPRequestHandler):
             self.write_json({"error": "invalid_or_expired_token"}, status=403)
             return
 
+        accel_path = beta_apk_accel_path()
+        if accel_path:
+            self.send_response(200)
+            self.send_common_headers()
+            self.send_apk_headers(path.stat().st_size)
+            self.send_header("X-Accel-Redirect", accel_path)
+            self.end_headers()
+            return
+
         file_size = path.stat().st_size
         range_header = self.headers.get("Range")
         range_start = 0
@@ -636,16 +658,19 @@ class Handler(BaseHTTPRequestHandler):
 
         self.send_response(status)
         self.send_common_headers()
-        self.send_header("Content-Type", APK_CONTENT_TYPE)
-        self.send_header("Content-Disposition", f'attachment; filename="{BETA_APK_FILENAME}"')
-        self.send_header("Content-Length", str(content_length))
-        self.send_header("Accept-Ranges", "bytes")
-        self.send_header("X-Content-Type-Options", "nosniff")
+        self.send_apk_headers(content_length)
         if status == 206:
             self.send_header("Content-Range", f"bytes {range_start}-{range_end}/{file_size}")
         self.end_headers()
         if send_body:
             self.wfile.write(body)
+
+    def send_apk_headers(self, content_length: int) -> None:
+        self.send_header("Content-Type", APK_CONTENT_TYPE)
+        self.send_header("Content-Disposition", f'attachment; filename="{BETA_APK_FILENAME}"')
+        self.send_header("Content-Length", str(content_length))
+        self.send_header("Accept-Ranges", "bytes")
+        self.send_header("X-Content-Type-Options", "nosniff")
 
     def send_common_headers(self) -> None:
         allowed_origin = allowed_cors_origin(self.headers.get("Origin"))
