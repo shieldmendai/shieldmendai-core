@@ -308,6 +308,7 @@ android/.gradle/
 android/build/
 android/app/build/
 *.apk
+private-builds/
 
 # Extraction scratch data must never be committed
 private_source/

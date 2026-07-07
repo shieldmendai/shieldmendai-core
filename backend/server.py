@@ -9,14 +9,18 @@ read-only provider adapters and a real tax engine are implemented.
 from __future__ import annotations
 
 import json
+import base64
 import hashlib
 import hmac
+import mimetypes
 import os
 import re
 import shlex
 import socket
+import time
 from decimal import Decimal
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
 from typing import Any
 from urllib import error, parse, request
 
@@ -24,6 +28,8 @@ from urllib import error, parse, request
 HOST = os.environ.get("SHIELDMEND_HOST", "127.0.0.1")
 PORT = int(os.environ.get("PORT") or os.environ.get("SHIELDMEND_PORT", "8787"))
 RPC_TIMEOUT_SECONDS = 5
+BETA_DOWNLOAD_TOKEN_SECONDS = 600
+BETA_APK_FILENAME = "ShieldMendAI-beta-0.1-debug.apk"
 WALLET_RE = re.compile(r"^0x[a-fA-F0-9]{40}$")
 SHA256_HEX_RE = re.compile(r"^[a-fA-F0-9]{64}$")
 ALLOWED_CORS_ORIGINS = {
@@ -97,12 +103,77 @@ def parse_creator_code_hashes(value: str) -> list[tuple[str, str]]:
     return creators
 
 
-def configured_apk_download_url() -> str | None:
-    value = os.environ.get("APK_DOWNLOAD_URL", "").strip()
+def beta_apk_path() -> Path | None:
+    value = os.environ.get("BETA_APK_FILE", "").strip()
+    if not value:
+        return None
+    path = Path(value)
+    if path.is_file():
+        return path
+    return None
+
+
+def beta_download_secret() -> bytes | None:
+    secret = os.environ.get("BETA_DOWNLOAD_SECRET", "").strip()
+    return secret.encode("utf-8") if secret else None
+
+
+def public_api_base_url() -> str:
+    value = os.environ.get("PUBLIC_API_BASE_URL", "https://api.shieldmendai.com").strip()
     parsed = parse.urlparse(value)
     if parsed.scheme in {"https", "http"} and parsed.netloc:
-        return value
-    return None
+        return value.rstrip("/")
+    return "https://api.shieldmendai.com"
+
+
+def sign_beta_download_token(expires_at: int) -> str | None:
+    secret = beta_download_secret()
+    if not secret:
+        return None
+    payload = json.dumps({"exp": expires_at}, separators=(",", ":"), sort_keys=True).encode("utf-8")
+    payload_b64 = base64.urlsafe_b64encode(payload).decode("ascii").rstrip("=")
+    signature = hmac.new(secret, payload_b64.encode("ascii"), hashlib.sha256).digest()
+    signature_b64 = base64.urlsafe_b64encode(signature).decode("ascii").rstrip("=")
+    return f"{payload_b64}.{signature_b64}"
+
+
+def decode_urlsafe_b64(value: str) -> bytes:
+    padding = "=" * (-len(value) % 4)
+    return base64.urlsafe_b64decode((value + padding).encode("ascii"))
+
+
+def verify_beta_download_token(token: str) -> bool:
+    secret = beta_download_secret()
+    if not secret:
+        return False
+    payload_b64, separator, signature_b64 = token.partition(".")
+    if not separator or not payload_b64 or not signature_b64:
+        return False
+
+    expected = hmac.new(secret, payload_b64.encode("ascii"), hashlib.sha256).digest()
+    try:
+        provided = decode_urlsafe_b64(signature_b64)
+        payload = json.loads(decode_urlsafe_b64(payload_b64).decode("utf-8"))
+    except (ValueError, UnicodeDecodeError, json.JSONDecodeError):
+        return False
+
+    if not hmac.compare_digest(provided, expected):
+        return False
+
+    try:
+        expires_at = int(payload.get("exp", 0))
+    except (TypeError, ValueError):
+        return False
+    return expires_at >= int(time.time())
+
+
+def beta_download_url() -> str | None:
+    if beta_apk_path() is None:
+        return None
+    token = sign_beta_download_token(int(time.time()) + BETA_DOWNLOAD_TOKEN_SECONDS)
+    if token is None:
+        return None
+    return f"{public_api_base_url()}/api/beta-access/download?token={parse.quote(token)}"
 
 
 def beta_access_response(payload: dict[str, Any]) -> dict[str, Any]:
@@ -139,14 +210,14 @@ def beta_access_response(payload: dict[str, Any]) -> dict[str, Any]:
             "message": "That access code was not recognized.",
         }
 
-    download_url = configured_apk_download_url()
+    download_url = beta_download_url()
     response: dict[str, Any] = {
         "ok": True,
         "accessGranted": True,
         "accessType": access_type,
         "apkAvailable": download_url is not None,
         "message": (
-            "Access approved. Your APK download is ready."
+            "Access approved. Your ShieldMendAI beta download is ready."
             if download_url
             else "Access approved. APK download is not available yet."
         ),
@@ -423,14 +494,20 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
 
     def do_GET(self) -> None:
-        if self.path == "/health":
+        parsed_path = parse.urlparse(self.path)
+        if parsed_path.path == "/health":
             self.write_json({"ok": True, "service": "shieldmendai-backend"})
             return
-        if self.path == "/api/status":
+        if parsed_path.path == "/api/status":
             self.write_json(status_payload())
             return
-        if self.path == "/api/rpc-diagnostics":
+        if parsed_path.path == "/api/rpc-diagnostics":
             self.write_json(rpc_diagnostics())
+            return
+        if parsed_path.path == "/api/beta-access/download":
+            params = parse.parse_qs(parsed_path.query)
+            token = params.get("token", [""])[0]
+            self.write_beta_apk(token)
             return
         self.write_json({"error": "not_found"}, status=404)
 
@@ -487,6 +564,26 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         self.wfile.write(body)
+
+    def write_beta_apk(self, token: str) -> None:
+        path = beta_apk_path()
+        if path is None:
+            self.write_json({"error": "apk_unavailable"}, status=404)
+            return
+        if not verify_beta_download_token(token):
+            self.write_json({"error": "invalid_or_expired_token"}, status=403)
+            return
+
+        content_type = mimetypes.guess_type(BETA_APK_FILENAME)[0] or "application/vnd.android.package-archive"
+        self.send_response(200)
+        self.send_common_headers()
+        self.send_header("Content-Type", content_type)
+        self.send_header("Content-Disposition", f'attachment; filename="{BETA_APK_FILENAME}"')
+        self.send_header("Content-Length", str(path.stat().st_size))
+        self.end_headers()
+        with path.open("rb") as apk_file:
+            while chunk := apk_file.read(1024 * 1024):
+                self.wfile.write(chunk)
 
     def send_common_headers(self) -> None:
         allowed_origin = allowed_cors_origin(self.headers.get("Origin"))

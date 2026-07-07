@@ -114,6 +114,22 @@
       background: #ede9fe;
     }
 
+    .beta-download {
+      display: grid;
+      gap: 10px;
+    }
+
+    .beta-download .button {
+      width: 100%;
+    }
+
+    .beta-download-note {
+      margin: 0;
+      color: #5e5a6d;
+      font-size: 13px;
+      font-weight: 760;
+    }
+
     .beta-principles {
       display: flex;
       flex-wrap: wrap;
@@ -218,6 +234,31 @@
       betaResult.textContent = message;
     };
 
+    const setBetaDownload = (message, downloadUrl) => {
+      betaResult.className = "beta-result is-success";
+      betaResult.innerHTML = "";
+
+      const container = document.createElement("div");
+      container.className = "beta-download";
+
+      const copy = document.createElement("p");
+      copy.textContent = message;
+      container.append(copy);
+
+      const link = document.createElement("a");
+      link.className = "button primary";
+      link.href = downloadUrl;
+      link.textContent = "Download ShieldMendAI Beta";
+      container.append(link);
+
+      const note = document.createElement("p");
+      note.className = "beta-download-note";
+      note.textContent = "Private beta debug APK. Not a Play Store release. Android may warn because this is a private beta debug build.";
+      container.append(note);
+
+      betaResult.append(container);
+    };
+
     betaForm.addEventListener("submit", async (event) => {
       event.preventDefault();
       const code = new FormData(betaForm).get("code");
@@ -239,7 +280,12 @@
           return;
         }
 
-        setBetaResult("Access approved. APK download is not available yet.", "success");
+        if (data.apkAvailable && data.downloadUrl) {
+          setBetaDownload(data.message || "Access approved. Your ShieldMendAI beta download is ready.", data.downloadUrl);
+          return;
+        }
+
+        setBetaResult(data.message || "Access approved. APK download is not available yet.", "success");
       } catch {
         setBetaResult("Beta access could not be checked right now.", "error");
       }
