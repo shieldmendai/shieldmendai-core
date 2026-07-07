@@ -4,6 +4,8 @@
 
 ShieldMendAI is light-first. The default website and mobile app direction is a white, premium fintech/SaaS interface with near-black text, purple accents, clean cards, and confident plain-English labels.
 
+The product is a wallet-first crypto holdings, profit/loss, and tax-planning app for everyday holders. Staking rewards, airdrops, unlocks, and newly received coins are built-in wallet intelligence categories for users who have them.
+
 Dark mode can be added later as an alternate mode. Dark sections may be used sparingly for contrast, trust messaging, or high-emphasis product moments, but the product should not feel like an all-dark crypto template.
 
 ## Light Palette
@@ -35,6 +37,8 @@ Dark mode can be added later as an alternate mode. Dark sections may be used spa
 - Keep labels short and plain-English.
 - Make the mobile app match the same light-first brand direction.
 - Do not publish real invite strings, placeholder invite strings, or public release links.
+- Lead with wallet holdings, profit/loss, cost basis, tax lots, and What If I Sell? planning.
+- Present staking, rewards, airdrops, unlocks, and new received coins as built-in tracking categories.
 
 ## Inspiration Rules
 

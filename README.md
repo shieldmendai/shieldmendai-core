@@ -1,6 +1,10 @@
 # ShieldMendAI
 
-ShieldMendAI is a read-only crypto wallet and tax-lot planning app.
+ShieldMendAI is a read-only crypto wallet intelligence, profit/loss, and tax-planning app for everyday holders.
+
+The core promise is simple: know what you might owe before you sell.
+
+The app is wallet-first. It helps users understand what they own, what they paid, what they are up or down, what they might owe before selling, and which lots may be smarter to sell first. Staking rewards, airdrops, unlocks, and newly received coins are built-in tracking categories, not optional add-ons.
 
 The public site is built as static GitHub Pages content under `docs/` and keeps
 the existing `shieldmendai.com` CNAME.
