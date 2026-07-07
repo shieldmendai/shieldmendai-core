@@ -301,6 +301,14 @@ cooldown_state*
 coverage.json
 junit.xml
 
+# Node and Android build artifacts
+node_modules/
+.gradle/
+android/.gradle/
+android/build/
+android/app/build/
+*.apk
+
 # Extraction scratch data must never be committed
 private_source/
 source_snapshot/
