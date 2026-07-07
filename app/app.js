@@ -5,152 +5,409 @@ const ENDPOINTS = {
   scanWallet: `${API_BASE}/api/scan-wallet`
 };
 
-const screens = Array.from(document.querySelectorAll(".screen"));
-const stepNav = document.querySelector(".step-nav");
-const state = {
-  current: 0,
-  profile: {},
-  walletAddress: "",
-  scan: null,
-  salePlanSaved: false
-};
-
-const screenNames = [
-  "Welcome",
-  "Profile",
-  "Wallet",
-  "Scan",
-  "Buckets",
-  "Sell",
-  "Options",
-  "Export"
+const STORAGE_KEY = "shieldmendai.mobile.beta.state";
+const EVM_RE = /^0x[a-fA-F0-9]{40}$/;
+const SOLANA_RE = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
+const EVM_NETWORKS = new Set(["base", "ethereum", "arbitrum", "optimism", "polygon"]);
+const BOOT_LINES = [
+  "Checking safe wallet view...",
+  "Loading dashboard...",
+  "Preparing wallet planning tools..."
 ];
 
-screenNames.forEach((name, index) => {
-  const dot = document.createElement("button");
-  dot.className = "step-dot";
-  dot.type = "button";
-  dot.setAttribute("aria-label", name);
-  dot.addEventListener("click", () => {
-    if (index <= state.current) showScreen(index);
-  });
-  stepNav.appendChild(dot);
-});
+const state = {
+  activeScreen: "dashboard",
+  wallet: null,
+  scanStatus: "none",
+  scanMessage: "Add a public wallet address or import address with WalletConnect.",
+  scan: null,
+  planner: {
+    mode: "coins",
+    value: "200",
+    olderLots: true,
+    protectRewards: true,
+    showLoss: true
+  },
+  settings: {
+    filingStatus: "Single",
+    state: "Not sure yet",
+    incomeRange: "Under $50k",
+    dependents: "No"
+  },
+  savedPlan: false
+};
 
-function showScreen(index) {
-  state.current = Math.max(0, Math.min(index, screens.length - 1));
-  screens.forEach((screen, screenIndex) => {
-    screen.classList.toggle("active", screenIndex === state.current);
+const elements = {
+  app: document.querySelector("#app"),
+  boot: document.querySelector("#boot-screen"),
+  bootStatus: document.querySelector("#boot-status"),
+  screens: Array.from(document.querySelectorAll(".screen")),
+  navButtons: Array.from(document.querySelectorAll("[data-nav]")),
+  bottomNavButtons: Array.from(document.querySelectorAll(".bottom-nav [data-nav]")),
+  dashboardWalletCard: document.querySelector("#dashboard-wallet-card"),
+  walletScanCard: document.querySelector("#wallet-scan-card"),
+  walletForm: document.querySelector("#wallet-form"),
+  walletNetwork: document.querySelector("#wallet-network"),
+  walletAddress: document.querySelector("#wallet-address"),
+  walletError: document.querySelector("#wallet-error"),
+  walletConnectButton: document.querySelector("#walletconnect-button"),
+  walletConnectMessage: document.querySelector("#walletconnect-message"),
+  metricValue: document.querySelector("#metric-value"),
+  metricGain: document.querySelector("#metric-gain"),
+  metricLots: document.querySelector("#metric-lots"),
+  metricRewards: document.querySelector("#metric-rewards"),
+  coinAmount: document.querySelector("#custom-coin-amount"),
+  cashTarget: document.querySelector("#custom-cash-target"),
+  plannerEstimate: document.querySelector("#planner-estimate"),
+  olderLots: document.querySelector("#older-lots"),
+  protectRewards: document.querySelector("#protect-rewards"),
+  showLoss: document.querySelector("#show-loss"),
+  bucketDetail: document.querySelector("#bucket-detail"),
+  settingsForm: document.querySelector("#settings-form"),
+  savePlanButton: document.querySelector("#save-plan-button"),
+  saveMessage: document.querySelector("#save-message"),
+  clearDataButton: document.querySelector("#clear-data-button")
+};
+
+loadState();
+bindEvents();
+render();
+runBootSequence();
+
+function bindEvents() {
+  elements.navButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      const preset = button.dataset.preset;
+      if (preset === "loss") {
+        state.planner.showLoss = true;
+        elements.showLoss.checked = true;
+        updatePlannerEstimate();
+      }
+      showScreen(button.dataset.nav);
+    });
   });
-  Array.from(stepNav.children).forEach((dot, dotIndex) => {
-    dot.classList.toggle("active", dotIndex <= state.current);
+
+  elements.walletForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    addManualWallet();
+  });
+
+  elements.walletConnectButton.addEventListener("click", importWalletConnectAddress);
+
+  document.querySelectorAll("[data-plan-preset]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const [mode, value] = button.dataset.planPreset.split(":");
+      state.planner.mode = mode;
+      state.planner.value = value;
+      elements.coinAmount.value = mode === "coins" ? value : "";
+      elements.cashTarget.value = mode === "cash" ? value : "";
+      updatePlannerEstimate();
+      persistState();
+    });
+  });
+
+  elements.coinAmount.addEventListener("input", () => {
+    state.planner.mode = "coins";
+    state.planner.value = elements.coinAmount.value.trim();
+    elements.cashTarget.value = "";
+    updatePlannerEstimate();
+    persistState();
+  });
+
+  elements.cashTarget.addEventListener("input", () => {
+    state.planner.mode = "cash";
+    state.planner.value = elements.cashTarget.value.trim();
+    elements.coinAmount.value = "";
+    updatePlannerEstimate();
+    persistState();
+  });
+
+  [elements.olderLots, elements.protectRewards, elements.showLoss].forEach((input) => {
+    input.addEventListener("change", () => {
+      state.planner.olderLots = elements.olderLots.checked;
+      state.planner.protectRewards = elements.protectRewards.checked;
+      state.planner.showLoss = elements.showLoss.checked;
+      updatePlannerEstimate();
+      persistState();
+    });
+  });
+
+  document.querySelector("#see-options-button").addEventListener("click", () => {
+    showScreen("lots");
+    elements.bucketDetail.textContent = "Planning preview only. ShieldMendAI will compare lot strategies once full tax-lot data is available.";
+  });
+
+  document.querySelectorAll("[data-bucket-key]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const details = {
+        older: "Older lots will highlight coins that may be closer to long-term treatment once full history is available.",
+        newer: "Newer buys stay separated so short-term exposure is easier to review before a sale.",
+        rewards: "Rewards and airdrops are tracked as their own planning category for income and basis review.",
+        unknown: "Unknown items are kept visible for cost basis cleanup instead of being hidden from the plan.",
+        longterm: "Long-term candidates will help compare timing options before selling elsewhere.",
+        shortterm: "Short-term exposure flags newer activity that may create a higher tax impact."
+      };
+      elements.bucketDetail.textContent = details[button.dataset.bucketKey];
+    });
+  });
+
+  elements.settingsForm.addEventListener("change", () => {
+    state.settings = Object.fromEntries(new FormData(elements.settingsForm).entries());
+    persistState();
+  });
+
+  elements.savePlanButton.addEventListener("click", () => {
+    state.savedPlan = true;
+    elements.saveMessage.hidden = false;
+    persistState();
+  });
+
+  elements.clearDataButton.addEventListener("click", () => {
+    localStorage.removeItem(STORAGE_KEY);
+    state.wallet = null;
+    state.scan = null;
+    state.scanStatus = "none";
+    state.scanMessage = "Add a public wallet address or import address with WalletConnect.";
+    state.savedPlan = false;
+    elements.walletAddress.value = "";
+    elements.saveMessage.hidden = true;
+    persistState();
+    render();
+  });
+}
+
+function runBootSequence() {
+  if (state.wallet) {
+    BOOT_LINES[0] = "Restoring saved wallet view...";
+  }
+
+  BOOT_LINES.forEach((line, index) => {
+    setTimeout(() => {
+      elements.bootStatus.textContent = line;
+    }, index * 460);
+  });
+
+  setTimeout(() => {
+    elements.app.classList.remove("is-booting");
+    elements.boot.classList.add("done");
+    showScreen("dashboard");
+  }, 1550);
+}
+
+function showScreen(screenName) {
+  state.activeScreen = screenName;
+  elements.screens.forEach((screen) => {
+    screen.classList.toggle("active", screen.dataset.screen === screenName);
+  });
+  elements.bottomNavButtons.forEach((button) => {
+    button.classList.toggle("active", button.dataset.nav === screenName);
   });
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
-function saveProfileState() {
-  const form = document.querySelector("#profile-form");
-  state.profile = Object.fromEntries(new FormData(form).entries());
-}
+function addManualWallet() {
+  const network = elements.walletNetwork.value;
+  const address = elements.walletAddress.value.trim();
+  const validation = validateAddress(network, address);
 
-function nextScreen() {
-  if (state.current === 1) saveProfileState();
-  showScreen(state.current + 1);
-}
-
-function previousScreen() {
-  showScreen(state.current - 1);
-}
-
-document.querySelectorAll("[data-next]").forEach((button) => {
-  button.addEventListener("click", nextScreen);
-});
-
-document.querySelectorAll("[data-back]").forEach((button) => {
-  button.addEventListener("click", previousScreen);
-});
-
-document.querySelector("[data-start-over]").addEventListener("click", () => {
-  state.current = 0;
-  state.scan = null;
-  state.salePlanSaved = false;
-  document.querySelector("#save-message").hidden = true;
-  showScreen(0);
-});
-
-document.querySelector("#scan-button").addEventListener("click", () => {
-  const input = document.querySelector("#wallet-address");
-  const error = document.querySelector("#wallet-error");
-  const address = input.value.trim();
-  if (!address) {
-    error.hidden = false;
-    input.focus();
+  if (!validation.ok) {
+    showWalletError(validation.message);
     return;
   }
 
-  error.hidden = true;
-  state.walletAddress = address;
-  showScreen(3);
-  runWalletScan(address);
-});
+  elements.walletError.hidden = true;
+  state.wallet = {
+    address,
+    network,
+    type: validation.type,
+    source: validation.type === "solana" ? "Manual Solana address" : "Manual public address"
+  };
+  state.scan = null;
+  state.scanStatus = validation.type === "solana" ? "solana-preview" : "scanning";
+  state.scanMessage = validation.type === "solana"
+    ? "Solana address added for planning preview. Solana scan support is coming next."
+    : "Public address added. Safe wallet view active. Scanning public wallet data...";
+  persistState();
+  render();
 
-document.querySelector("#scan-results-button").addEventListener("click", () => {
-  showScreen(4);
-});
+  if (validation.type === "evm") {
+    runWalletScan(address);
+  }
+}
 
-document.querySelectorAll("input[name='saleAmount']").forEach((input) => {
-  input.addEventListener("change", () => {
-    document.querySelector("#sell-summary").textContent =
-      `${input.value} is a planning estimate. Older lots first may lower short-term exposure.`;
-  });
-});
+function validateAddress(network, address) {
+  if (!address) {
+    return { ok: false, message: "Enter a public wallet address first." };
+  }
 
-document.querySelector("#save-plan-button").addEventListener("click", () => {
-  state.salePlanSaved = true;
-  document.querySelector("#save-message").hidden = false;
-});
+  if (network === "solana") {
+    if (!SOLANA_RE.test(address)) {
+      return { ok: false, message: "Enter a Solana public address between 32 and 44 base58 characters." };
+    }
+    return { ok: true, type: "solana" };
+  }
+
+  if (!EVM_NETWORKS.has(network)) {
+    return { ok: false, message: "Choose a supported network first." };
+  }
+
+  if (!EVM_RE.test(address)) {
+    return { ok: false, message: "Enter an EVM address that starts with 0x followed by 40 hex characters." };
+  }
+
+  return { ok: true, type: "evm" };
+}
+
+function showWalletError(message) {
+  elements.walletError.textContent = message;
+  elements.walletError.hidden = false;
+  elements.walletAddress.focus();
+}
 
 async function runWalletScan(address) {
-  resetScanUi();
-  const steps = Array.from(document.querySelectorAll(".scan-step"));
-  const resultsButton = document.querySelector("#scan-results-button");
-  const fallback = document.querySelector("#scan-fallback");
-  const scanCopy = document.querySelector("#scan-copy");
-
-  const stepTimer = setInterval(() => {
-    const nextIndex = steps.findIndex((step) => !step.classList.contains("done"));
-    if (nextIndex === -1) return;
-    steps.forEach((step, index) => {
-      step.classList.toggle("active", index === nextIndex);
-      if (index < nextIndex) step.classList.add("done");
-    });
-  }, 380);
+  state.scanStatus = "scanning";
+  state.scanMessage = "Scanning public wallet data...";
+  render();
 
   try {
-    const [health, status, scan] = await Promise.all([
-      fetchJson(ENDPOINTS.health),
+    const [status, scan] = await Promise.all([
       fetchJson(ENDPOINTS.status),
       fetchJson(ENDPOINTS.scanWallet, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ walletAddress: address })
+        body: JSON.stringify({ wallet: address })
       })
     ]);
 
-    state.scan = { health, status, scan };
-    scanCopy.textContent = "Scan preview loaded. Review the planning buckets before modeling a sale.";
+    state.scan = { status, scan };
+    if (scan.mode === "live-basic") {
+      state.scanStatus = "basic-active";
+      state.scanMessage = "Public address added. Basic Base scan active. Full token, profit/loss, and tax-lot scanning is being expanded in Beta.";
+    } else {
+      state.scanStatus = "beta-preview";
+      state.scanMessage = "Public address added. Full scan data unavailable in Beta, so ShieldMendAI is showing a planning preview.";
+    }
   } catch (error) {
     state.scan = { error: String(error) };
-    fallback.hidden = false;
-    scanCopy.textContent = "The scan service did not return a preview, so this session will use Beta 0.1 shell buckets.";
+    state.scanStatus = "failed";
+    state.scanMessage = "Wallet address was added, but the live scan could not complete. Try again.";
   } finally {
-    clearInterval(stepTimer);
-    steps.forEach((step) => {
-      step.classList.remove("active");
-      step.classList.add("done");
-    });
-    resultsButton.disabled = false;
+    persistState();
+    render();
   }
+}
+
+async function importWalletConnectAddress() {
+  const config = window.ShieldMendAIWalletConnectConfig || {};
+  const projectId = typeof config.projectId === "string" ? config.projectId.trim() : "";
+  hideWalletConnectMessage();
+
+  if (!projectId || projectId === "YOUR_REOWN_PROJECT_ID") {
+    showWalletConnectMessage("Connect Wallet needs a Reown Project ID before it can open.");
+    return;
+  }
+
+  try {
+    const imported = await openReownAddressImport(projectId);
+    if (!imported || !EVM_RE.test(imported.address)) {
+      showWalletConnectMessage("WalletConnect did not return a supported EVM public address.");
+      return;
+    }
+
+    state.wallet = {
+      address: imported.address,
+      network: imported.network || "ethereum",
+      type: "evm",
+      source: "WalletConnect address import"
+    };
+    state.scan = null;
+    state.scanStatus = "scanning";
+    state.scanMessage = "Wallet address imported. Safe wallet view active. No signing requested. Scanning public wallet data...";
+    elements.walletAddress.value = imported.address;
+    elements.walletNetwork.value = state.wallet.network;
+    persistState();
+    render();
+    runWalletScan(imported.address);
+  } catch (error) {
+    showWalletConnectMessage(`Wallet address import could not open: ${friendlyError(error)}`);
+  }
+}
+
+async function openReownAddressImport(projectId) {
+  if (window.ShieldMendAIWalletAddressImporter) {
+    return window.ShieldMendAIWalletAddressImporter({ projectId });
+  }
+
+  const [{ createAppKit }, { EthersAdapter }, networks] = await Promise.all([
+    import("https://esm.sh/@reown/appkit@1.7.8"),
+    import("https://esm.sh/@reown/appkit-adapter-ethers@1.7.8"),
+    import("https://esm.sh/@reown/appkit@1.7.8/networks")
+  ]);
+
+  const networkList = [
+    networks.mainnet,
+    networks.base,
+    networks.arbitrum,
+    networks.optimism,
+    networks.polygon
+  ].filter(Boolean);
+
+  const modal = createAppKit({
+    adapters: [new EthersAdapter()],
+    networks: networkList,
+    projectId,
+    metadata: {
+      name: "ShieldMendAI",
+      description: "Safe wallet view for planning before selling.",
+      url: "https://shieldmendai.com",
+      icons: ["https://shieldmendai.com/favicon.ico"]
+    },
+    features: {
+      analytics: false,
+      email: false,
+      socials: false,
+      swaps: false,
+      onramp: false
+    }
+  });
+
+  return new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => reject(new Error("Timed out waiting for wallet address import.")), 120000);
+    const unsubscribe = modal.subscribeAccount((account) => {
+      const address = account && account.address;
+      if (!address) return;
+      clearTimeout(timeout);
+      if (typeof unsubscribe === "function") unsubscribe();
+      resolve({
+        address,
+        network: networkFromChainId(account.chainId)
+      });
+    });
+    Promise.resolve(modal.open({ view: "Connect" })).catch((error) => {
+      clearTimeout(timeout);
+      if (typeof unsubscribe === "function") unsubscribe();
+      reject(error);
+    });
+  });
+}
+
+function networkFromChainId(chainId) {
+  const normalized = Number(chainId);
+  if (normalized === 8453) return "base";
+  if (normalized === 42161) return "arbitrum";
+  if (normalized === 10) return "optimism";
+  if (normalized === 137) return "polygon";
+  return "ethereum";
+}
+
+function showWalletConnectMessage(message) {
+  elements.walletConnectMessage.textContent = message;
+  elements.walletConnectMessage.hidden = false;
+}
+
+function hideWalletConnectMessage() {
+  elements.walletConnectMessage.hidden = true;
+  elements.walletConnectMessage.textContent = "";
 }
 
 async function fetchJson(url, options = {}) {
@@ -171,13 +428,156 @@ async function fetchJson(url, options = {}) {
   return response.text();
 }
 
-function resetScanUi() {
-  document.querySelector("#scan-results-button").disabled = true;
-  document.querySelector("#scan-fallback").hidden = true;
-  document.querySelector("#scan-copy").textContent = "ShieldMendAI is preparing a read-only planning preview.";
-  document.querySelectorAll(".scan-step").forEach((step) => {
-    step.classList.remove("active", "done");
+function render() {
+  renderWalletCards();
+  renderMetrics();
+  renderPlanner();
+  renderSettings();
+  elements.saveMessage.hidden = !state.savedPlan;
+}
+
+function renderWalletCards() {
+  const cardMarkup = walletStatusMarkup();
+  elements.dashboardWalletCard.innerHTML = cardMarkup;
+  elements.walletScanCard.innerHTML = cardMarkup;
+}
+
+function walletStatusMarkup() {
+  if (!state.wallet) {
+    return `
+      <div class="status-line">
+        <strong>No address added</strong>
+        <span class="address-pill">Safe wallet view</span>
+      </div>
+      <p class="status-copy">Add a public wallet address or import address with WalletConnect.</p>
+      <p class="status-copy">No approval needed. No funds can move.</p>
+    `;
+  }
+
+  const source = escapeHtml(state.wallet.source);
+  const address = escapeHtml(shortAddress(state.wallet.address));
+  return `
+    <div class="status-line">
+      <strong>${statusTitle()}</strong>
+      <span class="address-pill">${address}</span>
+    </div>
+    <p class="status-copy">Source: ${source}</p>
+    <p class="status-copy">${escapeHtml(state.scanMessage)}</p>
+    <p class="status-copy">No approval needed. No funds can move.</p>
+  `;
+}
+
+function statusTitle() {
+  if (!state.wallet) return "No address added";
+  if (state.scanStatus === "scanning") return "Scanning public wallet data";
+  if (state.scanStatus === "basic-active") return "Basic Base scan active";
+  if (state.scanStatus === "failed") return "Scan failed";
+  if (state.scanStatus === "solana-preview") return "Public address added";
+  if (state.wallet.source === "WalletConnect address import") return "Wallet address imported";
+  return "Public address added";
+}
+
+function renderMetrics() {
+  const scan = state.scan && state.scan.scan;
+  const tokens = scan && Array.isArray(scan.tokens) ? scan.tokens : [];
+  const lots = tokens.flatMap((token) => Array.isArray(token.lots) ? token.lots : []);
+  const totalValue = tokens.reduce((sum, token) => sum + Number(token.estimatedValueUsd || 0), 0);
+
+  elements.metricValue.textContent = totalValue > 0 ? formatUsd(totalValue) : "Beta preview";
+  elements.metricLots.textContent = lots.length > 0 ? `${lots.length} preview lots` : "Beta preview";
+  elements.metricGain.textContent = "Beta preview";
+  elements.metricRewards.textContent = state.scanStatus === "basic-active" ? "Coming next" : "Beta preview";
+
+  if (scan && scan.nativeBalanceEth) {
+    elements.metricValue.textContent = `${Number(scan.nativeBalanceEth).toFixed(5)} ETH`;
+  }
+}
+
+function renderPlanner() {
+  elements.coinAmount.value = state.planner.mode === "coins" ? state.planner.value : "";
+  elements.cashTarget.value = state.planner.mode === "cash" ? state.planner.value : "";
+  elements.olderLots.checked = state.planner.olderLots;
+  elements.protectRewards.checked = state.planner.protectRewards;
+  elements.showLoss.checked = state.planner.showLoss;
+  updatePlannerEstimate();
+}
+
+function updatePlannerEstimate() {
+  const value = state.planner.value || "0";
+  const amountCopy = state.planner.mode === "cash"
+    ? `${formatUsd(Number(value || 0))} cash target`
+    : `${value || "0"} coin amount`;
+  const lotCopy = state.planner.olderLots ? "older lots first" : "selected lot order";
+  const rewardCopy = state.planner.protectRewards ? "protecting newer rewards when possible" : "including rewards if needed";
+  const lossCopy = state.planner.showLoss ? "with tax-loss opportunities visible" : "without tax-loss filtering";
+
+  elements.plannerEstimate.textContent = `${amountCopy}: planning preview using ${lotCopy}, ${rewardCopy}, ${lossCopy}.`;
+}
+
+function renderSettings() {
+  Object.entries(state.settings).forEach(([name, value]) => {
+    const field = elements.settingsForm.elements[name];
+    if (field) field.value = value;
   });
 }
 
-showScreen(0);
+function loadState() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+    if (saved && typeof saved === "object") {
+      Object.assign(state, {
+        wallet: saved.wallet || null,
+        scanStatus: saved.scanStatus || state.scanStatus,
+        scanMessage: saved.scanMessage || state.scanMessage,
+        scan: saved.scan || null,
+        planner: { ...state.planner, ...(saved.planner || {}) },
+        settings: { ...state.settings, ...(saved.settings || {}) },
+        savedPlan: Boolean(saved.savedPlan)
+      });
+    }
+  } catch {
+    localStorage.removeItem(STORAGE_KEY);
+  }
+}
+
+function persistState() {
+  const saved = {
+    wallet: state.wallet,
+    scanStatus: state.scanStatus,
+    scanMessage: state.scanMessage,
+    scan: state.scan,
+    planner: state.planner,
+    settings: state.settings,
+    savedPlan: state.savedPlan
+  };
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
+}
+
+function shortAddress(address) {
+  if (!address || address.length <= 14) return address || "";
+  return `${address.slice(0, 6)}...${address.slice(-4)}`;
+}
+
+function formatUsd(value) {
+  if (!Number.isFinite(value)) return "$0";
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 0
+  }).format(value);
+}
+
+function friendlyError(error) {
+  const message = error && error.message ? error.message : String(error);
+  return message.replace(/^Error:\s*/, "");
+}
+
+function escapeHtml(value) {
+  return String(value).replace(/[&<>"']/g, (character) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#039;"
+  })[character]);
+}

@@ -309,6 +309,7 @@ android/build/
 android/app/build/
 *.apk
 private-builds/
+app/walletconnect.local.js
 
 # Extraction scratch data must never be committed
 private_source/

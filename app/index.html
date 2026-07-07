@@ -4,44 +4,203 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#ffffff">
-  <meta name="description" content="ShieldMendAI Mobile Beta 0.1 read-only wallet intelligence app shell.">
-  <title>ShieldMendAI Mobile Beta 0.1</title>
+  <meta name="description" content="ShieldMendAI wallet-first crypto holdings, profit/loss, tax-lot, and tax-planning dashboard.">
+  <title>ShieldMendAI</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <main class="app-shell" id="app">
+  <div class="boot-screen" id="boot-screen" aria-live="polite">
+    <div class="boot-card" aria-label="ShieldMendAI loading">
+      <div class="boot-mark">S</div>
+      <p class="eyebrow">ShieldMendAI</p>
+      <h1>Know what you might owe before you sell.</h1>
+      <p id="boot-status">Checking safe wallet view...</p>
+      <div class="boot-progress"><span></span></div>
+    </div>
+  </div>
+
+  <main class="app-shell is-booting" id="app">
     <header class="app-header">
       <div>
         <p class="eyebrow">Mobile Beta 0.1</p>
         <h1>ShieldMendAI</h1>
       </div>
-      <span class="status-pill"><span aria-hidden="true"></span> Read-only</span>
+      <div class="header-actions">
+        <span class="status-pill"><span aria-hidden="true"></span> Safe wallet view</span>
+        <button class="icon-button" type="button" data-nav="settings" aria-label="Settings">Settings</button>
+      </div>
     </header>
 
-    <nav class="step-nav" aria-label="App progress"></nav>
-
-    <section class="screen active" data-screen="welcome" aria-labelledby="welcome-title">
-      <div class="hero-card">
-        <p class="eyebrow">Wallet tax planner</p>
-        <h2 id="welcome-title">Know what you might owe before you sell.</h2>
-        <p class="lead">Understand your wallet without needing to be a tax expert.</p>
-        <div class="trust-grid" aria-label="Trust principles">
-          <span>No seed phrase</span>
-          <span>No private keys</span>
-          <span>No custody</span>
-          <span>No approvals</span>
+    <section class="screen active" data-screen="dashboard" aria-labelledby="dashboard-title">
+      <div class="dashboard-hero">
+        <div>
+          <p class="eyebrow">Wallet planning dashboard</p>
+          <h2 id="dashboard-title">Know what you might owe before you sell.</h2>
         </div>
+        <div class="hero-badge">No funds can move</div>
       </div>
-      <button class="button primary" type="button" data-next>Get Started</button>
+
+      <article class="wallet-status-card" id="dashboard-wallet-card"></article>
+
+      <div class="snapshot-grid" aria-label="Portfolio snapshot">
+        <article class="metric-card">
+          <span>Total estimated value</span>
+          <strong id="metric-value">Beta preview</strong>
+        </article>
+        <article class="metric-card">
+          <span>Unrealized gain/loss</span>
+          <strong id="metric-gain">Beta preview</strong>
+        </article>
+        <article class="metric-card">
+          <span>Tax lots</span>
+          <strong id="metric-lots">Beta preview</strong>
+        </article>
+        <article class="metric-card">
+          <span>Rewards & airdrops</span>
+          <strong id="metric-rewards">Beta preview</strong>
+        </article>
+      </div>
+
+      <div class="section-row">
+        <h3>Quick actions</h3>
+      </div>
+      <div class="quick-grid">
+        <button type="button" data-nav="wallet">Add Wallet</button>
+        <button type="button" data-nav="planner">What If I Sell?</button>
+        <button type="button" data-nav="planner" data-preset="loss">Tax-Loss Harvest</button>
+        <button type="button" data-nav="lots">View Lots</button>
+        <button type="button" data-nav="lots" data-bucket="rewards">Rewards/Airdrops</button>
+        <button type="button" data-nav="reports">Export Report</button>
+      </div>
+
+      <div class="safety-strip" aria-label="Safety guardrails">
+        <span>No seed phrase</span>
+        <span>No private keys</span>
+        <span>No custody</span>
+        <span>No approvals</span>
+      </div>
     </section>
 
-    <section class="screen" data-screen="profile" aria-labelledby="profile-title">
+    <section class="screen" data-screen="wallet" aria-labelledby="wallet-title">
       <div class="section-head">
-        <p class="eyebrow">Profile</p>
-        <h2 id="profile-title">Set a planning estimate.</h2>
-        <p>This stays local for now. ShieldMendAI does not send your tax profile to the backend in Beta 0.1.</p>
+        <p class="eyebrow">Wallet</p>
+        <h2 id="wallet-title">Add a public wallet address.</h2>
+        <p>ShieldMendAI imports public address data for view-only planning. No seed phrase, private key, signing, approval, swap, or transfer is requested.</p>
       </div>
-      <form class="form-stack" id="profile-form">
+
+      <article class="scan-status-card" id="wallet-scan-card"></article>
+
+      <form class="form-stack" id="wallet-form">
+        <label>
+          <span>Network/type</span>
+          <select id="wallet-network" name="network">
+            <optgroup label="EVM">
+              <option value="base">Base</option>
+              <option value="ethereum">Ethereum</option>
+              <option value="arbitrum">Arbitrum</option>
+              <option value="optimism">Optimism</option>
+              <option value="polygon">Polygon</option>
+            </optgroup>
+            <option value="solana">Solana</option>
+          </select>
+        </label>
+        <label>
+          <span>Public wallet address</span>
+          <input id="wallet-address" type="text" inputmode="text" autocomplete="off" placeholder="0x... or Solana public address">
+        </label>
+        <p class="input-note" id="wallet-error" hidden></p>
+        <div class="button-row">
+          <button class="button primary" type="submit">Add Public Address</button>
+          <button class="button secondary" type="button" id="walletconnect-button">Connect Wallet - import address</button>
+        </div>
+      </form>
+
+      <div class="notice compact" id="walletconnect-message" hidden></div>
+      <div class="safety-list">
+        <span>No signing requested</span>
+        <span>No approval needed</span>
+        <span>No funds can move</span>
+      </div>
+    </section>
+
+    <section class="screen" data-screen="planner" aria-labelledby="planner-title">
+      <div class="section-head">
+        <p class="eyebrow">Planner</p>
+        <h2 id="planner-title">What If I Sell?</h2>
+        <p>Model a possible sale before doing anything in an exchange or wallet.</p>
+      </div>
+
+      <div class="chip-row" aria-label="Sale presets">
+        <button type="button" data-plan-preset="coins:200">Sell 200 coins</button>
+        <button type="button" data-plan-preset="cash:500">Sell $500 worth</button>
+        <button type="button" data-plan-preset="cash:1000">Sell $1,000 worth</button>
+      </div>
+
+      <div class="form-grid">
+        <label>
+          <span>Custom coin amount</span>
+          <input id="custom-coin-amount" type="number" min="0" step="any" inputmode="decimal" placeholder="0.00">
+        </label>
+        <label>
+          <span>Custom cash target</span>
+          <input id="custom-cash-target" type="number" min="0" step="any" inputmode="decimal" placeholder="0.00">
+        </label>
+      </div>
+
+      <div class="toggle-stack">
+        <label><input type="checkbox" id="older-lots" checked> <span>Sell older lots first</span></label>
+        <label><input type="checkbox" id="protect-rewards" checked> <span>Protect newer rewards when possible</span></label>
+        <label><input type="checkbox" id="show-loss" checked> <span>Show tax-loss opportunities</span></label>
+      </div>
+
+      <article class="estimate-card">
+        <span class="mini-label">Planning preview only</span>
+        <strong id="planner-estimate">Sell 200 coins is a planning preview.</strong>
+        <p>No sale will be made. ShieldMendAI will compare lot strategies once full tax-lot data is available.</p>
+      </article>
+      <button class="button primary" type="button" id="see-options-button">See Options</button>
+    </section>
+
+    <section class="screen" data-screen="lots" aria-labelledby="lots-title">
+      <div class="section-head">
+        <p class="eyebrow">Lots</p>
+        <h2 id="lots-title">Tax-lot buckets.</h2>
+        <p>Public wallet activity is organized into planning buckets as full token and tax-lot scanning expands in Beta.</p>
+      </div>
+      <div class="bucket-grid" id="bucket-grid">
+        <button type="button" data-bucket-key="older"><span>Older lots</span><strong>Long-term candidates</strong></button>
+        <button type="button" data-bucket-key="newer"><span>Newer buys</span><strong>Short-term exposure</strong></button>
+        <button type="button" data-bucket-key="rewards"><span>Rewards & airdrops</span><strong>Income review</strong></button>
+        <button type="button" data-bucket-key="unknown"><span>Unknown / needs review</span><strong>Cost basis cleanup</strong></button>
+        <button type="button" data-bucket-key="longterm"><span>Long-term candidates</span><strong>Lower-rate planning</strong></button>
+        <button type="button" data-bucket-key="shortterm"><span>Short-term exposure</span><strong>Higher-rate planning</strong></button>
+      </div>
+      <article class="notice" id="bucket-detail">Tap a bucket to preview details.</article>
+    </section>
+
+    <section class="screen" data-screen="reports" aria-labelledby="reports-title">
+      <div class="section-head">
+        <p class="eyebrow">Reports</p>
+        <h2 id="reports-title">Save planning work.</h2>
+      </div>
+      <div class="report-list">
+        <button class="button primary" type="button" id="save-plan-button">Save sale plan</button>
+        <button class="button secondary" type="button" disabled>CPA report coming soon</button>
+        <button class="button secondary" type="button" disabled>Transaction CSV coming soon</button>
+        <button class="button secondary" type="button" disabled>Tax summary PDF coming soon</button>
+        <button class="button secondary" type="button" disabled>Timestamped proof record coming soon</button>
+      </div>
+      <div class="notice compact" id="save-message" hidden>Sale plan saved locally on this device.</div>
+      <p class="disclaimer">Estimates only. ShieldMendAI does not file taxes or replace a tax professional.</p>
+    </section>
+
+    <section class="screen" data-screen="settings" aria-labelledby="settings-title">
+      <div class="section-head">
+        <p class="eyebrow">Settings</p>
+        <h2 id="settings-title">Local planning profile.</h2>
+        <p>These settings stay on this device for now and are not sent to the backend.</p>
+      </div>
+      <form class="form-stack" id="settings-form">
         <label>
           <span>Filing status</span>
           <select name="filingStatus">
@@ -55,60 +214,11 @@
           <span>State</span>
           <select name="state">
             <option>Not sure yet</option>
-            <option>Alabama</option>
-            <option>Alaska</option>
-            <option>Arizona</option>
-            <option>Arkansas</option>
-            <option>California</option>
-            <option>Colorado</option>
-            <option>Connecticut</option>
-            <option>Delaware</option>
-            <option>Florida</option>
-            <option>Georgia</option>
-            <option>Hawaii</option>
-            <option>Idaho</option>
-            <option>Illinois</option>
-            <option>Indiana</option>
-            <option>Iowa</option>
-            <option>Kansas</option>
-            <option>Kentucky</option>
-            <option>Louisiana</option>
-            <option>Maine</option>
-            <option>Maryland</option>
-            <option>Massachusetts</option>
-            <option>Michigan</option>
-            <option>Minnesota</option>
-            <option>Mississippi</option>
-            <option>Missouri</option>
-            <option>Montana</option>
-            <option>Nebraska</option>
-            <option>Nevada</option>
-            <option>New Hampshire</option>
-            <option>New Jersey</option>
-            <option>New Mexico</option>
-            <option>New York</option>
-            <option>North Carolina</option>
-            <option>North Dakota</option>
-            <option>Ohio</option>
-            <option>Oklahoma</option>
-            <option>Oregon</option>
-            <option>Pennsylvania</option>
-            <option>Rhode Island</option>
-            <option>South Carolina</option>
-            <option>South Dakota</option>
-            <option>Tennessee</option>
-            <option>Texas</option>
-            <option>Utah</option>
-            <option>Vermont</option>
-            <option>Virginia</option>
-            <option>Washington</option>
-            <option>West Virginia</option>
-            <option>Wisconsin</option>
-            <option>Wyoming</option>
+            <option>Alabama</option><option>Alaska</option><option>Arizona</option><option>Arkansas</option><option>California</option><option>Colorado</option><option>Connecticut</option><option>Delaware</option><option>Florida</option><option>Georgia</option><option>Hawaii</option><option>Idaho</option><option>Illinois</option><option>Indiana</option><option>Iowa</option><option>Kansas</option><option>Kentucky</option><option>Louisiana</option><option>Maine</option><option>Maryland</option><option>Massachusetts</option><option>Michigan</option><option>Minnesota</option><option>Mississippi</option><option>Missouri</option><option>Montana</option><option>Nebraska</option><option>Nevada</option><option>New Hampshire</option><option>New Jersey</option><option>New Mexico</option><option>New York</option><option>North Carolina</option><option>North Dakota</option><option>Ohio</option><option>Oklahoma</option><option>Oregon</option><option>Pennsylvania</option><option>Rhode Island</option><option>South Carolina</option><option>South Dakota</option><option>Tennessee</option><option>Texas</option><option>Utah</option><option>Vermont</option><option>Virginia</option><option>Washington</option><option>West Virginia</option><option>Wisconsin</option><option>Wyoming</option>
           </select>
         </label>
         <label>
-          <span>Approx yearly income range</span>
+          <span>Income range</span>
           <select name="incomeRange">
             <option>Under $50k</option>
             <option>$50k - $100k</option>
@@ -117,149 +227,31 @@
             <option>$500k+</option>
           </select>
         </label>
-        <fieldset>
-          <legend>Dependents</legend>
-          <div class="segmented">
-            <label><input type="radio" name="dependents" value="No" checked> <span>No</span></label>
-            <label><input type="radio" name="dependents" value="Yes"> <span>Yes</span></label>
-          </div>
-        </fieldset>
+        <label>
+          <span>Dependents</span>
+          <select name="dependents">
+            <option>No</option>
+            <option>Yes</option>
+          </select>
+        </label>
+        <article class="privacy-card">
+          <h3>Privacy & safety</h3>
+          <p>ShieldMendAI never asks for seed phrases, private keys, custody, approvals, swaps, transfers, trading, transaction signing, or message signing.</p>
+        </article>
+        <button class="button secondary danger" type="button" id="clear-data-button">Clear local app data</button>
       </form>
-      <div class="actions">
-        <button class="button secondary" type="button" data-back>Back</button>
-        <button class="button primary" type="button" data-next>Continue</button>
-      </div>
-    </section>
-
-    <section class="screen" data-screen="wallet" aria-labelledby="wallet-title">
-      <div class="section-head">
-        <p class="eyebrow">Add Wallet</p>
-        <h2 id="wallet-title">Paste a public wallet address for read-only analysis.</h2>
-        <p>We never ask for seed phrases, private keys, custody, or approvals.</p>
-      </div>
-      <label class="wallet-field">
-        <span>Public wallet address only</span>
-        <input id="wallet-address" type="text" inputmode="text" autocomplete="off" placeholder="0x... or public address">
-      </label>
-      <p class="input-note" id="wallet-error" hidden>Please enter a public wallet address before scanning.</p>
-      <div class="safety-strip">
-        <span>No wallet connect</span>
-        <span>No signing</span>
-        <span>No permissions</span>
-      </div>
-      <div class="actions">
-        <button class="button secondary" type="button" data-back>Back</button>
-        <button class="button primary" type="button" id="scan-button">Scan Wallet</button>
-      </div>
-    </section>
-
-    <section class="screen" data-screen="scan" aria-labelledby="scan-title">
-      <div class="section-head">
-        <p class="eyebrow">Wallet Scan</p>
-        <h2 id="scan-title">Checking public wallet activity.</h2>
-        <p id="scan-copy">ShieldMendAI is preparing a read-only planning preview.</p>
-      </div>
-      <div class="scan-panel" aria-live="polite">
-        <div class="scan-step" data-scan-step="0"><span></span>Checking public wallet</div>
-        <div class="scan-step" data-scan-step="1"><span></span>Loading holdings</div>
-        <div class="scan-step" data-scan-step="2"><span></span>Estimating profit/loss</div>
-        <div class="scan-step" data-scan-step="3"><span></span>Organizing lots</div>
-        <div class="scan-step" data-scan-step="4"><span></span>Finding rewards and airdrops</div>
-        <div class="scan-step" data-scan-step="5"><span></span>Checking long-term vs short-term status</div>
-      </div>
-      <div class="notice" id="scan-fallback" hidden>
-        Scan preview is not available right now. Your wallet was not connected and no private keys were used.
-      </div>
-      <div class="actions">
-        <button class="button secondary" type="button" data-back>Back</button>
-        <button class="button primary" type="button" id="scan-results-button" disabled>View Planning Buckets</button>
-      </div>
-    </section>
-
-    <section class="screen" data-screen="holdings" aria-labelledby="holdings-title">
-      <div class="section-head">
-        <p class="eyebrow">Holdings / Lots / Rewards</p>
-        <h2 id="holdings-title">Planning buckets for your wallet.</h2>
-        <p>ShieldMendAI organizes public wallet activity into planning buckets so you can understand what may happen before selling.</p>
-      </div>
-      <div class="card-grid">
-        <article class="card"><span class="mini-label">Longer held</span><h3>Older Coins</h3><p>Lots that may be closer to long-term treatment appear here for review.</p></article>
-        <article class="card"><span class="mini-label">Recent activity</span><h3>Newer Buys</h3><p>Recent purchases are separated so short-term exposure is easier to see.</p></article>
-        <article class="card"><span class="mini-label">Built in</span><h3>Rewards & Airdrops</h3><p>Staking rewards, airdrops, and newly received coins are tracked alongside core holdings.</p></article>
-        <article class="card"><span class="mini-label">Review</span><h3>Unknown / Needs Review</h3><p>Items with incomplete cost basis or unclear source stay visible for later cleanup.</p></article>
-      </div>
-      <div class="actions">
-        <button class="button secondary" type="button" data-back>Back</button>
-        <button class="button primary" type="button" data-next>What If I Sell?</button>
-      </div>
-    </section>
-
-    <section class="screen" data-screen="sell" aria-labelledby="sell-title">
-      <div class="section-head">
-        <p class="eyebrow">What If I Sell?</p>
-        <h2 id="sell-title">Preview a possible sale before moving anything.</h2>
-        <p>This Beta 0.1 planner uses shell estimates only.</p>
-      </div>
-      <div class="option-grid" role="radiogroup" aria-label="Sale amount">
-        <label><input type="radio" name="saleAmount" value="Sell 200 coins" checked><span>Sell 200 coins</span></label>
-        <label><input type="radio" name="saleAmount" value="Sell $500 worth"><span>Sell $500 worth</span></label>
-        <label><input type="radio" name="saleAmount" value="Sell $1,000 worth"><span>Sell $1,000 worth</span></label>
-        <label><input type="radio" name="saleAmount" value="Custom amount"><span>Custom amount</span></label>
-      </div>
-      <div class="toggle-stack">
-        <label><input type="checkbox" checked> <span>Sell older lots first</span></label>
-        <label><input type="checkbox" checked> <span>Protect newer rewards when possible</span></label>
-        <label><input type="checkbox" checked> <span>Show tax-loss opportunities</span></label>
-      </div>
-      <div class="estimate-card">
-        <span class="mini-label">Estimate only</span>
-        <strong id="sell-summary">Selling older lots first may lower short-term exposure.</strong>
-        <p>No transaction is created. No wallet approval is requested.</p>
-      </div>
-      <div class="actions">
-        <button class="button secondary" type="button" data-back>Back</button>
-        <button class="button primary" type="button" data-next>See Best Options</button>
-      </div>
-    </section>
-
-    <section class="screen" data-screen="options" aria-labelledby="options-title">
-      <div class="section-head">
-        <p class="eyebrow">Best Options</p>
-        <h2 id="options-title">Plain-English planning choices.</h2>
-      </div>
-      <div class="card-grid">
-        <article class="card"><span class="mini-label">Estimate only</span><h3>Lowest estimated tax impact</h3><p>Review lots with lower estimated gains before choosing what to sell elsewhere.</p></article>
-        <article class="card"><span class="mini-label">Estimate only</span><h3>Harvest loss opportunity</h3><p>Some lots may show a loss that could offset gains if your tax professional agrees.</p></article>
-        <article class="card"><span class="mini-label">Estimate only</span><h3>Older lots first</h3><p>Older coins may be easier to plan around when long-term status is available.</p></article>
-        <article class="card"><span class="mini-label">Estimate only</span><h3>Hold newer rewards</h3><p>Newer staking rewards and airdrops can be protected from the first sale preview when possible.</p></article>
-      </div>
-      <div class="actions">
-        <button class="button secondary" type="button" data-back>Back</button>
-        <button class="button primary" type="button" data-next>Export / Save Proof</button>
-      </div>
-    </section>
-
-    <section class="screen" data-screen="export" aria-labelledby="export-title">
-      <div class="section-head">
-        <p class="eyebrow">Export / Save Proof</p>
-        <h2 id="export-title">Save a planning trail.</h2>
-        <p>Keep a proof-style sale plan for tax-prep conversations.</p>
-      </div>
-      <div class="export-stack">
-        <button class="button primary" type="button" id="save-plan-button">Save My Sale Plan</button>
-        <button class="button secondary" type="button" disabled>CPA Report - Coming soon</button>
-        <button class="button secondary" type="button" disabled>Transaction CSV - Coming soon</button>
-        <button class="button secondary" type="button" disabled>Tax Summary PDF - Coming soon</button>
-      </div>
-      <div class="notice" id="save-message" hidden>Sale plan saved in this app session.</div>
-      <p class="disclaimer">Estimates only. ShieldMendAI does not file taxes or replace a tax professional.</p>
-      <div class="actions">
-        <button class="button secondary" type="button" data-back>Back</button>
-        <button class="button primary" type="button" data-start-over>Start Over</button>
-      </div>
     </section>
   </main>
 
+  <nav class="bottom-nav" aria-label="Primary navigation">
+    <button class="active" type="button" data-nav="dashboard"><span>Home</span></button>
+    <button type="button" data-nav="wallet"><span>Wallet</span></button>
+    <button type="button" data-nav="planner"><span>Plan</span></button>
+    <button type="button" data-nav="lots"><span>Lots</span></button>
+    <button type="button" data-nav="reports"><span>Reports</span></button>
+  </nav>
+
+  <script src="walletconnect.local.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
