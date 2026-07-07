@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Invite-only ShieldMendAI beta access for read-only staking and tax planning.">
+  <title>Beta Access | ShieldMendAI</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    body.beta-page {
+      color: #eefcf4;
+      background:
+        linear-gradient(135deg, rgba(5, 28, 20, 0.94), rgba(8, 16, 24, 0.98)),
+        #06140f;
+    }
+
+    .beta-shell {
+      min-height: calc(100vh - 72px);
+      display: grid;
+      align-items: center;
+      padding: 72px 24px;
+    }
+
+    .beta-panel {
+      width: min(980px, 100%);
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: minmax(0, 1.08fr) minmax(320px, 0.92fr);
+      gap: 30px;
+      align-items: stretch;
+    }
+
+    .beta-copy,
+    .beta-form-card {
+      border: 1px solid rgba(78, 221, 146, 0.2);
+      border-radius: 8px;
+      background: rgba(6, 20, 15, 0.74);
+      box-shadow: 0 28px 90px rgba(0, 0, 0, 0.32);
+    }
+
+    .beta-copy {
+      padding: clamp(30px, 5vw, 52px);
+    }
+
+    .beta-copy h1 {
+      margin: 0 0 16px;
+      color: #ffffff;
+      font-size: clamp(42px, 7vw, 76px);
+      line-height: 0.96;
+      letter-spacing: 0;
+    }
+
+    .beta-copy p {
+      color: #b8d7c7;
+    }
+
+    .beta-form-card {
+      padding: 28px;
+    }
+
+    .beta-form {
+      display: grid;
+      gap: 14px;
+    }
+
+    .beta-form label {
+      color: #e9fff2;
+      font-weight: 850;
+    }
+
+    .beta-form input {
+      width: 100%;
+      min-height: 52px;
+      border: 1px solid rgba(78, 221, 146, 0.28);
+      border-radius: 8px;
+      padding: 0 14px;
+      background: rgba(255, 255, 255, 0.08);
+      color: #ffffff;
+      font: inherit;
+      font-weight: 760;
+    }
+
+    .beta-form input:focus {
+      outline: 3px solid rgba(78, 221, 146, 0.24);
+      border-color: rgba(78, 221, 146, 0.7);
+    }
+
+    .beta-form .button.primary {
+      background: linear-gradient(135deg, #22c55e, #14b8a6);
+      color: #03120c;
+      box-shadow: 0 18px 44px rgba(34, 197, 94, 0.24);
+    }
+
+    .beta-result {
+      min-height: 72px;
+      margin-top: 18px;
+      padding: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.06);
+      color: #d8f7e6;
+    }
+
+    .beta-result.is-error {
+      border-color: rgba(248, 113, 113, 0.36);
+      color: #fecaca;
+    }
+
+    .beta-result.is-success {
+      border-color: rgba(78, 221, 146, 0.42);
+      color: #bbf7d0;
+    }
+
+    .beta-principles {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 24px;
+    }
+
+    .beta-principles span {
+      padding: 8px 10px;
+      border: 1px solid rgba(78, 221, 146, 0.22);
+      border-radius: 8px;
+      color: #c8f5d9;
+      background: rgba(78, 221, 146, 0.08);
+      font-size: 13px;
+      font-weight: 850;
+    }
+
+    body.beta-page .site-header {
+      background: rgba(6, 20, 15, 0.82);
+      border-bottom-color: rgba(78, 221, 146, 0.18);
+    }
+
+    body.beta-page .brand-wordmark {
+      background: linear-gradient(135deg, #ffffff 18%, #4ade80 60%, #14b8a6 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    body.beta-page .site-nav a {
+      color: #d8f7e6;
+    }
+
+    body.beta-page .site-nav a:hover,
+    body.beta-page .site-nav a[aria-current="page"] {
+      color: #ffffff;
+      background: rgba(78, 221, 146, 0.1);
+    }
+
+    @media (max-width: 820px) {
+      .beta-panel {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body class="beta-page">
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="site-header">
+    <nav class="nav" aria-label="Primary">
+      <a class="brand brand-wordmark" href="index.html">ShieldMendAI</a>
+      <button class="menu-button" type="button" aria-label="Open navigation"><span></span></button>
+      <div class="site-nav">
+        <a href="how-it-works.html">How It Works</a>
+        <a href="pricing.html">Pricing</a>
+        <a href="security.html">Security</a>
+        <a href="faq.html">FAQ</a>
+        <a aria-current="page" class="button primary" href="beta.html">Beta Access</a>
+      </div>
+    </nav>
+  </header>
+
+  <main id="main" class="beta-shell">
+    <section class="beta-panel" aria-label="Invite-only beta access">
+      <div class="beta-copy">
+        <p class="eyebrow">Invite-only beta</p>
+        <h1>Stake smarter. Sell cleaner.</h1>
+        <p class="lead">ShieldMendAI beta access is reserved for invited friends, testers, and creators while the read-only staking and tax-planning workflow is being prepared.</p>
+        <p>Enter your access code to check eligibility. The code is verified by the backend API; this page does not contain real codes or APK links.</p>
+        <div class="beta-principles" aria-label="Safety principles">
+          <span>No seed phrase</span>
+          <span>No private keys</span>
+          <span>No custody</span>
+          <span>No approvals</span>
+          <span>No swaps</span>
+        </div>
+      </div>
+
+      <div class="beta-form-card">
+        <p class="eyebrow">Protect My Staking Rewards</p>
+        <h2>Unlock Beta</h2>
+        <form class="beta-form" data-beta-access-form>
+          <label for="beta-code">Access code</label>
+          <input id="beta-code" name="code" type="password" autocomplete="one-time-code" spellcheck="false" required>
+          <button class="button primary" type="submit">Unlock Beta</button>
+        </form>
+        <div class="beta-result" data-beta-access-result role="status" aria-live="polite">Enter your invite code to check beta access.</div>
+      </div>
+    </section>
+  </main>
+
+  <script src="site.js"></script>
+  <script>
+    const betaForm = document.querySelector("[data-beta-access-form]");
+    const betaResult = document.querySelector("[data-beta-access-result]");
+    const betaEndpoint = "https://api.shieldmendai.com/api/beta-access/verify";
+
+    const setBetaResult = (message, state = "") => {
+      betaResult.className = `beta-result${state ? ` is-${state}` : ""}`;
+      betaResult.textContent = message;
+    };
+
+    betaForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const code = new FormData(betaForm).get("code");
+      setBetaResult("Checking access...");
+
+      try {
+        const response = await fetch(betaEndpoint, {
+          method: "POST",
+          headers: {
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ code }),
+        });
+        const data = await response.json();
+
+        if (!data.accessGranted) {
+          setBetaResult(data.message || "That access code was not recognized.", "error");
+          return;
+        }
+
+        if (!data.apkAvailable || !data.downloadUrl) {
+          setBetaResult("Access approved. APK download is not available yet.", "success");
+          return;
+        }
+
+        betaResult.className = "beta-result is-success";
+        betaResult.innerHTML = "";
+        const message = document.createElement("p");
+        message.textContent = data.message || "Access approved. Your APK download is ready.";
+        const download = document.createElement("a");
+        download.className = "button primary";
+        download.href = data.downloadUrl;
+        download.rel = "noopener";
+        download.textContent = "Download APK";
+        betaResult.append(message, download);
+      } catch {
+        setBetaResult("Beta access could not be checked right now.", "error");
+      }
+    });
+  </script>
+</body>
+</html>

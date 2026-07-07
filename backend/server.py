@@ -9,6 +9,8 @@ read-only provider adapters and a real tax engine are implemented.
 from __future__ import annotations
 
 import json
+import hashlib
+import hmac
 import os
 import re
 import shlex
@@ -23,6 +25,7 @@ HOST = os.environ.get("SHIELDMEND_HOST", "127.0.0.1")
 PORT = int(os.environ.get("PORT") or os.environ.get("SHIELDMEND_PORT", "8787"))
 RPC_TIMEOUT_SECONDS = 5
 WALLET_RE = re.compile(r"^0x[a-fA-F0-9]{40}$")
+SHA256_HEX_RE = re.compile(r"^[a-fA-F0-9]{64}$")
 ALLOWED_CORS_ORIGINS = {
     "https://shieldmendai.com",
     "https://www.shieldmendai.com",
@@ -64,6 +67,95 @@ def allowed_cors_origin(origin: str | None) -> str | None:
     if LOCAL_DEV_ORIGIN_RE.fullmatch(origin):
         return origin
     return None
+
+
+def env_flag(name: str) -> bool:
+    return os.environ.get(name, "").strip().lower() in {"1", "true", "yes", "on"}
+
+
+def sha256_hex(value: str) -> str:
+    return hashlib.sha256(value.encode("utf-8")).hexdigest()
+
+
+def safe_hash_match(value: str, expected_hash: str) -> bool:
+    expected = expected_hash.strip().lower()
+    if not SHA256_HEX_RE.fullmatch(expected):
+        return False
+    return hmac.compare_digest(sha256_hex(value), expected)
+
+
+def parse_creator_code_hashes(value: str) -> list[tuple[str, str]]:
+    creators: list[tuple[str, str]] = []
+    for item in value.split(","):
+        raw_hash, separator, raw_label = item.strip().partition(":")
+        if not separator:
+            continue
+        code_hash = raw_hash.strip().lower()
+        label = raw_label.strip()
+        if SHA256_HEX_RE.fullmatch(code_hash) and label:
+            creators.append((code_hash, label[:80]))
+    return creators
+
+
+def configured_apk_download_url() -> str | None:
+    value = os.environ.get("APK_DOWNLOAD_URL", "").strip()
+    parsed = parse.urlparse(value)
+    if parsed.scheme in {"https", "http"} and parsed.netloc:
+        return value
+    return None
+
+
+def beta_access_response(payload: dict[str, Any]) -> dict[str, Any]:
+    if not env_flag("BETA_ACCESS_ENABLED"):
+        return {
+            "ok": False,
+            "accessGranted": False,
+            "message": "Beta access is not open yet.",
+        }
+
+    code = str(payload.get("code", "")).strip()
+    if not code:
+        return {
+            "ok": False,
+            "accessGranted": False,
+            "message": "That access code was not recognized.",
+        }
+
+    access_type: str | None = None
+    creator: str | None = None
+    if safe_hash_match(code, os.environ.get("BETA_FRIEND_CODE_HASH", "")):
+        access_type = "friend"
+    else:
+        for code_hash, label in parse_creator_code_hashes(os.environ.get("BETA_CREATOR_CODE_HASHES", "")):
+            if safe_hash_match(code, code_hash):
+                access_type = "creator"
+                creator = label
+                break
+
+    if access_type is None:
+        return {
+            "ok": False,
+            "accessGranted": False,
+            "message": "That access code was not recognized.",
+        }
+
+    download_url = configured_apk_download_url()
+    response: dict[str, Any] = {
+        "ok": True,
+        "accessGranted": True,
+        "accessType": access_type,
+        "apkAvailable": download_url is not None,
+        "message": (
+            "Access approved. Your APK download is ready."
+            if download_url
+            else "Access approved. APK download is not available yet."
+        ),
+    }
+    if creator:
+        response["creator"] = creator
+    if download_url:
+        response["downloadUrl"] = download_url
+    return response
 
 
 def split_rpc_env_value(value: str) -> list[str]:
@@ -366,6 +458,10 @@ class Handler(BaseHTTPRequestHandler):
 
         if self.path == "/api/simulate-sale":
             self.write_json(mock_sale(payload))
+            return
+
+        if self.path == "/api/beta-access/verify":
+            self.write_json(beta_access_response(payload))
             return
 
         self.write_json({"error": "not_found"}, status=404)

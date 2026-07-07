@@ -7,6 +7,7 @@ const drawerLinks = [
   ["Tax Pack", "tax-pack.html"],
   ["Archive Mode", "archive-mode.html"],
   ["FAQ", "faq.html"],
+  ["Beta Access", "beta.html"],
   ["Start Free Scan", "dashboard.html", "drawer-cta"],
 ];
 

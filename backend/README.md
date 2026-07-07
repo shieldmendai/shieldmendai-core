@@ -24,6 +24,10 @@ Supported placeholders are documented in `.env.example`:
 - `MORALIS_API_KEY`
 - `SIMPLEHASH_API_KEY`
 - `PORT`
+- `BETA_ACCESS_ENABLED`
+- `BETA_FRIEND_CODE_HASH`
+- `BETA_CREATOR_CODE_HASHES`
+- `APK_DOWNLOAD_URL`
 
 The server does not expose these values and does not require them to start. `BASE_RPC_URL` and `BASE_RPC_URLS`, when present, are parsed as read-only JSON-RPC candidates. Comma-separated and space-separated candidate lists are supported. Only `http://` and `https://` candidates are used.
 
@@ -50,6 +54,7 @@ SHIELDMEND_HOST=127.0.0.1 PORT=8787 python3 backend/server.py
 - `GET /api/rpc-diagnostics`
 - `POST /api/scan-wallet`
 - `POST /api/simulate-sale`
+- `POST /api/beta-access/verify`
 
 Example scan request:
 
@@ -66,6 +71,50 @@ curl -s http://127.0.0.1:8787/api/simulate-sale \
   -H 'Content-Type: application/json' \
   -d '{"wallet":"0x7a000000000000000000000000000000000091F","token":"ETH","amount":1.25,"salePriceUsd":2500}'
 ```
+
+Example beta access verification request:
+
+```bash
+curl -s http://127.0.0.1:8787/api/beta-access/verify \
+  -H 'Content-Type: application/json' \
+  -d '{"code":"example-code"}'
+```
+
+## Beta Access Gate
+
+`POST /api/beta-access/verify` checks invite codes server-side. It never requires private keys, seed phrases, wallet approvals, custody, swaps, or trading actions.
+
+Keep real access codes out of git. Do not commit plaintext codes, hashed production codes, or APK URLs unless the URL is intentionally public. The private deployment values belong in `backend/.env`.
+
+Beta access environment variables:
+
+- `BETA_ACCESS_ENABLED=false` keeps the endpoint closed with a plain-English "not open yet" message.
+- `BETA_FRIEND_CODE_HASH=` stores a SHA-256 hash for one friend/family/tester code.
+- `BETA_CREATOR_CODE_HASHES=` stores comma-separated `sha256Hash:creatorLabel` pairs.
+- `APK_DOWNLOAD_URL=` stores the APK URL only when an APK is ready to release behind verified access.
+
+Generate a SHA-256 hash for a code without printing or committing the real code:
+
+```bash
+printf '%s' 'replace-with-code' | sha256sum
+```
+
+Use only the 64-character hash output. Example shape only:
+
+```ini
+BETA_ACCESS_ENABLED=true
+BETA_FRIEND_CODE_HASH=64_character_sha256_hash_here
+BETA_CREATOR_CODE_HASHES=64_character_sha256_hash_here:Creator Label
+APK_DOWNLOAD_URL=
+```
+
+After changing `backend/.env` on the VPS, restart the service:
+
+```bash
+systemctl restart shieldmendai-backend
+```
+
+If `APK_DOWNLOAD_URL` is empty, a valid code returns access approved while clearly saying the APK download is not available yet.
 
 ## Current Status
 
