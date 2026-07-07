@@ -22,7 +22,7 @@
   <main class="app-shell is-booting" id="app">
     <header class="app-header">
       <div>
-        <p class="eyebrow">Mobile Beta 0.1</p>
+        <p class="eyebrow">Wallet dashboard</p>
         <h1>ShieldMendAI</h1>
       </div>
       <div class="header-actions">
@@ -34,8 +34,8 @@
     <section class="screen active" data-screen="dashboard" aria-labelledby="dashboard-title">
       <div class="dashboard-hero">
         <div>
-          <p class="eyebrow">Wallet planning dashboard</p>
-          <h2 id="dashboard-title">Know what you might owe before you sell.</h2>
+          <p class="eyebrow">Portfolio and tax preview</p>
+          <h2 id="dashboard-title">Your wallet tax picture.</h2>
         </div>
         <div class="hero-badge">No funds can move</div>
       </div>
@@ -44,20 +44,20 @@
 
       <div class="snapshot-grid" aria-label="Portfolio snapshot">
         <article class="metric-card">
-          <span>Total estimated value</span>
+          <span>Wallet value</span>
           <strong id="metric-value">Beta preview</strong>
         </article>
         <article class="metric-card">
-          <span>Unrealized gain/loss</span>
-          <strong id="metric-gain">Beta preview</strong>
+          <span>Profit/Loss</span>
+          <strong id="metric-gain">Coming with full scan</strong>
         </article>
         <article class="metric-card">
           <span>Tax lots</span>
-          <strong id="metric-lots">Beta preview</strong>
+          <strong id="metric-lots">Planning preview</strong>
         </article>
         <article class="metric-card">
-          <span>Rewards & airdrops</span>
-          <strong id="metric-rewards">Beta preview</strong>
+          <span>Rewards</span>
+          <strong id="metric-rewards">Staking/airdrops tracking</strong>
         </article>
       </div>
 
@@ -65,10 +65,8 @@
         <h3>Quick actions</h3>
       </div>
       <div class="quick-grid">
-        <button type="button" data-nav="wallet">Add Wallet</button>
         <button type="button" data-nav="planner">What If I Sell?</button>
-        <button type="button" data-nav="planner" data-preset="loss">Tax-Loss Harvest</button>
-        <button type="button" data-nav="lots">View Lots</button>
+        <button type="button" data-nav="lots">View Tax Lots</button>
         <button type="button" data-nav="lots" data-bucket="rewards">Rewards/Airdrops</button>
         <button type="button" data-nav="reports">Export Report</button>
       </div>
@@ -92,7 +90,7 @@
 
       <form class="form-stack" id="wallet-form">
         <label>
-          <span>Network/type</span>
+          <span>Choose chain</span>
           <select id="wallet-network" name="network">
             <optgroup label="EVM">
               <option value="base">Base</option>

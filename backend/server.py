@@ -33,6 +33,9 @@ APK_CONTENT_TYPE = "application/vnd.android.package-archive"
 WALLET_RE = re.compile(r"^0x[a-fA-F0-9]{40}$")
 SHA256_HEX_RE = re.compile(r"^[a-fA-F0-9]{64}$")
 ALLOWED_CORS_ORIGINS = {
+    "capacitor://localhost",
+    "http://localhost",
+    "https://localhost",
     "https://shieldmendai.com",
     "https://www.shieldmendai.com",
 }

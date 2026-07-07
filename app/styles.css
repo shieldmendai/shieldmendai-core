@@ -320,6 +320,35 @@ p {
   margin: 0;
 }
 
+.card-actions {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+.scan-details {
+  display: grid;
+  gap: 8px;
+}
+
+.details-toggle {
+  justify-self: start;
+  min-height: 34px;
+  border: 1px solid rgba(124, 58, 237, 0.2);
+  border-radius: 999px;
+  padding: 0 12px;
+  background: #ffffff;
+  color: var(--purple-strong);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.scan-details p {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 800;
+}
+
 .snapshot-grid,
 .quick-grid,
 .bucket-grid {
@@ -623,6 +652,10 @@ select:focus {
   }
 
   .button-row {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .card-actions {
     grid-template-columns: 1fr 1fr;
   }
 }

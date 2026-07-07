@@ -9,6 +9,7 @@ const STORAGE_KEY = "shieldmendai.mobile.beta.state";
 const EVM_RE = /^0x[a-fA-F0-9]{40}$/;
 const SOLANA_RE = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
 const EVM_NETWORKS = new Set(["base", "ethereum", "arbitrum", "optimism", "polygon"]);
+const SCAN_TIMEOUT_MS = 14000;
 const BOOT_LINES = [
   "Checking safe wallet view...",
   "Loading dashboard...",
@@ -20,6 +21,7 @@ const state = {
   wallet: null,
   scanStatus: "none",
   scanMessage: "Add a public wallet address or import address with WalletConnect.",
+  scanDetailsOpen: false,
   scan: null,
   planner: {
     mode: "coins",
@@ -93,6 +95,22 @@ function bindEvents() {
   });
 
   elements.walletConnectButton.addEventListener("click", importWalletConnectAddress);
+
+  document.addEventListener("click", (event) => {
+    const target = event.target.closest("[data-action]");
+    if (!target) return;
+    if (target.dataset.action === "add-wallet") {
+      showScreen("wallet");
+    }
+    if (target.dataset.action === "retry-scan" && state.wallet && state.wallet.type === "evm") {
+      runWalletScan(state.wallet.address);
+    }
+    if (target.dataset.action === "toggle-scan-details") {
+      state.scanDetailsOpen = !state.scanDetailsOpen;
+      persistState();
+      renderWalletCards();
+    }
+  });
 
   document.querySelectorAll("[data-plan-preset]").forEach((button) => {
     button.addEventListener("click", () => {
@@ -168,6 +186,7 @@ function bindEvents() {
     state.scan = null;
     state.scanStatus = "none";
     state.scanMessage = "Add a public wallet address or import address with WalletConnect.";
+    state.scanDetailsOpen = false;
     state.savedPlan = false;
     elements.walletAddress.value = "";
     elements.saveMessage.hidden = true;
@@ -271,26 +290,26 @@ async function runWalletScan(address) {
 
   try {
     const [status, scan] = await Promise.all([
-      fetchJson(ENDPOINTS.status),
+      fetchJson(ENDPOINTS.status, {}, SCAN_TIMEOUT_MS),
       fetchJson(ENDPOINTS.scanWallet, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ wallet: address })
-      })
+      }, SCAN_TIMEOUT_MS)
     ]);
 
     state.scan = { status, scan };
-    if (scan.mode === "live-basic") {
+    if (isBasicScan(scan)) {
       state.scanStatus = "basic-active";
-      state.scanMessage = "Public address added. Basic Base scan active. Full token, profit/loss, and tax-lot scanning is being expanded in Beta.";
+      state.scanMessage = "Basic scan active. Full holdings, profit/loss, and tax-lot data is being expanded in Beta.";
     } else {
       state.scanStatus = "beta-preview";
-      state.scanMessage = "Public address added. Full scan data unavailable in Beta, so ShieldMendAI is showing a planning preview.";
+      state.scanMessage = "Wallet added. Full holdings, profit/loss, and tax-lot data is being expanded in Beta.";
     }
   } catch (error) {
-    state.scan = { error: String(error) };
-    state.scanStatus = "failed";
-    state.scanMessage = "Wallet address was added, but the live scan could not complete. Try again.";
+    state.scan = { error: scanErrorDetails(error) };
+    state.scanStatus = "retry";
+    state.scanMessage = "Your address is saved. No approval was requested and no funds can move.";
   } finally {
     persistState();
     render();
@@ -303,7 +322,7 @@ async function importWalletConnectAddress() {
   hideWalletConnectMessage();
 
   if (!projectId || projectId === "YOUR_REOWN_PROJECT_ID") {
-    showWalletConnectMessage("Connect Wallet needs a Reown Project ID before it can open.");
+    showWalletConnectMessage("WalletConnect setup needed before wallet import can open.");
     return;
   }
 
@@ -410,22 +429,59 @@ function hideWalletConnectMessage() {
   elements.walletConnectMessage.textContent = "";
 }
 
-async function fetchJson(url, options = {}) {
-  const response = await fetch(url, {
-    cache: "no-store",
-    ...options
-  });
+function isBasicScan(scan) {
+  const mode = String(scan && (scan.mode || scan.walletScan || scan.status || "")).toLowerCase();
+  return mode === "live-basic" || mode === "basic" || mode.includes("basic") || scan?.ok === true;
+}
 
-  if (!response.ok) {
-    throw new Error(`${url} returned ${response.status}`);
+async function fetchJson(url, options = {}, timeoutMs = SCAN_TIMEOUT_MS) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  let response;
+  try {
+    response = await fetch(url, {
+      cache: "no-store",
+      signal: controller.signal,
+      ...options
+    });
+  } catch (error) {
+    throw markScanError(error, error.name === "AbortError" ? "timeout" : "network");
+  } finally {
+    clearTimeout(timeout);
   }
 
+  if (!response.ok) {
+    const errorPayload = await readResponsePayload(response);
+    const error = new Error(`${url} returned ${response.status}`);
+    error.httpStatus = response.status;
+    error.payload = errorPayload;
+    throw error;
+  }
+
+  return readResponsePayload(response);
+}
+
+async function readResponsePayload(response) {
   const contentType = response.headers.get("content-type") || "";
   if (contentType.includes("application/json")) {
     return response.json();
   }
 
   return response.text();
+}
+
+function markScanError(error, type) {
+  error.errorType = type;
+  return error;
+}
+
+function scanErrorDetails(error) {
+  return {
+    type: error.errorType || "request_error",
+    httpStatus: error.httpStatus || null,
+    message: friendlyError(error),
+    payload: error.payload || null
+  };
 }
 
 function render() {
@@ -446,16 +502,23 @@ function walletStatusMarkup() {
   if (!state.wallet) {
     return `
       <div class="status-line">
-        <strong>No address added</strong>
+        <strong>Add wallet to preview your tax picture</strong>
         <span class="address-pill">Safe wallet view</span>
       </div>
-      <p class="status-copy">Add a public wallet address or import address with WalletConnect.</p>
+      <div class="card-actions">
+        <button class="button primary" type="button" data-action="add-wallet">Add Public Address</button>
+        <button class="button secondary" type="button" data-action="add-wallet">Connect Wallet</button>
+      </div>
       <p class="status-copy">No approval needed. No funds can move.</p>
     `;
   }
 
   const source = escapeHtml(state.wallet.source);
   const address = escapeHtml(shortAddress(state.wallet.address));
+  const retry = state.scanStatus === "retry"
+    ? `<button class="button secondary" type="button" data-action="retry-scan">Retry Scan</button>`
+    : "";
+  const details = scanDetailsMarkup();
   return `
     <div class="status-line">
       <strong>${statusTitle()}</strong>
@@ -463,6 +526,8 @@ function walletStatusMarkup() {
     </div>
     <p class="status-copy">Source: ${source}</p>
     <p class="status-copy">${escapeHtml(state.scanMessage)}</p>
+    ${retry}
+    ${details}
     <p class="status-copy">No approval needed. No funds can move.</p>
   `;
 }
@@ -470,11 +535,29 @@ function walletStatusMarkup() {
 function statusTitle() {
   if (!state.wallet) return "No address added";
   if (state.scanStatus === "scanning") return "Scanning public wallet data";
-  if (state.scanStatus === "basic-active") return "Basic Base scan active";
-  if (state.scanStatus === "failed") return "Scan failed";
-  if (state.scanStatus === "solana-preview") return "Public address added";
+  if (state.scanStatus === "basic-active") return "Wallet added";
+  if (state.scanStatus === "retry") return "Live scan needs a retry";
+  if (state.scanStatus === "solana-preview") return "Wallet added";
   if (state.wallet.source === "WalletConnect address import") return "Wallet address imported";
-  return "Public address added";
+  return "Wallet added";
+}
+
+function scanDetailsMarkup() {
+  const scan = state.scan && state.scan.scan;
+  const error = state.scan && state.scan.error;
+  if (!scan && !error) return "";
+  const lines = [];
+  if (scan && scan.mode) lines.push(`Scan mode: ${scan.mode}`);
+  if (scan && scan.chainId) lines.push(`Chain ID: ${scan.chainId}`);
+  if (error && error.httpStatus) lines.push(`HTTP status: ${error.httpStatus}`);
+  if (error && error.type) lines.push(`Error type: ${error.type}`);
+  if (!lines.length) return "";
+  return `
+    <div class="scan-details">
+      <button class="details-toggle" type="button" data-action="toggle-scan-details">Details</button>
+      ${state.scanDetailsOpen ? `<p>${escapeHtml(lines.join(" | "))}</p>` : ""}
+    </div>
+  `;
 }
 
 function renderMetrics() {
@@ -484,9 +567,9 @@ function renderMetrics() {
   const totalValue = tokens.reduce((sum, token) => sum + Number(token.estimatedValueUsd || 0), 0);
 
   elements.metricValue.textContent = totalValue > 0 ? formatUsd(totalValue) : "Beta preview";
-  elements.metricLots.textContent = lots.length > 0 ? `${lots.length} preview lots` : "Beta preview";
-  elements.metricGain.textContent = "Beta preview";
-  elements.metricRewards.textContent = state.scanStatus === "basic-active" ? "Coming next" : "Beta preview";
+  elements.metricLots.textContent = lots.length > 0 ? `${lots.length} preview lots` : "Planning preview";
+  elements.metricGain.textContent = "Coming with full scan";
+  elements.metricRewards.textContent = "Staking/airdrops tracking";
 
   if (scan && scan.nativeBalanceEth) {
     elements.metricValue.textContent = `${Number(scan.nativeBalanceEth).toFixed(5)} ETH`;
@@ -529,6 +612,7 @@ function loadState() {
         wallet: saved.wallet || null,
         scanStatus: saved.scanStatus || state.scanStatus,
         scanMessage: saved.scanMessage || state.scanMessage,
+        scanDetailsOpen: Boolean(saved.scanDetailsOpen),
         scan: saved.scan || null,
         planner: { ...state.planner, ...(saved.planner || {}) },
         settings: { ...state.settings, ...(saved.settings || {}) },
@@ -545,6 +629,7 @@ function persistState() {
     wallet: state.wallet,
     scanStatus: state.scanStatus,
     scanMessage: state.scanMessage,
+    scanDetailsOpen: state.scanDetailsOpen,
     scan: state.scan,
     planner: state.planner,
     settings: state.settings,
