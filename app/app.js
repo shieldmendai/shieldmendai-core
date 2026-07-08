@@ -10,6 +10,8 @@ const EVM_RE = /^0x[a-fA-F0-9]{40}$/;
 const SOLANA_RE = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
 const EVM_NETWORKS = new Set(["base", "ethereum", "arbitrum", "optimism", "polygon"]);
 const SCAN_TIMEOUT_MS = 14000;
+const PRICING_URL = "https://shieldmendai.com/pricing.html";
+const APP_VERSION = "Beta 0.1";
 const BOOT_LINES = [
   "Checking safe wallet view...",
   "Loading dashboard...",
@@ -36,6 +38,7 @@ const state = {
     incomeRange: "Under $50k",
     dependents: "No"
   },
+  taxProfileSaved: false,
   savedPlan: false
 };
 
@@ -66,6 +69,8 @@ const elements = {
   showLoss: document.querySelector("#show-loss"),
   bucketDetail: document.querySelector("#bucket-detail"),
   settingsForm: document.querySelector("#settings-form"),
+  taxProfileMessage: document.querySelector("#tax-profile-message"),
+  saveTaxProfileButton: document.querySelector("#save-tax-profile-button"),
   savePlanButton: document.querySelector("#save-plan-button"),
   saveMessage: document.querySelector("#save-message"),
   clearDataButton: document.querySelector("#clear-data-button")
@@ -109,6 +114,9 @@ function bindEvents() {
       state.scanDetailsOpen = !state.scanDetailsOpen;
       persistState();
       renderWalletCards();
+    }
+    if (target.dataset.action === "open-pricing") {
+      openPricingPage();
     }
   });
 
@@ -171,7 +179,15 @@ function bindEvents() {
 
   elements.settingsForm.addEventListener("change", () => {
     state.settings = Object.fromEntries(new FormData(elements.settingsForm).entries());
+    state.taxProfileSaved = false;
+    elements.taxProfileMessage.hidden = true;
+  });
+
+  elements.saveTaxProfileButton.addEventListener("click", () => {
+    state.settings = Object.fromEntries(new FormData(elements.settingsForm).entries());
+    state.taxProfileSaved = true;
     persistState();
+    renderSettings();
   });
 
   elements.savePlanButton.addEventListener("click", () => {
@@ -187,9 +203,11 @@ function bindEvents() {
     state.scanStatus = "none";
     state.scanMessage = "Add a public wallet address or import address with WalletConnect.";
     state.scanDetailsOpen = false;
+    state.taxProfileSaved = false;
     state.savedPlan = false;
     elements.walletAddress.value = "";
     elements.saveMessage.hidden = true;
+    elements.taxProfileMessage.hidden = true;
     persistState();
     render();
   });
@@ -299,7 +317,12 @@ async function runWalletScan(address) {
     ]);
 
     state.scan = { status, scan };
-    if (isBasicScan(scan)) {
+    if (isTokenScan(scan)) {
+      state.scanStatus = "token-active";
+      state.scanMessage = scan.cached
+        ? "Updated recently. Showing your latest saved scan."
+        : "Token scan active.";
+    } else if (isBasicScan(scan)) {
       state.scanStatus = "basic-active";
       state.scanMessage = "Basic scan active. Full holdings, profit/loss, and tax-lot data is being expanded in Beta.";
     } else {
@@ -431,7 +454,12 @@ function hideWalletConnectMessage() {
 
 function isBasicScan(scan) {
   const mode = String(scan && (scan.mode || scan.walletScan || scan.status || "")).toLowerCase();
-  return mode === "live-basic" || mode === "basic" || mode.includes("basic") || scan?.ok === true;
+  return mode === "live-basic" || mode === "basic" || mode.includes("basic");
+}
+
+function isTokenScan(scan) {
+  const mode = String(scan && (scan.scanMode || scan.mode || "")).toLowerCase();
+  return mode === "alchemy-token-balances";
 }
 
 async function fetchJson(url, options = {}, timeoutMs = SCAN_TIMEOUT_MS) {
@@ -519,6 +547,7 @@ function walletStatusMarkup() {
     ? `<button class="button secondary" type="button" data-action="retry-scan">Retry Scan</button>`
     : "";
   const details = scanDetailsMarkup();
+  const tokenSection = tokenBalancesMarkup();
   return `
     <div class="status-line">
       <strong>${statusTitle()}</strong>
@@ -528,6 +557,7 @@ function walletStatusMarkup() {
     <p class="status-copy">${escapeHtml(state.scanMessage)}</p>
     ${retry}
     ${details}
+    ${tokenSection}
     <p class="status-copy">No approval needed. No funds can move.</p>
   `;
 }
@@ -535,6 +565,7 @@ function walletStatusMarkup() {
 function statusTitle() {
   if (!state.wallet) return "No address added";
   if (state.scanStatus === "scanning") return "Scanning public wallet data";
+  if (state.scanStatus === "token-active") return "Token scan active";
   if (state.scanStatus === "basic-active") return "Wallet added";
   if (state.scanStatus === "retry") return "Live scan needs a retry";
   if (state.scanStatus === "solana-preview") return "Wallet added";
@@ -547,8 +578,10 @@ function scanDetailsMarkup() {
   const error = state.scan && state.scan.error;
   if (!scan && !error) return "";
   const lines = [];
-  if (scan && scan.mode) lines.push(`Scan mode: ${scan.mode}`);
+  if (scan && (scan.scanMode || scan.mode)) lines.push(`Scan mode: ${scan.scanMode || scan.mode}`);
   if (scan && scan.chainId) lines.push(`Chain ID: ${scan.chainId}`);
+  if (scan && Number.isFinite(Number(scan.tokenCount))) lines.push(`Tokens: ${scan.tokenCount}`);
+  if (scan && typeof scan.cached === "boolean") lines.push(`Cached: ${scan.cached ? "yes" : "no"}`);
   if (error && error.httpStatus) lines.push(`HTTP status: ${error.httpStatus}`);
   if (error && error.type) lines.push(`Error type: ${error.type}`);
   if (!lines.length) return "";
@@ -557,6 +590,53 @@ function scanDetailsMarkup() {
       <button class="details-toggle" type="button" data-action="toggle-scan-details">Details</button>
       ${state.scanDetailsOpen ? `<p>${escapeHtml(lines.join(" | "))}</p>` : ""}
     </div>
+  `;
+}
+
+function tokenBalancesMarkup() {
+  const scan = state.scan && state.scan.scan;
+  if (!isTokenScan(scan)) {
+    if (state.scanStatus === "basic-active") {
+      return `<div class="token-summary muted">Basic wallet scan active. Token balances are temporarily unavailable.</div>`;
+    }
+    return "";
+  }
+
+  const tokens = Array.isArray(scan.tokens) ? scan.tokens : [];
+  const tokenCount = Number.isFinite(Number(scan.tokenCount)) ? Number(scan.tokenCount) : tokens.length;
+  if (!tokens.length) {
+    return `<div class="token-summary">No Base ERC-20 balances found yet.</div>`;
+  }
+
+  return `
+    <section class="token-panel" aria-label="Base token balances">
+      <div class="token-summary">
+        <strong>${tokenCount} Base token balances found</strong>
+        <span>${scan.cached ? "Updated recently. Showing your latest saved scan." : "Token scan active."}</span>
+      </div>
+      <div class="token-list">
+        ${tokens.map(tokenCardMarkup).join("")}
+      </div>
+    </section>
+  `;
+}
+
+function tokenCardMarkup(token) {
+  const symbol = escapeHtml(token.symbol || "Token");
+  const name = escapeHtml(token.name || "Base token");
+  const balance = escapeHtml(token.formattedBalance || "0");
+  const contract = escapeHtml(shortAddress(token.contractAddress || ""));
+  return `
+    <article class="token-card">
+      <div>
+        <strong>${symbol}</strong>
+        <span>${name}</span>
+      </div>
+      <div>
+        <strong>${balance}</strong>
+        <span>${contract}</span>
+      </div>
+    </article>
   `;
 }
 
@@ -571,7 +651,13 @@ function renderMetrics() {
   elements.metricGain.textContent = "Coming with full scan";
   elements.metricRewards.textContent = "Staking/airdrops tracking";
 
-  if (scan && scan.nativeBalanceEth) {
+  if (isTokenScan(scan)) {
+    const tokenCount = Number.isFinite(Number(scan.tokenCount)) ? Number(scan.tokenCount) : tokens.length;
+    elements.metricValue.textContent = `${tokenCount} Base tokens`;
+    elements.metricGain.textContent = "Estimate before selling";
+    elements.metricLots.textContent = "Tax lots coming next";
+    elements.metricRewards.textContent = "Rewards planning ready";
+  } else if (scan && scan.nativeBalanceEth) {
     elements.metricValue.textContent = `${Number(scan.nativeBalanceEth).toFixed(5)} ETH`;
   }
 }
@@ -602,6 +688,7 @@ function renderSettings() {
     const field = elements.settingsForm.elements[name];
     if (field) field.value = value;
   });
+  elements.taxProfileMessage.hidden = !state.taxProfileSaved;
 }
 
 function loadState() {
@@ -616,6 +703,7 @@ function loadState() {
         scan: saved.scan || null,
         planner: { ...state.planner, ...(saved.planner || {}) },
         settings: { ...state.settings, ...(saved.settings || {}) },
+        taxProfileSaved: Boolean(saved.taxProfileSaved),
         savedPlan: Boolean(saved.savedPlan)
       });
     }
@@ -633,9 +721,14 @@ function persistState() {
     scan: state.scan,
     planner: state.planner,
     settings: state.settings,
+    taxProfileSaved: state.taxProfileSaved,
     savedPlan: state.savedPlan
   };
   localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
+}
+
+function openPricingPage() {
+  window.open(PRICING_URL, "_blank", "noopener,noreferrer");
 }
 
 function shortAddress(address) {

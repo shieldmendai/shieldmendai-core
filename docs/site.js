@@ -119,6 +119,41 @@ document.querySelectorAll(".accordion-trigger").forEach((trigger) => {
   });
 });
 
+const pricingModal = document.querySelector("[data-pricing-modal]");
+
+if (pricingModal) {
+  const title = pricingModal.querySelector("#pricing-modal-title");
+  const closeControls = pricingModal.querySelectorAll("[data-pricing-close]");
+  let lastPlanButton = null;
+
+  const openPricingModal = (planName, button) => {
+    lastPlanButton = button;
+    if (title) title.textContent = `${planName} plan details`;
+    pricingModal.hidden = false;
+    document.body.classList.add("menu-open");
+    const closeButton = pricingModal.querySelector(".pricing-modal__close");
+    if (closeButton) closeButton.focus({ preventScroll: true });
+  };
+
+  const closePricingModal = () => {
+    pricingModal.hidden = true;
+    document.body.classList.remove("menu-open");
+    if (lastPlanButton) lastPlanButton.focus({ preventScroll: true });
+  };
+
+  document.querySelectorAll("[data-plan-info]").forEach((button) => {
+    button.addEventListener("click", () => openPricingModal(button.dataset.planInfo || "Selected", button));
+  });
+
+  closeControls.forEach((control) => {
+    control.addEventListener("click", closePricingModal);
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !pricingModal.hidden) closePricingModal();
+  });
+}
+
 const backendStatusCard = document.querySelector("[data-backend-status]");
 
 if (backendStatusCard) {

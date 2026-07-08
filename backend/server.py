@@ -16,6 +16,7 @@ import os
 import re
 import shlex
 import socket
+import threading
 import time
 from decimal import Decimal
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -30,6 +31,10 @@ RPC_TIMEOUT_SECONDS = 5
 BETA_DOWNLOAD_TOKEN_SECONDS = 30 * 60
 BETA_APK_FILENAME = "ShieldMendAI-beta-0.1-debug.apk"
 APK_CONTENT_TYPE = "application/vnd.android.package-archive"
+WALLET_SCAN_CACHE_TTL_SECONDS = 5 * 60
+WALLET_SCAN_COOLDOWN_SECONDS = 2 * 60
+WALLET_SCAN_DAILY_LIMIT = 100
+TOKEN_METADATA_CACHE_TTL_SECONDS = 30 * 24 * 60 * 60
 WALLET_RE = re.compile(r"^0x[a-fA-F0-9]{40}$")
 SHA256_HEX_RE = re.compile(r"^[a-fA-F0-9]{64}$")
 ALLOWED_CORS_ORIGINS = {
@@ -40,6 +45,29 @@ ALLOWED_CORS_ORIGINS = {
     "https://www.shieldmendai.com",
 }
 LOCAL_DEV_ORIGIN_RE = re.compile(r"^http://(localhost|127\.0\.0\.1)(:\d{1,5})?$")
+BASE_CHAIN_ID = 8453
+WALLET_SCAN_CACHE: dict[str, dict[str, Any]] = {}
+WALLET_SCAN_ACTIVITY: dict[str, dict[str, Any]] = {}
+TOKEN_METADATA_CACHE: dict[str, dict[str, Any]] = {}
+CACHE_LOCK = threading.Lock()
+
+
+def load_env_file() -> None:
+    env_path = Path(__file__).resolve().parent / ".env"
+    if not env_path.is_file():
+        return
+    for raw_line in env_path.read_text(errors="ignore").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        name, value = line.split("=", 1)
+        name = name.strip()
+        if not name or name in os.environ:
+            continue
+        os.environ[name] = value.strip().strip("'\"")
+
+
+load_env_file()
 
 
 class RpcError(RuntimeError):
@@ -58,6 +86,8 @@ def provider_configured() -> bool:
         for name in (
             "BASE_RPC_URL",
             "BASE_RPC_URLS",
+            "ALCHEMY_BASE_API_KEY",
+            "ALCHEMY_BASE_RPC_URL",
             "BASESCAN_API_KEY",
             "GOPLUS_API_KEY",
             "COINGECKO_API_KEY",
@@ -350,6 +380,66 @@ def rpc_call(rpc_url: str, method: str, params: list[Any]) -> Any:
     return payload["result"]
 
 
+def rpc_batch_call(rpc_url: str, calls: list[tuple[str, list[Any]]]) -> list[Any]:
+    if not rpc_url:
+        raise RpcError("not_configured")
+    if not calls:
+        return []
+
+    body = json.dumps(
+        [
+            {
+                "jsonrpc": "2.0",
+                "id": index,
+                "method": method,
+                "params": params,
+            }
+            for index, (method, params) in enumerate(calls, start=1)
+        ]
+    ).encode("utf-8")
+    rpc_request = request.Request(
+        rpc_url,
+        data=body,
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+
+    try:
+        with request.urlopen(rpc_request, timeout=RPC_TIMEOUT_SECONDS) as response:
+            raw = response.read(5_000_000)
+    except TimeoutError as exc:
+        raise RpcError("timeout") from exc
+    except socket.timeout as exc:
+        raise RpcError("timeout") from exc
+    except error.HTTPError as exc:
+        raise RpcError("http_error") from exc
+    except error.URLError as exc:
+        reason = getattr(exc, "reason", None)
+        if isinstance(reason, TimeoutError | socket.timeout):
+            raise RpcError("timeout") from exc
+        raise RpcError("url_error") from exc
+    except OSError as exc:
+        raise RpcError("network_error") from exc
+
+    try:
+        payload = json.loads(raw.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise RpcError("invalid_json") from exc
+
+    if not isinstance(payload, list):
+        raise RpcError("invalid_response")
+
+    by_id = {item.get("id"): item for item in payload if isinstance(item, dict)}
+    results: list[Any] = []
+    for index in range(1, len(calls) + 1):
+        item = by_id.get(index)
+        if not item or item.get("error") or "result" not in item:
+            results.append(None)
+        else:
+            results.append(item["result"])
+    return results
+
+
 def get_chain_id(rpc_url: str) -> int:
     result = rpc_call(rpc_url, "eth_chainId", [])
     if not isinstance(result, str) or not result.startswith("0x"):
@@ -373,6 +463,251 @@ def get_native_balance(rpc_url: str, wallet: str) -> int:
 def wei_to_eth(wei: int) -> str:
     value = Decimal(wei) / Decimal(10**18)
     return format(value, "f")
+
+
+def alchemy_base_rpc_url() -> str:
+    value = os.environ.get("ALCHEMY_BASE_RPC_URL", "").strip()
+    parsed = parse.urlparse(value)
+    if parsed.scheme in ("http", "https") and parsed.netloc:
+        return value
+    return ""
+
+
+def alchemy_base_configured() -> bool:
+    return bool(alchemy_base_rpc_url())
+
+
+def hex_quantity_to_int(value: Any) -> int:
+    if not isinstance(value, str):
+        return 0
+    try:
+        if value.startswith("0x"):
+            return int(value, 16)
+        return int(value)
+    except ValueError:
+        return 0
+
+
+def safe_decimals(value: Any) -> int:
+    if isinstance(value, int):
+        decimals = value
+    elif isinstance(value, str) and value.startswith("0x"):
+        decimals = hex_quantity_to_int(value)
+    else:
+        try:
+            decimals = int(value)
+        except (TypeError, ValueError):
+            decimals = 18
+    return decimals if 0 <= decimals <= 255 else 18
+
+
+def format_token_balance(raw_balance: int, decimals: int) -> str:
+    value = Decimal(raw_balance) / (Decimal(10) ** Decimal(decimals))
+    formatted = format(value.normalize(), "f")
+    if "." in formatted:
+        formatted = formatted.rstrip("0").rstrip(".")
+    return formatted or "0"
+
+
+def fallback_token_metadata(contract_address: str) -> dict[str, Any]:
+    short = short_contract_address(contract_address)
+    return {
+        "symbol": short,
+        "name": f"Token {short}",
+        "decimals": 18,
+    }
+
+
+def short_contract_address(address: str) -> str:
+    if len(address) <= 14:
+        return address
+    return f"{address[:6]}...{address[-4:]}"
+
+
+def cached_token_metadata(contract_address: str) -> dict[str, Any] | None:
+    key = contract_address.lower()
+    now = time.time()
+    with CACHE_LOCK:
+        cached = TOKEN_METADATA_CACHE.get(key)
+        if cached and now - float(cached["storedAt"]) < TOKEN_METADATA_CACHE_TTL_SECONDS:
+            return dict(cached["metadata"])
+    return None
+
+
+def store_token_metadata(contract_address: str, metadata: dict[str, Any]) -> None:
+    key = contract_address.lower()
+    with CACHE_LOCK:
+        TOKEN_METADATA_CACHE[key] = {
+            "storedAt": time.time(),
+            "metadata": dict(metadata),
+        }
+
+
+def normalize_token_metadata(contract_address: str, payload: Any) -> dict[str, Any]:
+    fallback = fallback_token_metadata(contract_address)
+    if not isinstance(payload, dict):
+        return fallback
+    symbol = str(payload.get("symbol") or "").strip() or fallback["symbol"]
+    name = str(payload.get("name") or "").strip() or fallback["name"]
+    decimals = safe_decimals(payload.get("decimals", fallback["decimals"]))
+    return {
+        "symbol": symbol[:40],
+        "name": name[:120],
+        "decimals": decimals,
+    }
+
+
+def fetch_token_metadata(rpc_url: str, contract_addresses: list[str]) -> dict[str, dict[str, Any]]:
+    metadata_by_contract: dict[str, dict[str, Any]] = {}
+    missing: list[str] = []
+    for contract_address in contract_addresses:
+        cached = cached_token_metadata(contract_address)
+        if cached is not None:
+            metadata_by_contract[contract_address.lower()] = cached
+        else:
+            missing.append(contract_address)
+
+    if missing:
+        calls = [("alchemy_getTokenMetadata", [contract_address]) for contract_address in missing]
+        try:
+            results = rpc_batch_call(rpc_url, calls)
+        except RpcError:
+            results = [None] * len(missing)
+
+        for contract_address, result in zip(missing, results):
+            metadata = normalize_token_metadata(contract_address, result)
+            metadata_by_contract[contract_address.lower()] = metadata
+            store_token_metadata(contract_address, metadata)
+
+    return metadata_by_contract
+
+
+def wallet_cache_payload(wallet_key: str, message: str | None = None) -> dict[str, Any] | None:
+    now = time.time()
+    with CACHE_LOCK:
+        cached = WALLET_SCAN_CACHE.get(wallet_key)
+        if not cached:
+            return None
+        age_seconds = max(0, int(now - float(cached["storedAt"])))
+        payload = dict(cached["payload"])
+    payload["cached"] = True
+    payload["cacheAgeSeconds"] = age_seconds
+    payload["refreshAvailableInSeconds"] = max(0, WALLET_SCAN_CACHE_TTL_SECONDS - age_seconds)
+    if message:
+        payload["message"] = message
+    return payload
+
+
+def fresh_scan_allowed(wallet_key: str) -> bool:
+    now = time.time()
+    day = time.strftime("%Y-%m-%d", time.gmtime(now))
+    with CACHE_LOCK:
+        activity = WALLET_SCAN_ACTIVITY.get(wallet_key)
+        if activity and activity.get("day") != day:
+            activity = None
+        if activity:
+            if now - float(activity.get("lastFreshAt", 0)) < WALLET_SCAN_COOLDOWN_SECONDS:
+                return False
+            if int(activity.get("count", 0)) >= WALLET_SCAN_DAILY_LIMIT:
+                return False
+        return True
+
+
+def record_fresh_scan(wallet_key: str) -> None:
+    now = time.time()
+    day = time.strftime("%Y-%m-%d", time.gmtime(now))
+    with CACHE_LOCK:
+        activity = WALLET_SCAN_ACTIVITY.get(wallet_key)
+        if not activity or activity.get("day") != day:
+            activity = {"day": day, "count": 0, "lastFreshAt": 0}
+        activity["count"] = int(activity.get("count", 0)) + 1
+        activity["lastFreshAt"] = now
+        WALLET_SCAN_ACTIVITY[wallet_key] = activity
+
+
+def store_wallet_scan(wallet_key: str, payload: dict[str, Any]) -> None:
+    with CACHE_LOCK:
+        WALLET_SCAN_CACHE[wallet_key] = {
+            "storedAt": time.time(),
+            "payload": dict(payload),
+        }
+
+
+def alchemy_token_scan(wallet: str) -> dict[str, Any]:
+    rpc_url = alchemy_base_rpc_url()
+    if not rpc_url:
+        raise RpcError("not_configured")
+
+    wallet_key = wallet.lower()
+    cached = wallet_cache_payload(wallet_key, "Updated recently. Showing your latest saved scan.")
+    if cached and cached["cacheAgeSeconds"] < WALLET_SCAN_CACHE_TTL_SECONDS:
+        return cached
+    if cached and not fresh_scan_allowed(wallet_key):
+        cached["refreshAvailableInSeconds"] = max(0, WALLET_SCAN_COOLDOWN_SECONDS - cached["cacheAgeSeconds"])
+        cached["message"] = "Updated recently. Showing your latest saved scan."
+        return cached
+
+    balances_result = rpc_call(rpc_url, "alchemy_getTokenBalances", [wallet, "erc20"])
+    if not isinstance(balances_result, dict):
+        raise RpcError("invalid_response")
+
+    raw_balances = balances_result.get("tokenBalances")
+    if not isinstance(raw_balances, list):
+        raise RpcError("invalid_response")
+
+    nonzero_balances: list[tuple[str, int, str]] = []
+    for item in raw_balances:
+        if not isinstance(item, dict):
+            continue
+        contract_address = str(item.get("contractAddress") or "").strip()
+        raw_balance_value = item.get("tokenBalance")
+        raw_balance = hex_quantity_to_int(raw_balance_value)
+        if not WALLET_RE.match(contract_address) or raw_balance <= 0:
+            continue
+        nonzero_balances.append((contract_address, raw_balance, str(raw_balance_value)))
+
+    metadata_by_contract = fetch_token_metadata(
+        rpc_url,
+        [contract_address for contract_address, _, _ in nonzero_balances],
+    )
+    tokens = []
+    for contract_address, raw_balance, raw_balance_value in nonzero_balances:
+        metadata = metadata_by_contract.get(contract_address.lower()) or fallback_token_metadata(contract_address)
+        decimals = safe_decimals(metadata.get("decimals"))
+        tokens.append(
+            {
+                "contractAddress": contract_address,
+                "symbol": metadata.get("symbol") or short_contract_address(contract_address),
+                "name": metadata.get("name") or f"Token {short_contract_address(contract_address)}",
+                "decimals": decimals,
+                "rawBalance": raw_balance_value if raw_balance_value.startswith("0x") else str(raw_balance),
+                "formattedBalance": format_token_balance(raw_balance, decimals),
+            }
+        )
+
+    record_fresh_scan(wallet_key)
+    payload: dict[str, Any] = {
+        "ok": True,
+        "wallet": wallet,
+        "chainId": BASE_CHAIN_ID,
+        "scanMode": "alchemy-token-balances",
+        "mode": "alchemy-token-balances",
+        "cached": False,
+        "cacheAgeSeconds": 0,
+        "refreshAvailableInSeconds": WALLET_SCAN_CACHE_TTL_SECONDS,
+        "tokenCount": len(tokens),
+        "tokens": tokens,
+        "readOnly": True,
+        "message": "Token scan active.",
+        "security": {
+            "requiresSeedPhrase": False,
+            "requiresPrivateKey": False,
+            "requiresWalletApproval": False,
+            "custody": False,
+        },
+    }
+    store_wallet_scan(wallet_key, payload)
+    return payload
 
 
 def test_rpc_candidate(index: int, rpc_url: str) -> dict[str, Any]:
@@ -426,9 +761,14 @@ def rpc_status() -> dict[str, Any]:
 
 def status_payload() -> dict[str, Any]:
     rpc = rpc_status()
+    alchemy_base_ready = alchemy_base_configured()
     return {
         "backend": "live",
         "walletScan": "live-basic" if rpc["rpcLive"] else "mock",
+        "alchemyConfigured": env_present("ALCHEMY_BASE_API_KEY") or alchemy_base_ready,
+        "alchemyBaseConfigured": alchemy_base_ready,
+        "tokenScanner": "alchemy" if alchemy_base_ready else "unconfigured",
+        "cacheEnabled": True,
         "taxEngine": "mock",
         "readOnlyProviderConfigured": provider_configured(),
         "basescanConfigured": env_present("BASESCAN_API_KEY"),
@@ -571,6 +911,11 @@ class Handler(BaseHTTPRequestHandler):
             if not WALLET_RE.match(wallet):
                 self.write_json({"error": "invalid_wallet", "message": "Use a public EVM wallet address."}, status=400)
                 return
+            try:
+                self.write_json(alchemy_token_scan(wallet))
+                return
+            except RpcError:
+                pass
             rpc = working_rpc()
             if rpc:
                 rpc_url, chain_id = rpc

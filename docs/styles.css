@@ -1035,6 +1035,70 @@ h3 { font-size: 20px; }
   color: #fff;
 }
 
+.plan-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.plan-info-button {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  border: 1px solid rgba(124, 58, 237, 0.26);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--purple-deep);
+  font-weight: 950;
+  cursor: pointer;
+}
+
+.pricing-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+}
+
+.pricing-modal[hidden] {
+  display: none;
+}
+
+.pricing-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(5, 5, 10, 0.48);
+}
+
+.pricing-modal__panel {
+  position: relative;
+  width: min(100%, 560px);
+  max-height: min(82vh, 720px);
+  overflow-y: auto;
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  border-radius: 12px;
+  padding: 26px;
+  background: #fff;
+  box-shadow: var(--shadow-strong);
+}
+
+.pricing-modal__close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--text);
+  font-weight: 950;
+  cursor: pointer;
+}
+
 @media (max-width: 1040px) {
   .menu-button { display: inline-flex; }
   .site-nav { display: none; }

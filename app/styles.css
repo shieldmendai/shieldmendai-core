@@ -238,7 +238,10 @@ button {
 .metric-card,
 .estimate-card,
 .notice,
-.privacy-card {
+.privacy-card,
+.settings-card,
+.token-card,
+.plan-card {
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--card);
@@ -347,6 +350,73 @@ p {
   margin: 0;
   font-size: 12px;
   font-weight: 800;
+}
+
+.token-panel {
+  display: grid;
+  gap: 10px;
+}
+
+.token-summary {
+  display: grid;
+  gap: 3px;
+  padding: 12px;
+  border-radius: 8px;
+  background: var(--bg-soft);
+  color: var(--ink);
+}
+
+.token-summary.muted {
+  color: var(--muted);
+  font-weight: 850;
+}
+
+.token-summary strong,
+.token-summary span {
+  display: block;
+}
+
+.token-summary span {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.token-list {
+  display: grid;
+  gap: 8px;
+  max-height: 420px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.token-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  gap: 10px;
+  padding: 12px;
+  box-shadow: none;
+}
+
+.token-card div:last-child {
+  text-align: right;
+}
+
+.token-card strong,
+.token-card span {
+  display: block;
+}
+
+.token-card strong {
+  font-size: 15px;
+  line-height: 1.15;
+}
+
+.token-card span {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 750;
 }
 
 .snapshot-grid,
@@ -602,6 +672,69 @@ select:focus {
   box-shadow: none;
 }
 
+.settings-card {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding: 14px;
+}
+
+.settings-card p {
+  margin: 0;
+}
+
+.settings-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.settings-rows {
+  display: grid;
+  gap: 8px;
+}
+
+.settings-rows div {
+  display: grid;
+  gap: 3px;
+  padding: 10px;
+  border-radius: 8px;
+  background: var(--bg-soft);
+}
+
+.settings-rows span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.settings-rows strong {
+  font-size: 14px;
+  line-height: 1.2;
+}
+
+.plan-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.plan-card {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  box-shadow: none;
+}
+
+.plan-card h4 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.plan-card p {
+  font-size: 13px;
+}
+
 .privacy-card p,
 .disclaimer {
   margin-bottom: 0;
@@ -682,5 +815,13 @@ select:focus {
   .safety-strip,
   .safety-list {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .token-card {
+    grid-template-columns: 1fr;
+  }
+
+  .token-card div:last-child {
+    text-align: left;
   }
 }

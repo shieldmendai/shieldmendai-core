@@ -195,49 +195,88 @@
     <section class="screen" data-screen="settings" aria-labelledby="settings-title">
       <div class="section-head">
         <p class="eyebrow">Settings</p>
-        <h2 id="settings-title">Local planning profile.</h2>
-        <p>These settings stay on this device for now and are not sent to the backend.</p>
+        <h2 id="settings-title">Account and planning.</h2>
       </div>
-      <form class="form-stack" id="settings-form">
-        <label>
-          <span>Filing status</span>
-          <select name="filingStatus">
-            <option>Single</option>
-            <option>Married filing jointly</option>
-            <option>Married filing separately</option>
-            <option>Head of household</option>
-          </select>
-        </label>
-        <label>
-          <span>State</span>
-          <select name="state">
-            <option>Not sure yet</option>
-            <option>Alabama</option><option>Alaska</option><option>Arizona</option><option>Arkansas</option><option>California</option><option>Colorado</option><option>Connecticut</option><option>Delaware</option><option>Florida</option><option>Georgia</option><option>Hawaii</option><option>Idaho</option><option>Illinois</option><option>Indiana</option><option>Iowa</option><option>Kansas</option><option>Kentucky</option><option>Louisiana</option><option>Maine</option><option>Maryland</option><option>Massachusetts</option><option>Michigan</option><option>Minnesota</option><option>Mississippi</option><option>Missouri</option><option>Montana</option><option>Nebraska</option><option>Nevada</option><option>New Hampshire</option><option>New Jersey</option><option>New Mexico</option><option>New York</option><option>North Carolina</option><option>North Dakota</option><option>Ohio</option><option>Oklahoma</option><option>Oregon</option><option>Pennsylvania</option><option>Rhode Island</option><option>South Carolina</option><option>South Dakota</option><option>Tennessee</option><option>Texas</option><option>Utah</option><option>Vermont</option><option>Virginia</option><option>Washington</option><option>West Virginia</option><option>Wisconsin</option><option>Wyoming</option>
-          </select>
-        </label>
-        <label>
-          <span>Income range</span>
-          <select name="incomeRange">
-            <option>Under $50k</option>
-            <option>$50k - $100k</option>
-            <option>$100k - $200k</option>
-            <option>$200k - $500k</option>
-            <option>$500k+</option>
-          </select>
-        </label>
-        <label>
-          <span>Dependents</span>
-          <select name="dependents">
-            <option>No</option>
-            <option>Yes</option>
-          </select>
-        </label>
-        <article class="privacy-card">
-          <h3>Privacy & safety</h3>
-          <p>ShieldMendAI never asks for seed phrases, private keys, custody, approvals, swaps, transfers, trading, transaction signing, or message signing.</p>
-        </article>
+
+      <article class="settings-card">
+        <div class="settings-card-head">
+          <h3>Subscription</h3>
+          <span class="address-pill">Active beta access</span>
+        </div>
+        <div class="settings-rows">
+          <div><span>Current plan</span><strong>Free Beta</strong></div>
+          <div><span>Status</span><strong>Active beta access</strong></div>
+          <div><span>Refresh limits</span><strong>5 minute cache, 2 minute manual refresh, 100 fresh scans per wallet per day</strong></div>
+        </div>
+        <div class="plan-grid" aria-label="Plans">
+          <article class="plan-card">
+            <h4>Free Beta</h4>
+            <p>Wallet scans, token balances, and planning previews while beta access is active.</p>
+            <button class="button secondary" type="button" data-action="open-pricing">Choose plan</button>
+          </article>
+          <article class="plan-card">
+            <h4>Investor</h4>
+            <p>Future profit/loss, tax-lot, reward, and export tools for heavier wallet activity.</p>
+            <button class="button primary" type="button" data-action="open-pricing">Open secure checkout</button>
+          </article>
+        </div>
+      </article>
+
+      <article class="settings-card">
+        <h3>Tax profile</h3>
+        <p>Saved locally on this device. It is not sent to the backend tonight.</p>
+        <form class="form-stack" id="settings-form">
+          <label>
+            <span>State</span>
+            <select name="state">
+              <option>Not sure yet</option>
+              <option>Alabama</option><option>Alaska</option><option>Arizona</option><option>Arkansas</option><option>California</option><option>Colorado</option><option>Connecticut</option><option>Delaware</option><option>Florida</option><option>Georgia</option><option>Hawaii</option><option>Idaho</option><option>Illinois</option><option>Indiana</option><option>Iowa</option><option>Kansas</option><option>Kentucky</option><option>Louisiana</option><option>Maine</option><option>Maryland</option><option>Massachusetts</option><option>Michigan</option><option>Minnesota</option><option>Mississippi</option><option>Missouri</option><option>Montana</option><option>Nebraska</option><option>Nevada</option><option>New Hampshire</option><option>New Jersey</option><option>New Mexico</option><option>New York</option><option>North Carolina</option><option>North Dakota</option><option>Ohio</option><option>Oklahoma</option><option>Oregon</option><option>Pennsylvania</option><option>Rhode Island</option><option>South Carolina</option><option>South Dakota</option><option>Tennessee</option><option>Texas</option><option>Utah</option><option>Vermont</option><option>Virginia</option><option>Washington</option><option>West Virginia</option><option>Wisconsin</option><option>Wyoming</option>
+            </select>
+          </label>
+          <label>
+            <span>Filing status</span>
+            <select name="filingStatus">
+              <option>Single</option>
+              <option>Married filing jointly</option>
+              <option>Married filing separately</option>
+              <option>Head of household</option>
+            </select>
+          </label>
+          <label>
+            <span>Estimated yearly income</span>
+            <select name="incomeRange">
+              <option>Under $50k</option>
+              <option>$50k - $100k</option>
+              <option>$100k - $200k</option>
+              <option>$200k - $500k</option>
+              <option>$500k+</option>
+            </select>
+          </label>
+          <label>
+            <span>Dependents/deductions</span>
+            <select name="dependents">
+              <option>No</option>
+              <option>Yes</option>
+            </select>
+          </label>
+          <button class="button primary" type="button" id="save-tax-profile-button">Save tax profile</button>
+          <div class="notice compact" id="tax-profile-message" hidden>Tax profile saved.</div>
+        </form>
+      </article>
+
+      <article class="settings-card">
+        <h3>Safety & privacy</h3>
+        <p>ShieldMendAI never asks for seed phrases, private keys, custody, approvals, swaps, transfers, trading, transaction signing, or message signing.</p>
         <button class="button secondary danger" type="button" id="clear-data-button">Clear local app data</button>
-      </form>
+      </article>
+
+      <article class="settings-card">
+        <h3>App info</h3>
+        <div class="settings-rows">
+          <div><span>App version</span><strong>Beta 0.1</strong></div>
+          <div><span>Safety</span><strong>No seed phrase / no custody / no approvals</strong></div>
+        </div>
+      </article>
     </section>
   </main>
 
