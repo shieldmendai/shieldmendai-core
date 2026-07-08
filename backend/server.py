@@ -50,6 +50,20 @@ WALLET_SCAN_CACHE: dict[str, dict[str, Any]] = {}
 WALLET_SCAN_ACTIVITY: dict[str, dict[str, Any]] = {}
 TOKEN_METADATA_CACHE: dict[str, dict[str, Any]] = {}
 CACHE_LOCK = threading.Lock()
+LFI_CONTRACT_ADDRESS = "0x3722264ab15a1dfce5a5af89e6547f7949a8aba3"
+COMMON_TOKEN_RANKS = {
+    "ETH": 10,
+    "WETH": 10,
+    "USDC": 20,
+    "CBBTC": 30,
+    "LFI": 40,
+    "LIENFI": 40,
+}
+SPAM_WORD_RE = re.compile(
+    r"(https?://|www\.|\.com|\.xyz|\.top|airdrop|claim|reward|bonus|visit|voucher|promo|gift|"
+    r"free|win|winner|drop|telegram|t\.me|discord|whatsapp)",
+    re.IGNORECASE,
+)
 
 
 def load_env_file() -> None:
@@ -524,6 +538,87 @@ def short_contract_address(address: str) -> str:
     return f"{address[:6]}...{address[-4:]}"
 
 
+def parse_balance_number(formatted_balance: str) -> float | None:
+    try:
+        value = Decimal(str(formatted_balance))
+    except Exception:
+        return None
+    if not value.is_finite():
+        return None
+    return float(value)
+
+
+def token_display_metadata(contract_address: str, symbol: Any, name: Any) -> tuple[str, str]:
+    if contract_address.lower() == LFI_CONTRACT_ADDRESS:
+        return "LFI", "LienFi"
+    display_symbol = str(symbol or "").strip()
+    display_name = str(name or "").strip()
+    short = short_contract_address(contract_address)
+    if not display_symbol:
+        display_symbol = short
+    if not display_name:
+        display_name = f"Token {short}"
+    return display_symbol[:40], display_name[:120]
+
+
+def token_quality_fields(
+    contract_address: str,
+    symbol: Any,
+    name: Any,
+    formatted_balance: str,
+) -> dict[str, Any]:
+    display_symbol, display_name = token_display_metadata(contract_address, symbol, name)
+    short = short_contract_address(contract_address)
+    symbol_upper = display_symbol.upper()
+    name_upper = display_name.upper()
+    is_common = (
+        symbol_upper in COMMON_TOKEN_RANKS
+        or name_upper in COMMON_TOKEN_RANKS
+        or contract_address.lower() == LFI_CONTRACT_ADDRESS
+    )
+    rank = min(
+        COMMON_TOKEN_RANKS.get(symbol_upper, 500),
+        COMMON_TOKEN_RANKS.get(name_upper, 500),
+    )
+    if contract_address.lower() == LFI_CONTRACT_ADDRESS:
+        rank = COMMON_TOKEN_RANKS["LFI"]
+
+    balance_number = parse_balance_number(formatted_balance)
+    is_likely_dust = (
+        balance_number is not None
+        and balance_number > 0
+        and Decimal(str(formatted_balance)) < Decimal("0.000000000001")
+    )
+    compact_symbol = re.sub(r"[^A-Za-z0-9$._-]", "", display_symbol)
+    fallback_like = display_symbol == short or display_name == f"Token {short}"
+    is_nonsense = len(compact_symbol) < max(1, min(len(display_symbol), 3) // 2)
+    is_suspiciously_long = len(display_symbol) > 18 or len(display_name) > 72
+    has_spam_words = bool(SPAM_WORD_RE.search(f"{display_symbol} {display_name}"))
+    is_likely_spam = not is_common and (
+        fallback_like
+        or is_nonsense
+        or is_suspiciously_long
+        or has_spam_words
+    )
+
+    if is_likely_spam:
+        rank = max(rank, 900)
+    elif is_likely_dust and not is_common:
+        rank = max(rank, 700)
+
+    fields: dict[str, Any] = {
+        "displaySymbol": display_symbol,
+        "displayName": display_name,
+        "shortContractAddress": short,
+        "isLikelyDust": bool(is_likely_dust),
+        "isLikelySpam": bool(is_likely_spam),
+        "displayRank": rank,
+    }
+    if balance_number is not None:
+        fields["balanceNumber"] = balance_number
+    return fields
+
+
 def cached_token_metadata(contract_address: str) -> dict[str, Any] | None:
     key = contract_address.lower()
     now = time.time()
@@ -674,17 +769,26 @@ def alchemy_token_scan(wallet: str) -> dict[str, Any]:
     for contract_address, raw_balance, raw_balance_value in nonzero_balances:
         metadata = metadata_by_contract.get(contract_address.lower()) or fallback_token_metadata(contract_address)
         decimals = safe_decimals(metadata.get("decimals"))
+        symbol = metadata.get("symbol") or short_contract_address(contract_address)
+        name = metadata.get("name") or f"Token {short_contract_address(contract_address)}"
+        formatted_balance = format_token_balance(raw_balance, decimals)
+        quality_fields = token_quality_fields(contract_address, symbol, name, formatted_balance)
         tokens.append(
             {
                 "contractAddress": contract_address,
-                "symbol": metadata.get("symbol") or short_contract_address(contract_address),
-                "name": metadata.get("name") or f"Token {short_contract_address(contract_address)}",
+                "symbol": symbol,
+                "name": name,
                 "decimals": decimals,
                 "rawBalance": raw_balance_value if raw_balance_value.startswith("0x") else str(raw_balance),
-                "formattedBalance": format_token_balance(raw_balance, decimals),
+                "formattedBalance": formatted_balance,
+                **quality_fields,
             }
         )
 
+    visible_token_count = sum(1 for token in tokens if not token["isLikelySpam"] and not token["isLikelyDust"])
+    likely_spam_count = sum(1 for token in tokens if token["isLikelySpam"])
+    likely_dust_count = sum(1 for token in tokens if token["isLikelyDust"])
+    important_token_count = sum(1 for token in tokens if int(token["displayRank"]) < 100)
     record_fresh_scan(wallet_key)
     payload: dict[str, Any] = {
         "ok": True,
@@ -696,6 +800,11 @@ def alchemy_token_scan(wallet: str) -> dict[str, Any]:
         "cacheAgeSeconds": 0,
         "refreshAvailableInSeconds": WALLET_SCAN_CACHE_TTL_SECONDS,
         "tokenCount": len(tokens),
+        "visibleTokenCount": visible_token_count,
+        "likelySpamCount": likely_spam_count,
+        "likelyDustCount": likely_dust_count,
+        "importantTokenCount": important_token_count,
+        "tokenQualityMode": "beta-basic-filtering",
         "tokens": tokens,
         "readOnly": True,
         "message": "Token scan active.",

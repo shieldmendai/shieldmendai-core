@@ -390,33 +390,138 @@ p {
   padding-right: 2px;
 }
 
-.token-card {
+.token-tools {
   display: grid;
-  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
-  gap: 10px;
-  padding: 12px;
+  gap: 8px;
+}
+
+.token-tools input {
+  min-height: 44px;
+}
+
+.token-filter-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.token-filter-row button {
+  min-height: 38px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #ffffff;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.token-filter-row button.active {
+  border-color: rgba(124, 58, 237, 0.36);
+  background: var(--purple-soft);
+  color: var(--purple-strong);
+}
+
+.token-count-note {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.token-card {
+  overflow: hidden;
+  padding: 0;
   box-shadow: none;
 }
 
-.token-card div:last-child {
+.token-card-button {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  gap: 10px;
+  width: 100%;
+  border: 0;
+  padding: 12px;
+  background: transparent;
+  color: var(--ink);
+  text-align: left;
+}
+
+.token-card-button div:last-child {
   text-align: right;
 }
 
-.token-card strong,
-.token-card span {
+.token-card-button strong,
+.token-card-button span {
   display: block;
 }
 
-.token-card strong {
+.token-card-button strong {
   font-size: 15px;
   line-height: 1.15;
 }
 
-.token-card span {
+.token-card-button span {
   margin-top: 4px;
   color: var(--muted);
   font-size: 12px;
   font-weight: 750;
+}
+
+.token-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  min-height: 18px;
+  margin: 0 0 5px;
+}
+
+.token-badges span {
+  margin: 0;
+  border-radius: 999px;
+  padding: 3px 6px;
+  background: var(--bg-soft);
+  color: var(--purple-strong);
+  font-size: 10px;
+  font-weight: 950;
+}
+
+.token-details {
+  display: grid;
+  gap: 7px;
+  padding: 0 12px 12px;
+}
+
+.token-details div {
+  display: grid;
+  gap: 3px;
+  border-radius: 8px;
+  padding: 9px;
+  background: var(--bg-soft);
+}
+
+.token-details span {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 850;
+}
+
+.token-details strong {
+  font-size: 12px;
+  line-height: 1.3;
+}
+
+.token-details p {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
 }
 
 .snapshot-grid,
@@ -817,11 +922,15 @@ select:focus {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .token-card {
+  .token-card-button {
     grid-template-columns: 1fr;
   }
 
-  .token-card div:last-child {
+  .token-card-button div:last-child {
     text-align: left;
+  }
+
+  .token-filter-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }

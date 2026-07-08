@@ -11,7 +11,7 @@ const SOLANA_RE = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
 const EVM_NETWORKS = new Set(["base", "ethereum", "arbitrum", "optimism", "polygon"]);
 const SCAN_TIMEOUT_MS = 14000;
 const PRICING_URL = "https://shieldmendai.com/pricing.html";
-const APP_VERSION = "Beta 0.1";
+const APP_VERSION = "Beta 0.1.4 token polish";
 const BOOT_LINES = [
   "Checking safe wallet view...",
   "Loading dashboard...",
@@ -24,6 +24,9 @@ const state = {
   scanStatus: "none",
   scanMessage: "Add a public wallet address or import address with WalletConnect.",
   scanDetailsOpen: false,
+  tokenSearch: "",
+  tokenFilter: "main",
+  expandedTokens: {},
   scan: null,
   planner: {
     mode: "coins",
@@ -102,6 +105,23 @@ function bindEvents() {
   elements.walletConnectButton.addEventListener("click", importWalletConnectAddress);
 
   document.addEventListener("click", (event) => {
+    const tokenFilter = event.target.closest("[data-token-filter]");
+    if (tokenFilter) {
+      state.tokenFilter = tokenFilter.dataset.tokenFilter;
+      persistState();
+      renderWalletCards();
+      return;
+    }
+
+    const tokenCard = event.target.closest("[data-token-contract]");
+    if (tokenCard) {
+      const contract = tokenCard.dataset.tokenContract.toLowerCase();
+      state.expandedTokens[contract] = !state.expandedTokens[contract];
+      persistState();
+      renderWalletCards();
+      return;
+    }
+
     const target = event.target.closest("[data-action]");
     if (!target) return;
     if (target.dataset.action === "add-wallet") {
@@ -118,6 +138,14 @@ function bindEvents() {
     if (target.dataset.action === "open-pricing") {
       openPricingPage();
     }
+  });
+
+  document.addEventListener("input", (event) => {
+    const input = event.target.closest("[data-token-search]");
+    if (!input) return;
+    state.tokenSearch = input.value;
+    persistState();
+    renderWalletCards({ restoreTokenSearchFocus: true });
   });
 
   document.querySelectorAll("[data-plan-preset]").forEach((button) => {
@@ -520,10 +548,17 @@ function render() {
   elements.saveMessage.hidden = !state.savedPlan;
 }
 
-function renderWalletCards() {
+function renderWalletCards(options = {}) {
   const cardMarkup = walletStatusMarkup();
   elements.dashboardWalletCard.innerHTML = cardMarkup;
   elements.walletScanCard.innerHTML = cardMarkup;
+  if (options.restoreTokenSearchFocus) {
+    const activeSearch = document.querySelector(".screen.active [data-token-search]");
+    if (activeSearch) {
+      activeSearch.focus({ preventScroll: true });
+      activeSearch.setSelectionRange(activeSearch.value.length, activeSearch.value.length);
+    }
+  }
 }
 
 function walletStatusMarkup() {
@@ -581,6 +616,7 @@ function scanDetailsMarkup() {
   if (scan && (scan.scanMode || scan.mode)) lines.push(`Scan mode: ${scan.scanMode || scan.mode}`);
   if (scan && scan.chainId) lines.push(`Chain ID: ${scan.chainId}`);
   if (scan && Number.isFinite(Number(scan.tokenCount))) lines.push(`Tokens: ${scan.tokenCount}`);
+  if (scan && scan.tokenQualityMode) lines.push(`tokenQualityMode: ${scan.tokenQualityMode}`);
   if (scan && typeof scan.cached === "boolean") lines.push(`Cached: ${scan.cached ? "yes" : "no"}`);
   if (error && error.httpStatus) lines.push(`HTTP status: ${error.httpStatus}`);
   if (error && error.type) lines.push(`Error type: ${error.type}`);
@@ -604,59 +640,149 @@ function tokenBalancesMarkup() {
 
   const tokens = Array.isArray(scan.tokens) ? scan.tokens : [];
   const tokenCount = Number.isFinite(Number(scan.tokenCount)) ? Number(scan.tokenCount) : tokens.length;
+  const visibleTokenCount = Number.isFinite(Number(scan.visibleTokenCount))
+    ? Number(scan.visibleTokenCount)
+    : tokens.filter(isMainToken).length;
+  const likelySpamCount = Number.isFinite(Number(scan.likelySpamCount))
+    ? Number(scan.likelySpamCount)
+    : tokens.filter((token) => token.isLikelySpam).length;
+  const likelyDustCount = Number.isFinite(Number(scan.likelyDustCount))
+    ? Number(scan.likelyDustCount)
+    : tokens.filter((token) => token.isLikelyDust).length;
   if (!tokens.length) {
     return `<div class="token-summary">No Base ERC-20 balances found yet.</div>`;
   }
+  const shownTokens = filterAndSortTokens(tokens);
+  const hiddenCount = Math.max(0, tokenCount - visibleTokenCount);
+  const hiddenLabel = hiddenCount > 0
+    ? `${hiddenCount} likely spam/dust hidden`
+    : "No likely spam/dust hidden";
 
   return `
     <section class="token-panel" aria-label="Base token balances">
       <div class="token-summary">
         <strong>${tokenCount} Base token balances found</strong>
         <span>${scan.cached ? "Updated recently. Showing your latest saved scan." : "Token scan active."}</span>
+        <span>${shownTokens.length} shown</span>
+        <span>${hiddenLabel}</span>
       </div>
+      <div class="token-tools">
+        <label>
+          <span class="sr-only">Search tokens</span>
+          <input type="text" data-token-search placeholder="Search tokens" value="${escapeHtml(state.tokenSearch)}">
+        </label>
+        <div class="token-filter-row" aria-label="Token filters">
+          ${tokenFilterButton("all", "All")}
+          ${tokenFilterButton("main", "Main")}
+          ${tokenFilterButton("dust", "Dust")}
+          ${tokenFilterButton("spam", "Hidden/spam")}
+        </div>
+      </div>
+      <div class="token-count-note">${visibleTokenCount} main tokens, ${likelyDustCount} dust, ${likelySpamCount} for review.</div>
       <div class="token-list">
-        ${tokens.map(tokenCardMarkup).join("")}
+        ${shownTokens.length ? shownTokens.map(tokenCardMarkup).join("") : `<div class="token-summary muted">No tokens match this view.</div>`}
       </div>
     </section>
   `;
 }
 
 function tokenCardMarkup(token) {
-  const symbol = escapeHtml(token.symbol || "Token");
-  const name = escapeHtml(token.name || "Base token");
+  const symbol = escapeHtml(token.displaySymbol || token.symbol || "Token");
+  const name = escapeHtml(token.displayName || token.name || "Base token");
   const balance = escapeHtml(token.formattedBalance || "0");
-  const contract = escapeHtml(shortAddress(token.contractAddress || ""));
+  const contractAddress = token.contractAddress || "";
+  const shortContract = escapeHtml(token.shortContractAddress || shortAddress(contractAddress));
+  const contractKey = String(contractAddress).toLowerCase();
+  const expanded = Boolean(state.expandedTokens[contractKey]);
+  const badges = tokenBadges(token);
   return `
-    <article class="token-card">
-      <div>
+    <article class="token-card ${expanded ? "expanded" : ""}">
+      <button class="token-card-button" type="button" data-token-contract="${escapeHtml(contractAddress)}" aria-expanded="${expanded ? "true" : "false"}">
+        <div>
+          <span class="token-badges">${badges}</span>
         <strong>${symbol}</strong>
         <span>${name}</span>
       </div>
       <div>
         <strong>${balance}</strong>
-        <span>${contract}</span>
+          <span>${shortContract}</span>
       </div>
+      </button>
+      ${expanded ? tokenDetailsMarkup(token) : ""}
     </article>
   `;
+}
+
+function tokenDetailsMarkup(token) {
+  return `
+    <div class="token-details">
+      <div><span>Contract</span><strong>${escapeHtml(token.contractAddress || "Unknown")}</strong></div>
+      <div><span>Raw balance</span><strong>${escapeHtml(token.rawBalance || "0")}</strong></div>
+      <div><span>Decimals</span><strong>${escapeHtml(token.decimals ?? "Unknown")}</strong></div>
+      <p>Beta token detection. Verify before making decisions.</p>
+    </div>
+  `;
+}
+
+function tokenFilterButton(filter, label) {
+  const active = state.tokenFilter === filter;
+  return `<button type="button" data-token-filter="${filter}" class="${active ? "active" : ""}">${label}</button>`;
+}
+
+function tokenBadges(token) {
+  const badges = [];
+  if (isMainToken(token)) badges.push("Main");
+  if (token.isLikelyDust) badges.push("Dust");
+  if (token.isLikelySpam) badges.push("Review");
+  return badges.map((badge) => `<span>${badge}</span>`).join("");
+}
+
+function filterAndSortTokens(tokens) {
+  const query = state.tokenSearch.trim().toLowerCase();
+  return tokens
+    .filter((token) => {
+      if (state.tokenFilter === "main" && !isMainToken(token)) return false;
+      if (state.tokenFilter === "dust" && !token.isLikelyDust) return false;
+      if (state.tokenFilter === "spam" && !token.isLikelySpam) return false;
+      if (!query) return true;
+      return [
+        token.displaySymbol,
+        token.displayName,
+        token.symbol,
+        token.name,
+        token.contractAddress,
+        token.shortContractAddress
+      ].some((value) => String(value || "").toLowerCase().includes(query));
+    })
+    .sort(compareTokens);
+}
+
+function isMainToken(token) {
+  return !token.isLikelyDust && !token.isLikelySpam;
+}
+
+function compareTokens(left, right) {
+  const leftRank = Number.isFinite(Number(left.displayRank)) ? Number(left.displayRank) : 500;
+  const rightRank = Number.isFinite(Number(right.displayRank)) ? Number(right.displayRank) : 500;
+  if (leftRank !== rightRank) return leftRank - rightRank;
+  const leftName = String(left.displaySymbol || left.symbol || left.displayName || left.name || "").toLowerCase();
+  const rightName = String(right.displaySymbol || right.symbol || right.displayName || right.name || "").toLowerCase();
+  return leftName.localeCompare(rightName);
 }
 
 function renderMetrics() {
   const scan = state.scan && state.scan.scan;
   const tokens = scan && Array.isArray(scan.tokens) ? scan.tokens : [];
-  const lots = tokens.flatMap((token) => Array.isArray(token.lots) ? token.lots : []);
-  const totalValue = tokens.reduce((sum, token) => sum + Number(token.estimatedValueUsd || 0), 0);
 
-  elements.metricValue.textContent = totalValue > 0 ? formatUsd(totalValue) : "Beta preview";
-  elements.metricLots.textContent = lots.length > 0 ? `${lots.length} preview lots` : "Planning preview";
-  elements.metricGain.textContent = "Coming with full scan";
-  elements.metricRewards.textContent = "Staking/airdrops tracking";
+  elements.metricValue.textContent = "Prices coming next";
+  elements.metricLots.textContent = "Coming with transaction history.";
+  elements.metricGain.textContent = "Coming with price + history scan.";
+  elements.metricRewards.textContent = "Rewards detection coming next.";
 
   if (isTokenScan(scan)) {
     const tokenCount = Number.isFinite(Number(scan.tokenCount)) ? Number(scan.tokenCount) : tokens.length;
-    elements.metricValue.textContent = `${tokenCount} Base tokens`;
-    elements.metricGain.textContent = "Estimate before selling";
-    elements.metricLots.textContent = "Tax lots coming next";
-    elements.metricRewards.textContent = "Rewards planning ready";
+    elements.metricValue.textContent = "Prices coming next";
+    elements.metricLots.textContent = `${tokenCount} tokens`;
   } else if (scan && scan.nativeBalanceEth) {
     elements.metricValue.textContent = `${Number(scan.nativeBalanceEth).toFixed(5)} ETH`;
   }
@@ -700,6 +826,9 @@ function loadState() {
         scanStatus: saved.scanStatus || state.scanStatus,
         scanMessage: saved.scanMessage || state.scanMessage,
         scanDetailsOpen: Boolean(saved.scanDetailsOpen),
+        tokenSearch: saved.tokenSearch || "",
+        tokenFilter: saved.tokenFilter || "main",
+        expandedTokens: saved.expandedTokens || {},
         scan: saved.scan || null,
         planner: { ...state.planner, ...(saved.planner || {}) },
         settings: { ...state.settings, ...(saved.settings || {}) },
@@ -718,6 +847,9 @@ function persistState() {
     scanStatus: state.scanStatus,
     scanMessage: state.scanMessage,
     scanDetailsOpen: state.scanDetailsOpen,
+    tokenSearch: state.tokenSearch,
+    tokenFilter: state.tokenFilter,
+    expandedTokens: state.expandedTokens,
     scan: state.scan,
     planner: state.planner,
     settings: state.settings,
