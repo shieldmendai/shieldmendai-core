@@ -6,6 +6,7 @@ const drawerLinks = [
   ["Security", "security.html"],
   ["Tax Pack", "tax-pack.html"],
   ["Archive Mode", "archive-mode.html"],
+  ["Community Token", "community-token.html"],
   ["FAQ", "faq.html"],
   ["Beta Access", "beta.html"],
   ["Start Free Scan", "dashboard.html", "drawer-cta"],
@@ -186,3 +187,46 @@ if (backendStatusCard) {
       });
   }
 }
+
+document.querySelectorAll("[data-countdown-target]").forEach((countdown) => {
+  const target = new Date(countdown.dataset.countdownTarget);
+  const status = countdown.querySelector("[data-countdown-status]");
+  const days = countdown.querySelector("[data-countdown-days]");
+  const hours = countdown.querySelector("[data-countdown-hours]");
+  const minutes = countdown.querySelector("[data-countdown-minutes]");
+  const seconds = countdown.querySelector("[data-countdown-seconds]");
+
+  if (Number.isNaN(target.getTime())) return;
+
+  const setText = (element, value) => {
+    if (element) element.textContent = String(value).padStart(2, "0");
+  };
+
+  const renderCountdown = () => {
+    const remaining = target.getTime() - Date.now();
+
+    if (remaining <= 0) {
+      if (status) status.textContent = "Launch window is live. Check the official launch link.";
+      setText(days, 0);
+      setText(hours, 0);
+      setText(minutes, 0);
+      setText(seconds, 0);
+      return;
+    }
+
+    const totalSeconds = Math.floor(remaining / 1000);
+    const dayValue = Math.floor(totalSeconds / 86400);
+    const hourValue = Math.floor((totalSeconds % 86400) / 3600);
+    const minuteValue = Math.floor((totalSeconds % 3600) / 60);
+    const secondValue = totalSeconds % 60;
+
+    if (status) status.textContent = "Time remaining";
+    setText(days, dayValue);
+    setText(hours, hourValue);
+    setText(minutes, minuteValue);
+    setText(seconds, secondValue);
+  };
+
+  renderCountdown();
+  window.setInterval(renderCountdown, 1000);
+});

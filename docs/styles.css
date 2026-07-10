@@ -752,6 +752,169 @@ h3 { font-size: 20px; }
   align-items: center;
 }
 
+.token-hero__inner {
+  min-height: auto;
+  grid-template-columns: minmax(0, 0.95fr) minmax(360px, 0.82fr);
+  padding-top: 92px;
+}
+
+.launch-time {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-top: 26px;
+}
+
+.launch-time span,
+.launch-time strong {
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  padding: 9px 12px;
+  border: 1px solid rgba(124, 58, 237, 0.14);
+  border-radius: 999px;
+  background: #ffffff;
+  color: var(--purple-deep);
+  font-weight: 880;
+  box-shadow: 0 10px 28px rgba(41, 31, 78, 0.08);
+}
+
+.launch-time strong {
+  color: #ffffff;
+  background: linear-gradient(135deg, var(--purple-deep), var(--purple), var(--purple-2));
+}
+
+.countdown-panel {
+  padding: 26px;
+  border: 1px solid rgba(17, 16, 24, 0.10);
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at 100% 0, rgba(168, 85, 247, 0.18), transparent 30%),
+    linear-gradient(180deg, #ffffff, #f7f5ff);
+  box-shadow: var(--shadow-strong);
+}
+
+.countdown-panel h2 {
+  font-size: clamp(25px, 3vw, 34px);
+}
+
+.countdown-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 22px;
+}
+
+.countdown-card {
+  min-height: 106px;
+  display: grid;
+  place-items: center;
+  gap: 4px;
+  padding: 12px 8px;
+  border: 1px solid rgba(124, 58, 237, 0.14);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.84);
+  text-align: center;
+}
+
+.countdown-card strong {
+  color: var(--purple-deep);
+  font-size: clamp(28px, 4vw, 42px);
+  line-height: 1;
+}
+
+.countdown-card span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.countdown-note {
+  margin: 16px 0 0;
+}
+
+.time-row {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.time-row div,
+.token-basics .card {
+  min-height: 118px;
+  display: grid;
+  align-content: center;
+  gap: 8px;
+}
+
+.time-row div {
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: #ffffff;
+  box-shadow: var(--shadow);
+}
+
+.time-row span,
+.token-basics span {
+  color: var(--purple);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.time-row strong,
+.token-basics strong {
+  color: var(--text);
+  font-size: 18px;
+  line-height: 1.2;
+}
+
+.token-basics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.disclaimer-card {
+  border: 1px solid rgba(245, 158, 11, 0.30);
+  border-left: 5px solid var(--amber);
+  border-radius: 20px;
+  padding: clamp(24px, 4vw, 40px);
+  background:
+    radial-gradient(circle at 100% 0, rgba(245, 158, 11, 0.14), transparent 28%),
+    #ffffff;
+  box-shadow: var(--shadow);
+}
+
+.disclaimer-card p {
+  max-width: 920px;
+}
+
+.official-links {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.official-links a {
+  min-height: 58px;
+  display: flex;
+  align-items: center;
+  padding: 14px 16px;
+  border: 1px solid rgba(124, 58, 237, 0.16);
+  border-radius: 14px;
+  background: #ffffff;
+  color: var(--purple-deep);
+  font-weight: 850;
+  text-decoration: none;
+  box-shadow: 0 14px 34px rgba(41, 31, 78, 0.08);
+}
+
 .trust-stack {
   display: grid;
   gap: 10px;
@@ -1107,8 +1270,14 @@ h3 { font-size: 20px; }
   .split,
   .bento-grid,
   .contrast-grid,
-  .grid.four {
+  .grid.four,
+  .token-hero__inner {
     grid-template-columns: 1fr;
+  }
+
+  .time-row,
+  .token-basics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .hero-inner {
@@ -1130,7 +1299,8 @@ h3 { font-size: 20px; }
   .grid.three,
   .app-layout,
   .app-main,
-  .footer-inner {
+  .footer-inner,
+  .official-links {
     grid-template-columns: 1fr;
   }
 
@@ -1156,7 +1326,11 @@ h3 { font-size: 20px; }
   .button { width: 100%; }
   .trust-row,
   .sell-map__grid,
-  .code-grid { grid-template-columns: 1fr; }
+  .code-grid,
+  .time-row,
+  .token-basics { grid-template-columns: 1fr; }
+  .countdown-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .countdown-card { min-height: 96px; }
   .lot-card.action { grid-column: auto; }
   .app-topbar { align-items: flex-start; flex-direction: column; }
   .app-preview { padding: 12px; }
