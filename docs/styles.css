@@ -880,6 +880,85 @@ h3 { font-size: 20px; }
   gap: 16px;
 }
 
+.contract-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(320px, 0.72fr);
+  gap: clamp(22px, 4vw, 42px);
+  align-items: center;
+  border: 1px solid rgba(124, 58, 237, 0.16);
+  border-radius: 24px;
+  padding: clamp(24px, 5vw, 48px);
+  background:
+    radial-gradient(circle at 100% 0, rgba(168, 85, 247, 0.15), transparent 32%),
+    linear-gradient(180deg, #ffffff, #f8f6ff);
+  box-shadow: var(--shadow-strong);
+}
+
+.contract-panel.compact {
+  grid-template-columns: minmax(0, 0.95fr) minmax(320px, 0.62fr);
+}
+
+.contract-panel p {
+  max-width: 760px;
+}
+
+.contract-details {
+  display: grid;
+  gap: 12px;
+}
+
+.contract-row {
+  display: grid;
+  gap: 6px;
+  padding: 16px;
+  border: 1px solid rgba(124, 58, 237, 0.14);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.contract-row span {
+  color: var(--purple);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.contract-row strong,
+.contract-row code {
+  color: var(--text);
+  font-size: 17px;
+  font-weight: 850;
+  line-height: 1.35;
+}
+
+.contract-row code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  overflow-wrap: anywhere;
+}
+
+.copy-button {
+  width: fit-content;
+  min-width: 176px;
+}
+
+.copy-confirmation {
+  min-height: 24px;
+  margin: 0;
+  color: var(--success);
+  font-size: 14px;
+  font-weight: 850;
+}
+
+.contract-safety {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 16px 18px;
+  border: 1px solid rgba(22, 163, 74, 0.18);
+  border-radius: 16px;
+  background: rgba(22, 163, 74, 0.07);
+}
+
 .disclaimer-card {
   border: 1px solid rgba(245, 158, 11, 0.30);
   border-left: 5px solid var(--amber);
@@ -1271,7 +1350,9 @@ h3 { font-size: 20px; }
   .bento-grid,
   .contrast-grid,
   .grid.four,
-  .token-hero__inner {
+  .token-hero__inner,
+  .contract-panel,
+  .contract-panel.compact {
     grid-template-columns: 1fr;
   }
 
@@ -1324,6 +1405,7 @@ h3 { font-size: 20px; }
   h2 { font-size: clamp(26px, 8vw, 34px); }
   .lead { font-size: 18px; }
   .button { width: 100%; }
+  .copy-button { width: 100%; }
   .trust-row,
   .sell-map__grid,
   .code-grid,

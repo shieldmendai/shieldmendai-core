@@ -120,6 +120,49 @@ document.querySelectorAll(".accordion-trigger").forEach((trigger) => {
   });
 });
 
+document.querySelectorAll("[data-copy-value]").forEach((button) => {
+  const status = button.parentElement ? button.parentElement.querySelector("[data-copy-status]") : null;
+  let resetTimer;
+
+  const setStatus = (message) => {
+    if (!status) return;
+    status.textContent = message;
+    clearTimeout(resetTimer);
+    resetTimer = window.setTimeout(() => {
+      status.textContent = "";
+    }, 2200);
+  };
+
+  const copyWithFallback = (value) => {
+    const textarea = document.createElement("textarea");
+    textarea.value = value;
+    textarea.setAttribute("readonly", "");
+    textarea.style.position = "fixed";
+    textarea.style.top = "-999px";
+    document.body.append(textarea);
+    textarea.select();
+    const copied = document.execCommand("copy");
+    textarea.remove();
+    if (!copied) throw new Error("copy failed");
+  };
+
+  button.addEventListener("click", async () => {
+    const value = button.dataset.copyValue || "";
+    if (!value) return;
+
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(value);
+      } else {
+        copyWithFallback(value);
+      }
+      setStatus("Copied");
+    } catch {
+      setStatus("Copy failed");
+    }
+  });
+});
+
 const pricingModal = document.querySelector("[data-pricing-modal]");
 
 if (pricingModal) {
